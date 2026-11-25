@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RatMath Discrete mathematics</title>
+<meta name="description" content="Discrete mathematics for RatMath: counting and enumeration, graphs, generating functions, games and exact linear programming.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">@ratmath/discrete</div>
+<h1>Counting, graphs and games, exactly</h1>
+<p class="lede">Combinatorics, graph theory and game theory in one library: exact counts of any size, objects you can list, rank and sample, graph algorithms with certificates, and games solved in exact fractions.</p>
+<p class="notice"><strong>Planned, not built yet.</strong> This site is the frame the package will grow into. The full plan is in the <a href="https://github.com/ratmath/ratmath/blob/main/docs/design/library-roadmap.md#7-a-discrete-mathematics-package-ratmathdiscrete">library roadmap</a>, and the <a href="https://ratmath.com/shelf/">RatMath Shelf</a> page lists what exists across all the libraries.</p>
+
+<h2>What it will cover</h2>
+<ul>
+  <li>Counting: binomials, Stirling and Catalan numbers, partitions, inclusion and exclusion.</li>
+  <li>Enumeration with ranking and unranking, and a seeded random generator shared with statistics.</li>
+  <li>Graphs: structure, traversal, shortest paths, trees, standard families.</li>
+  <li>Generating functions and recurrences, solved in closed form.</li>
+  <li>Matchings, flows, colouring, planarity, isomorphism and spectra.</li>
+  <li>Exact linear programming, and matrix and bimatrix games.</li>
+  <li>Combinatorial, extensive-form and cooperative games; voting.</li>
+  <li>Sets, relations and partial orders; Pólya counting; codes and designs.</li>
+</ul>
+
+<h2>The order of work</h2>
+<p>The phases below come from the roadmap. Sizes are rough estimates in lines of source.</p>
+<div class="tablewrap"><table class="plan">
+<tr><th>Phase</th><th>Contents</th><th>Estimate</th></tr>
+<tr><td>1</td><td>Counting, enumeration with ranking, the seeded generator</td><td>1,000</td></tr>
+<tr><td>2</td><td>Graphs: structure, traversal, paths, trees, families</td><td>1,300</td></tr>
+<tr><td>3</td><td>Generating functions and recurrences</td><td>900</td></tr>
+<tr><td>4</td><td>Matchings, flows, colouring, planarity, isomorphism, spectra</td><td>1,600</td></tr>
+<tr><td>5</td><td>Exact linear programming; matrix and bimatrix games</td><td>1,100</td></tr>
+<tr><td>6</td><td>Combinatorial, extensive-form and cooperative games; voting</td><td>1,000</td></tr>
+<tr><td>7</td><td>Sets, relations, partial orders; Pólya counting</td><td>600</td></tr>
+<tr><td>8</td><td>Codes and designs</td><td>700</td></tr>
+<tr><td>9</td><td>Graph drawing</td><td>900 in graphics</td></tr>
+</table></div>
+<p>It will build on: Core, and linalg for spectra and linear programming. The statistics package uses it for discrete probability.</p>
+
+<h2>How the docs will be laid out</h2>
+<p>Like every library on the Shelf: this overview, an <a href="explore.html">Explore</a> page for trying things without writing code, a <a href="reference.html">Reference</a> listing every function, and one page per topic that explains the usage and the mathematics. Every page ends with a box of code you can edit and run.</p>
+<div class="cards" id="cards"></div>
+
+<h2>Until then</h2>
+<p>The box below already runs, with <code>@ratmath/core</code> in scope. It shows the kind of exactness the package is built on, done by hand.</p>
+<template data-runbox>
+// Exact counting needs nothing but BigInt.
+const binomial = (n, k) =&gt; { let r = 1n; for (let i = 1n; i &lt;= BigInt(k); i += 1n) r = (r * (BigInt(n) - i + 1n)) / i; return r; };
+const catalan = (n) =&gt; binomial(2 * n, n) / BigInt(n + 1);
+PRINT("C(100, 50) =", binomial(100, 50));
+PRINT("Catalan numbers:", Array.from({ length: 12 }, (_, n) =&gt; catalan(n)).join(", "));
+// the chance that a random permutation of n things has no fixed point tends to 1/e
+let d = [1n, 0n];
+for (let n = 2; n &lt;= 20; n += 1) d.push(BigInt(n - 1) * (d[n - 1] + d[n - 2]));
+let f = 1n; for (let n = 2n; n &lt;= 20n; n += 1n) f *= n;
+PRINT("derangements of 20 / 20! =", new Rational(d[20], f).toDecimal(20));
+plan.map((p) =&gt; `${p.phase}. ${p.contents}`)
+</template>
+</article>
+</main>
+</div>
+<script type="module">
+import { topicCards } from "./assets/site.js";
+topicCards(document.getElementById("cards"));
+</script>
+</body>
+</html>
