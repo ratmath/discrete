@@ -1,0 +1,58 @@
+{
+  "name": "@ratmath/discrete",
+  "version": "0.0.0",
+  "description": "Discrete mathematics for RatMath: counting and enumeration, graphs, generating functions, games and exact linear programming",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "src/",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "test": "bun test ./tests",
+    "docs:build": "bun scripts/build-docs.js"
+  },
+  "keywords": [
+    "combinatorics",
+    "graph-theory",
+    "game-theory",
+    "discrete-mathematics",
+    "exact",
+    "ratmath"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ratmath/discrete.git"
+  },
+  "homepage": "https://ratmath.com/discrete/",
+  "bugs": {
+    "url": "https://github.com/ratmath/discrete/issues"
+  },
+  "dependencies": {
+    "@ratmath/core": "^0.10.0"
+  },
+  "devDependencies": {
+    "katex": "0.19.1"
+  },
+  "types": "index.d.ts",
+  "author": "James Taylor",
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
