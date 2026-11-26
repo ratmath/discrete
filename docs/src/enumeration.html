@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Enumeration · RatMath Discrete</title>
+<meta name="description" content="Enumeration with ranking and unranking in @ratmath/discrete: permutations, combinations, partitions, set partitions and more as numbered lists.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Enumeration</div>
+<h1>Enumeration with ranking</h1>
+<p class="lede">Listing every object of a kind is the oldest method in combinatorics and the first to run out of time. A ranked list does better: it knows what stands at each place without writing the others down.</p>
+
+<h2>A family</h2>
+<p>Each function below returns a <code>Family</code>: a finite list of objects in a fixed, documented order.</p>
+<pre><code>import { permutations } from "@ratmath/discrete";
+
+const p = permutations(4);
+p.count;                  // 24n
+p.unrank(0);              // [1, 2, 3, 4]
+p.unrank(23);             // [4, 3, 2, 1]      (unrank(-1) is the last, too)
+p.rank([2, 1, 4, 3]);     // 7n
+p.has([1, 1, 2, 3]);      // false
+p.first(3);               // [[1,2,3,4], [1,2,4,3], [1,3,2,4]]
+[...p].length;            // 24: a family is iterable
+p.random(rng(7));         // a uniformly random one</code></pre>
+<p>Given a number \(n\), the things arranged are \(1, \dots, n\). Given an array, they are its items: <code>permutations(["a", "b", "c"])</code>. Ranks are <code>BigInt</code>s counted from 0.</p>
+
+<h2>The families</h2>
+<div class="tablewrap"><table class="ref">
+<tr><th>Family</th><th>Objects</th><th>Count</th><th>Order</th></tr>
+<tr><td><code>permutations(n)</code></td><td>arrangements of all \(n\)</td><td>\(n!\)</td><td>lexicographic</td></tr>
+<tr><td><code>permutations(n, k)</code></td><td>arrangements of \(k\) out of \(n\)</td><td>\(n!/(n-k)!\)</td><td>lexicographic</td></tr>
+<tr><td><code>derangements(n)</code></td><td>permutations with no fixed point</td><td>\(D_n\)</td><td>lexicographic</td></tr>
+<tr><td><code>combinations(n, k)</code></td><td>\(k\)-subsets, each increasing</td><td>\(\binom nk\)</td><td>lexicographic</td></tr>
+<tr><td><code>multisets(n, k)</code></td><td>\(k\) from \(n\) with repeats, non-decreasing</td><td>\(\binom{n+k-1}{k}\)</td><td>lexicographic</td></tr>
+<tr><td><code>subsets(n)</code></td><td>all subsets</td><td>\(2^n\)</td><td>binary; or <code>{ order: "gray" }</code>, <code>"size"</code></td></tr>
+<tr><td><code>words(n, k)</code></td><td>\(k\)-letter words, repeats allowed</td><td>\(n^k\)</td><td>dictionary</td></tr>
+<tr><td><code>product(a, b, …)</code></td><td>one from each array or family</td><td>product</td><td>last varies fastest</td></tr>
+<tr><td><code>compositions(n)</code>, <code>(n, k)</code></td><td>ordered sums of positive parts</td><td>\(2^{n-1}\), \(\binom{n-1}{k-1}\)</td><td>lexicographic</td></tr>
+<tr><td><code>compositions(n, k, { zero: true })</code></td><td>\(n\) identical things in \(k\) boxes</td><td>\(\binom{n+k-1}{k-1}\)</td><td>lexicographic</td></tr>
+<tr><td><code>partitions(n)</code>, <code>(n, k)</code></td><td>unordered sums, largest part first</td><td>\(p(n)\), \(p(n, k)\)</td><td>largest first part first</td></tr>
+<tr><td><code>setPartitions(n)</code>, <code>(n, k)</code></td><td>splits of a set into blocks</td><td>\(B_n\), \(S(n, k)\)</td><td>restricted growth</td></tr>
+<tr><td><code>dyckWords(n)</code></td><td>balanced strings of \(n\) pairs of brackets</td><td>Catalan</td><td><code>(</code> before <code>)</code></td></tr>
+</table></div>
+
+<h2>How ranking works</h2>
+<p>One idea does all of them: <em>count the completions of a prefix</em>. To find the permutation of 4 at place 7, ask how many permutations start with 1: \(3! = 6\). Place 7 is past those, so the first entry is 2 and we want place \(7 - 6 = 1\) among the permutations starting with 2. Each next entry accounts for \(2! = 2\): place 1 is within the first block, so the next entry is the smallest unused, 1. Then \(1!\) each: place 1 skips one, so 4, then 3. The answer is \([2, 1, 4, 3]\), found with a handful of divisions, and the same walk run backwards is <code>rank</code>.</p>
+<p>All that changes from family to family is the count of completions:</p>
+<ul>
+<li>combinations: after choosing the element \(v\), \(\binom{n-v}{\text{left to choose}}\);</li>
+<li>integer partitions: the number of partitions of what is left with parts no larger than the last one;</li>
+<li>set partitions: element \(i\) joins one of the \(m\) open blocks or opens a new one, and the number of ways to finish satisfies \(w(r, m) = m\,w(r-1, m) + w(r-1, m+1)\);</li>
+<li>bracket strings: the ballot numbers, the number of ways to finish from a given height;</li>
+<li>derangements: an inclusion and exclusion sum that depends only on how many of the remaining places could still be fixed points.</li>
+</ul>
+<pre><code>import { partitions, setPartitions, dyckWords, derangements } from "@ratmath/discrete";
+
+partitions(4).toArray();        // [[4], [3,1], [2,2], [2,1,1], [1,1,1,1]]
+setPartitions(3).toArray();     // [[[1,2,3]], [[1,2],[3]], [[1,3],[2]], [[1],[2,3]], [[1],[2],[3]]]
+dyckWords(3).toArray();         // ["((()))", "(()())", "(())()", "()(())", "()()()"]
+derangements(3).toArray();      // [[2,3,1], [3,1,2]]
+
+const big = setPartitions(30);
+big.count;                      // 846749014511809332450147n
+big.unrank(10n ** 20n);         // found at once</code></pre>
+
+<h2>What it is good for</h2>
+<p><strong>Uniform random objects.</strong> <code>family.random(rng)</code> draws a uniform place and unranks it, so every object is exactly equally likely. For partitions and set partitions that is not easy to get any other way: "put each element in a random block" does not give uniform set partitions.</p>
+<p><strong>Splitting a search.</strong> Ten workers can each take a tenth of the places, with nothing shared but two numbers. A search that was interrupted resumes from the rank where it stopped.</p>
+<p><strong>Compact names.</strong> A rank is the shortest possible name for an object: a 5-card hand is a number below 2,598,960, which is 22 bits.</p>
+<p><strong>Gray codes.</strong> <code>subsets(n, { order: "gray" })</code> lists subsets so that neighbours differ in exactly one element, which is the order to use when each step updates a running total.</p>
+<template data-runbox>
+// The walk described above, shown: unranking place 7 among the permutations of 4.
+{
+  let r = 7n; const pool = [1, 2, 3, 4], out = [];
+  for (let left = 3; left &gt;= 0; left--) {
+    const block = factorial(left), d = Number(r / block);
+    PRINT(`  each choice here covers ${block}; place ${r} is in block ${d} → take ${pool[d]}`);
+    out.push(pool.splice(d, 1)[0]); r %= block;
+  }
+  PRINT("  result:", out.join(" "), "  library:", permutations(4).unrank(7).join(" "));
+}
+
+// Every way to make change for 12 with parts at most 5, straight from the list of partitions.
+PRINT(partitions(12).toArray().filter((p) =&gt; p[0] &lt;= 5).map((p) =&gt; p.join("+")).join("   "));
+
+// Catalan objects: brackets ↔ ranks ↔ back again
+const dw = dyckWords(6);
+PRINT("dyckWords(6):", dw.count, "strings; number 100 is", dw.unrank(100), "and its rank is", dw.rank(dw.unrank(100)));
+
+// A uniformly random way to split 8 people into 3 teams (seeded, so repeatable).
+const people = ["Ana", "Ben", "Cai", "Dee", "Eli", "Fay", "Gus", "Hal"];
+const teams = setPartitions(people, 3);
+PRINT(teams.count, "ways. One at random:", teams.random(rng("teams")).map((t) =&gt; t.join(" ")).join(" | "));
+
+// Subsets one change at a time: total weight updated by a single add or remove per step.
+const weights = { a: 3, b: 5, c: 8, d: 13 };
+let previous = [], total = 0, best = null;
+for (const s of subsets(Object.keys(weights), { order: "gray" })) {
+  const added = s.find((x) =&gt; !previous.includes(x)), removed = previous.find((x) =&gt; !s.includes(x));
+  total += added ? weights[added] : removed ? -weights[removed] : 0;
+  if (total === 16) best = s;
+  previous = s;
+}
+PRINT("a subset weighing exactly 16:", best.join(" + "));
+permutations(25).unrank(10n ** 24n)
+</template>
+</article>
+</main>
+</div>
+</body>
+</html>

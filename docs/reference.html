@@ -3,17 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Discrete mathematics Reference</title>
-<meta property="og:title" content="Discrete mathematics Reference">
+<title>Reference · RatMath Discrete</title>
+<meta property="og:title" content="Reference · RatMath Discrete">
 <meta property="og:description" content="Discrete mathematics for RatMath: counting and enumeration, graphs, generating functions, games and exact linear programming.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://ratmath.com/discrete/reference.html">
-<meta name="description" content="Every function of @ratmath/discrete.">
+<meta name="description" content="Every export of @ratmath/discrete.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=1c5d3af7d8">
-<script type="module" src="assets/site.js?v=1c5d3af7d8"></script>
+<link rel="stylesheet" href="https://ratmath.com/assets/katex/0.19.1/katex.min.css">
+<link rel="stylesheet" href="assets/style.css?v=645067272b">
+<script type="module" src="assets/site.js?v=645067272b"></script>
 </head>
 <body>
 <div class="shell">
@@ -22,17 +23,71 @@
 <article>
 <div class="eyebrow">Reference</div>
 <h1>Everything in the library</h1>
-<p class="lede">Every export of <code>@ratmath/discrete</code> will be listed here with what it takes and what it returns.</p>
-<p class="notice"><strong>Planned, not built yet.</strong> This site is the frame the package will grow into. The full plan is in the <a href="https://github.com/ratmath/ratmath/blob/main/docs/design/library-roadmap.md#7-a-discrete-mathematics-package-ratmathdiscrete">library roadmap</a>, and the <a href="https://ratmath.com/shelf/">RatMath Shelf</a> page lists what exists across all the libraries.</p>
-<div class="tablewrap"><table class="ref" id="ref">
+<p class="lede">Every export of <code>@ratmath/discrete</code>. Whole-number arguments may be numbers, <code>BigInt</code>s or digit strings; counts and ranks come back as <code>BigInt</code>s.</p>
+<h2>Counting</h2>
+<div class="tablewrap"><table class="ref">
 <tr><th>Export</th><th>What it does</th></tr>
-<tr><td>plan</td><td>The list of planned phases, each { phase, contents, estimate }. It is here so the package has something to load while it is empty, and it shrinks as phases are built.</td></tr>
+<tr><td><code>factorial(n), doubleFactorial(n)</code></td><td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi><mo stretchy="false">!</mo></mrow><annotation encoding="application/x-tex">n!</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.6944em;"></span><span class="mord mathnormal">n</span><span class="mclose">!</span></span></span></span> and <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi><mo stretchy="false">!</mo><mo stretchy="false">!</mo></mrow><annotation encoding="application/x-tex">n!!</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.6944em;"></span><span class="mord mathnormal">n</span><span class="mclose">!!</span></span></span></span>.</td></tr>
+<tr><td><code>fallingFactorial(n, k), risingFactorial(n, k)</code></td><td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi><mo stretchy="false">(</mo><mi>n</mi><mo>−</mo><mn>1</mn><mo stretchy="false">)</mo><mo>⋯</mo><mo stretchy="false">(</mo><mi>n</mi><mo>−</mo><mi>k</mi><mo>+</mo><mn>1</mn><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">n(n-1)\cdots(n-k+1)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">n</span><span class="mopen">(</span><span class="mord mathnormal">n</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">1</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="minner">⋯</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mopen">(</span><span class="mord mathnormal">n</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:0.7778em;vertical-align:-0.0833em;"></span><span class="mord mathnormal" style="margin-right:0.0315em;">k</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">1</span><span class="mclose">)</span></span></span></span> and <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi><mo stretchy="false">(</mo><mi>n</mi><mo>+</mo><mn>1</mn><mo stretchy="false">)</mo><mo>⋯</mo><mo stretchy="false">(</mo><mi>n</mi><mo>+</mo><mi>k</mi><mo>−</mo><mn>1</mn><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">n(n+1)\cdots(n+k-1)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">n</span><span class="mopen">(</span><span class="mord mathnormal">n</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">1</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="minner">⋯</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mopen">(</span><span class="mord mathnormal">n</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:0.7778em;vertical-align:-0.0833em;"></span><span class="mord mathnormal" style="margin-right:0.0315em;">k</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">1</span><span class="mclose">)</span></span></span></span>; n may be negative.</td></tr>
+<tr><td><code>binomial(n, k)</code></td><td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo fence="true">(</mo><mfrac linethickness="0px"><mi>n</mi><mi>k</mi></mfrac><mo fence="true">)</mo></mrow><annotation encoding="application/x-tex">\binom nk</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1.2em;vertical-align:-0.35em;"></span><span class="mord"><span class="mopen delimcenter" style="top:0em;"><span class="delimsizing size1">(</span></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.7454em;"><span style="top:-2.355em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.0315em;">k</span></span></span></span><span style="top:-3.144em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">n</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.345em;"><span></span></span></span></span></span><span class="mclose delimcenter" style="top:0em;"><span class="delimsizing size1">)</span></span></span></span></span></span>; 0 outside the triangle; the series coefficient for negative n.</td></tr>
+<tr><td><code>multinomial(k1, k2, …)</code></td><td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false">(</mo><msub><mi>k</mi><mn>1</mn></msub><mo>+</mo><mo>⋯</mo><mo>+</mo><msub><mi>k</mi><mi>r</mi></msub><mo stretchy="false">)</mo><mo stretchy="false">!</mo><mi mathvariant="normal">/</mi><mo stretchy="false">(</mo><msub><mi>k</mi><mn>1</mn></msub><mo stretchy="false">!</mo><mo>⋯</mo><msub><mi>k</mi><mi>r</mi></msub><mo stretchy="false">!</mo><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">(k_1 + \dots + k_r)!/(k_1!\cdots k_r!)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.0315em;">k</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0315em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:0.6667em;vertical-align:-0.0833em;"></span><span class="minner">⋯</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.0315em;">k</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.1514em;"><span style="top:-2.55em;margin-left:-0.0315em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.0278em;">r</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)!</span><span class="mord">/</span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.0315em;">k</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0315em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">!</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="minner">⋯</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.0315em;">k</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.1514em;"><span style="top:-2.55em;margin-left:-0.0315em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.0278em;">r</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">!)</span></span></span></span>; also takes one array.</td></tr>
+<tr><td><code>multichoose(n, k)</code></td><td>Multisets of size k from n kinds.</td></tr>
+<tr><td><code>pascalRow(n)</code></td><td>Row n of Pascal's triangle.</td></tr>
+<tr><td><code>stirling2(n, k), bell(n), surjections(n, k)</code></td><td>Set partitions into k blocks, all set partitions, functions onto a k-set.</td></tr>
+<tr><td><code>stirling1(n, k, { signed })</code></td><td>Permutations with k cycles; signed gives the coefficients of the falling factorial.</td></tr>
+<tr><td><code>catalan(n), fibonacci(n), lucas(n)</code></td><td>Fibonacci and Lucas accept negative and very large n.</td></tr>
+<tr><td><code>derangementCount(n), eulerian(n, k)</code></td><td>Permutations with no fixed point; with exactly k descents.</td></tr>
+<tr><td><code>partitionCount(n), partitionCount(n, k)</code></td><td>Partitions of the integer n; into exactly k parts.</td></tr>
+<tr><td><code>compositionCount(n), compositionCount(n, k)</code></td><td>Ordered sums of positive parts.</td></tr>
+</table></div>
+<h2>Principles</h2>
+<div class="tablewrap"><table class="ref">
+<tr><th>Export</th><th>What it does</th></tr>
+<tr><td><code>inclusionExclusion(sets, { universe })</code></td><td><code>{ union, none, terms }</code> for arrays or Sets; <code>terms[j]</code> has <code>size</code>, <code>sign</code>, <code>sum</code>, <code>count</code>.</td></tr>
+<tr><td><code>sieve(m, sizeOf)</code></td><td>The sieve formula for m symmetric properties: <code>{ all, none, union, terms }</code>.</td></tr>
+<tr><td><code>pigeonhole(items, holes)</code></td><td><code>{ atLeast, atMost, forced, statement }</code>.</td></tr>
+<tr><td><code>collision(items, key)</code></td><td>The first two items with the same key: <code>{ key, items, indices }</code> or null.</td></tr>
+</table></div>
+<h2>Families</h2>
+<div class="tablewrap"><table class="ref">
+<tr><th>Export</th><th>What it does</th></tr>
+<tr><td><code>Family</code></td><td><code>count</code> (BigInt), <code>unrank(i)</code> / <code>at(i)</code>, <code>rank(object)</code>, <code>has(object)</code>, <code>random(rng or seed)</code>, <code>first(n)</code>, <code>slice(from, to)</code>, <code>toArray()</code>, iteration with <code>for…of</code>, <code>name</code>, <code>order</code>.</td></tr>
+<tr><td><code>permutations(n or items, k)</code></td><td>Arrangements of all, or of k, in lexicographic order.</td></tr>
+<tr><td><code>derangements(n or items)</code></td><td>Permutations with no fixed point.</td></tr>
+<tr><td><code>combinations(n or items, k)</code></td><td>k-element subsets.</td></tr>
+<tr><td><code>multisets(n or items, k)</code></td><td>Selections with repetition.</td></tr>
+<tr><td><code>subsets(n or items, { order })</code></td><td>All subsets; order <code>"binary"</code>, <code>"gray"</code> or <code>"size"</code>.</td></tr>
+<tr><td><code>words(n or letters, k)</code></td><td>k-letter words; <code>rank</code> also accepts a string.</td></tr>
+<tr><td><code>product(a, b, …)</code></td><td>The Cartesian product of arrays and families.</td></tr>
+<tr><td><code>compositions(n, k, { zero })</code></td><td>Ordered sums; with k parts; with zero parts allowed.</td></tr>
+<tr><td><code>partitions(n, k)</code></td><td>Integer partitions, largest part first.</td></tr>
+<tr><td><code>setPartitions(n or items, k)</code></td><td>Partitions of a set into blocks; exactly k blocks.</td></tr>
+<tr><td><code>dyckWords(n, { open, close })</code></td><td>Balanced bracket strings.</td></tr>
+</table></div>
+<h2>Random</h2>
+<div class="tablewrap"><table class="ref">
+<tr><th>Export</th><th>What it does</th></tr>
+<tr><td><code>rng(seed)</code></td><td>A <code>Random</code> from a whole number of any size or text.</td></tr>
+<tr><td><code>Random</code></td><td><code>u32()</code>, <code>bits(k)</code>, <code>int(n)</code>, <code>between(lo, hi)</code>, <code>bool(p)</code>, <code>rational(denominator)</code>, <code>float()</code>, <code>pick(items)</code>, <code>shuffle(items)</code>, <code>sample(items, k)</code>, <code>weighted(items, weights)</code>, <code>weightedIndex(weights)</code>, <code>fork(label)</code>, <code>clone()</code>, <code>state</code>. <code>new Random(state)</code> resumes.</td></tr>
+<tr><td><code>DiscreteError</code></td><td>Thrown with a <code>code</code>: <code>not-in-family</code>, <code>too-large</code>, <code>no-rank</code>, <code>bad-argument</code>.</td></tr>
+<tr><td><code>plan</code></td><td>The phases still to come.</td></tr>
 </table></div>
 <section class="runbox" aria-label="Runnable code">
   <div class="runbox-head"><strong>Try it</strong><span>Edit the code and run it with <code>@ratmath/discrete</code> and Core's <code>Rational</code> in scope. The last line's value is shown; <code>PRINT(…)</code> adds lines, <code>TEX(…)</code> typesets math.</span></div>
-  <textarea spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code">// The one export so far.
-for (const p of plan) PRINT(`phase ${p.phase}:`, p.contents, `(${p.estimate} lines)`);
-plan.length</textarea>
+  <textarea spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code">// One of each.
+PRINT("binomial      ", binomial(40, 20));
+PRINT("multinomial   ", multinomial(3, 3, 3));
+PRINT("stirling2     ", stirling2(10, 4), " bell", bell(10), " stirling1", stirling1(10, 4));
+PRINT("partitionCount", partitionCount(50), " into 5 parts:", partitionCount(50, 5));
+PRINT("catalan       ", catalan(10), " fibonacci", fibonacci(90), " derangements", derangementCount(10));
+PRINT("sieve         ", sieve(6, (k) =&gt; factorial(6 - k)).none, "derangements of 6, by the sieve");
+PRINT("pigeonhole    ", pigeonhole(367, 366).statement);
+for (const f of [permutations(6), permutations(6, 3), derangements(6), combinations(6, 3), multisets(6, 3), subsets(6), words(6, 3), compositions(6), compositions(6, 3), partitions(6), setPartitions(6), dyckWords(6)]) {
+  PRINT(f.name.padEnd(46), String(f.count).padStart(6), "  #5:", JSON.stringify(f.unrank(5)));
+}
+const g = rng("reference");
+PRINT("rng           ", g.int(100), g.between(1, 6), g.bool("2/3"), String(g.rational(12)), g.shuffle(["a", "b", "c"]).join(""));
+Object.keys(pigeonhole(10, 3))</textarea>
   <div class="runbox-bar"><button type="button" data-run>Run</button><button type="button" class="ghost" data-reset>Reset</button><span class="runbox-meta">Ctrl/⌘ + Enter runs</span></div>
   <div class="runbox-out" aria-live="polite"></div>
 </section>

@@ -1,8 +1,8 @@
 // Shared page furniture for the discrete docs: the contents column, the theme
 // switch and the code boxes. Add each topic page to PAGES as it is written.
 
-import * as A from "./discrete.js?v=1c5d3af7d8";
-import { mountRunboxes } from "./runbox.js?v=1c5d3af7d8";
+import * as A from "./discrete.js?v=645067272b";
+import { mountRunboxes } from "./runbox.js?v=645067272b";
 
 export { A };
 
@@ -10,8 +10,11 @@ export const PAGES = [
   { href: "index.html", title: "Overview" },
   { href: "reference.html", title: "Reference" },
   { href: "explore.html", title: "Explore" },
-  // { group: "Topics" },
-  // { href: "topic.html", title: "A topic", blurb: "One line about it" },
+  { group: "Topics" },
+  { href: "counting.html", title: "Counting", blurb: "Binomials, Stirling, Bell, Catalan, partitions: exact at any size" },
+  { href: "inclusion-exclusion.html", title: "Inclusion and exclusion", blurb: "Unions by adding and subtracting, the sieve formula, pigeonholes" },
+  { href: "enumeration.html", title: "Enumeration", blurb: "Every family as a numbered list: rank, unrank, iterate, draw" },
+  { href: "random.html", title: "The seeded generator", blurb: "Reproducible streams, exactly uniform integers, exact probabilities" },
 ];
 
 export const h = (tag, attrs = {}, ...kids) => {

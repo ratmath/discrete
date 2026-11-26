@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Inclusion and exclusion · RatMath Discrete</title>
+<meta name="description" content="Inclusion and exclusion, the sieve formula and the pigeonhole principle in @ratmath/discrete, on real sets and by formula.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Inclusion and exclusion</div>
+<h1>Inclusion, exclusion and pigeonholes</h1>
+<p class="lede">Two principles that carry a surprising share of combinatorics: counting a union by adding and subtracting overlaps, and the fact that too many things in too few boxes must collide. Both are here on actual data and as formulas.</p>
+
+<h2>On sets you can list</h2>
+<p>For sets \(A_1, \dots, A_m\),</p>
+\[ |A_1 \cup \dots \cup A_m| = \sum_i |A_i| - \sum_{i<j} |A_i \cap A_j| + \sum_{i<j<k} |A_i \cap A_j \cap A_k| - \cdots \]
+<p><code>inclusionExclusion(sets)</code> computes each level of that sum, so the answer comes with its working.</p>
+<pre><code>import { inclusionExclusion } from "@ratmath/discrete";
+
+const r = inclusionExclusion([[1, 2, 3, 4], [3, 4, 5], [4, 5, 6, 7]], { universe: 10 });
+r.union;    // 7n
+r.none;     // 3n: of a universe of 10, how many are in none of the sets
+r.terms;    // [{ size: 1, sign: 1, sum: 11n, count: 3n },
+            //  { size: 2, sign: -1, sum: 5n, count: 3n },
+            //  { size: 3, sign: 1, sum: 1n, count: 1n }]     11 − 5 + 1 = 7</code></pre>
+<p>Sets are arrays or <code>Set</code>s. <code>universe</code> is a count, an array or a <code>Set</code>. Up to 20 sets are accepted, since the formula has \(2^m - 1\) terms; intersections that are already empty are not explored further.</p>
+
+<h2>By formula: the sieve</h2>
+<p>Most uses never list anything. There are \(m\) "bad" properties, the number of objects with any particular \(k\) of them is a known \(N_k\) (the same for every choice, by symmetry), and the number with none is</p>
+\[ \sum_{k=0}^{m} (-1)^k \binom{m}{k} N_k. \]
+<pre><code>import { sieve, factorial } from "@ratmath/discrete";
+
+// Derangements of 5: property i is "i stays in place"; fixing k of them leaves (5 − k)! permutations.
+const d = sieve(5, (k) =&gt; factorial(5 - k));
+d.none;     // 44n
+d.all;      // 120n
+d.union;    // 76n: permutations with at least one fixed point
+d.terms.map((t) =&gt; `${t.sign &gt; 0 ? "+" : "-"}${t.choices}·${t.each}`);
+// ["+1·120", "-5·24", "+10·6", "-10·2", "+5·1", "-1·1"]
+
+// Functions from 6 things onto 3: property i is "value i is never taken".
+sieve(3, (k) =&gt; BigInt(3 - k) ** 6n).none;   // 540n = 3!·S(6, 3)</code></pre>
+<p>The derangement sum simplifies to \(n!\sum_k (-1)^k/k!\), which is why the proportion of derangements tends to \(1/e\). The second example is the formula for surjections, and dividing by \(k!\) gives the Stirling numbers of the second kind.</p>
+
+<h2>Pigeonholes</h2>
+<p>If \(n\) things go into \(h\) boxes, some box holds at least \(\lceil n/h \rceil\). <code>pigeonhole</code> states the bound; <code>collision</code> finds an actual pair in the same box, given a function that says which box a thing goes in.</p>
+<pre><code>import { pigeonhole, collision } from "@ratmath/discrete";
+
+pigeonhole(13, 12);    // { atLeast: 2n, atMost: 1n, forced: true, statement: "13 items in 12 boxes: some box holds at least 2" }
+pigeonhole(100, 7).atLeast;    // 15n
+
+// Among any 12 whole numbers, two differ by a multiple of 11: the boxes are the remainders.
+collision([3, 14, 25, 7, 18, 40, 2, 9, 61, 33, 12, 5], (x) =&gt; x % 11);
+// { key: 3, items: [3, 14], indices: [0, 1] }
+collision([1, 2, 3]);   // null: all different</code></pre>
+<p>The principle only says a collision exists; it does not say where. That gap is real: it is easy to prove that two people in a large city have the same number of hairs and hard to find them. <code>collision</code> closes the gap for data you hold.</p>
+<template data-runbox>
+// Numbers up to 1000 divisible by none of 2, 3, 5, 7: by listing, and by formula.
+const N = 1000, primes = [2, 3, 5, 7];
+const multiples = primes.map((p) =&gt; Array.from({ length: Math.floor(N / p) }, (_, i) =&gt; p * (i + 1)));
+const listed = inclusionExclusion(multiples, { universe: N });
+for (const t of listed.terms) PRINT(`${t.sign &gt; 0 ? "+" : "−"} intersections of ${t.size}: ${t.sum}`);
+PRINT("divisible by at least one:", listed.union, "  by none:", listed.none);
+
+// Euler's φ(n) is the same sieve: n·Π(1 − 1/p). For 2·3·5·7 = 210:
+PRINT("φ(210) by the same idea:", inclusionExclusion(primes.map((p) =&gt; Array.from({ length: 210 / p }, (_, i) =&gt; p * (i + 1))), { universe: 210 }).none);
+
+// The sieve by formula: hands of 5 cards with no suit missing.
+// Property i: "suit i is missing". Missing k suits leaves C(13(4 − k), 5) hands.
+const allSuits = sieve(4, (k) =&gt; binomial(13 * (4 - k), 5));
+PRINT("hands using all four suits:", allSuits.none, "of", allSuits.all);
+
+// The birthday pigeonhole, found: 30 seeded "birthdays", and the first shared one.
+const g = rng("class of 30");
+const birthdays = Array.from({ length: 30 }, () =&gt; g.between(1, 365));
+const hit = collision(birthdays);
+PRINT(hit ? `students ${hit.indices[0] + 1} and ${hit.indices[1] + 1} share day ${hit.key}` : "no shared birthday this time");
+// How likely is that? All different: 365·364·…·336 / 365^30
+1 - Number(fallingFactorial(365, 30)) / Number(365n ** 30n)
+</template>
+</article>
+</main>
+</div>
+</body>
+</html>
