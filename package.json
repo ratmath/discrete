@@ -42,11 +42,14 @@
     "url": "https://github.com/ratmath/discrete/issues"
   },
   "dependencies": {
-    "@ratmath/core": "^0.10.0",
     "@ratmath/algebraic": "^0.1.0",
     "@ratmath/logic": "^0.2.0"
   },
+  "peerDependencies": {
+    "@ratmath/core": ">=0.10.0 <0.12.0"
+  },
   "devDependencies": {
+    "@ratmath/core": "^0.11.0",
     "katex": "0.19.1"
   },
   "types": "index.d.ts",
