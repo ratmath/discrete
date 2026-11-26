@@ -13,8 +13,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
 <link rel="stylesheet" href="https://ratmath.com/assets/katex/0.19.1/katex.min.css">
-<link rel="stylesheet" href="assets/style.css?v=645067272b">
-<script type="module" src="assets/site.js?v=645067272b"></script>
+<link rel="stylesheet" href="assets/style.css?v=b2be70433e">
+<script type="module" src="assets/site.js?v=b2be70433e"></script>
 </head>
 <body>
 <div class="shell">
@@ -22,11 +22,11 @@
 <main>
 <article>
 <div class="eyebrow">@ratmath/discrete</div>
-<h1>Count it, list it, or pick one at random</h1>
-<p class="lede">The numbers of combinatorics as exact integers of any size; every standard family of objects in a fixed order, with the millionth one found without listing the rest; and a random generator that gives the same stream from the same seed on every machine.</p>
+<h1>Count it, list it, pick one at random, or draw the graph</h1>
+<p class="lede">The numbers of combinatorics as exact integers of any size; every standard family of objects in a fixed order, with the millionth one found without listing the rest; a random generator that gives the same stream from the same seed on every machine; and graphs with exact weights, where every "no" comes with its reason.</p>
 
 <h2>What is here</h2>
-<p>The first part of the package: counting, enumeration and the generator. Graphs, generating functions, games and linear programming are planned and listed at the bottom of this page.</p>
+<p>Counting, enumeration and the generator (phase 1); graphs: structure, searching, paths, tours and trees (phase 2); and exact linear programming with matrix and bimatrix games (phase 5). Generating functions, matchings and flows, more games and the rest are planned and listed at the bottom of this page.</p>
 <div class="cards" id="cards"></div>
 
 <h2>A first program</h2>
@@ -41,11 +41,23 @@ p.rank([20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]);
 
 const g = rng("my experiment");
 setPartitions(["ann", "bo", "cy", "di"]).random(g);   // a uniformly random way to split four people into groups
-g.shuffle([1, 2, 3, 4, 5]);                           // the same shuffle every time this seed is used</code></pre>
+g.shuffle([1, 2, 3, 4, 5]);                           // the same shuffle every time this seed is used
+
+import { graph, shortestPath, bipartition, petersen, hamiltonCycle } from "@ratmath/discrete";
+const roads = graph("a-b:0.1 b-c:0.2 c-d:0.3 a-d:0.6");
+shortestPath(roads, "a", "d").distance;   // exactly 3/5: both routes tie (in floating point they differ)
+bipartition(graph("1-2 2-3 3-1"));        // { bipartite: false, oddCycle: [2, 1, 3, 2] }: the reason
+hamiltonCycle(petersen()).exists;         // false, proved by exhaustive search
+
+import { linearProgram, matrixGame } from "@ratmath/discrete";
+linearProgram({ maximize: [30, 50], constraints: [[[2, 4], "<=", 100], [[3, 2], "<=", 90]] }).dual;
+                                          // [45/4, 5/2]: the prices that prove 1350 is the best
+String(matrixGame([[3, -1], [-2, 1]]));   // "value 1/7; row plays r1 3/7, r2 4/7; column plays c1 2/7, c2 5/7"</code></pre>
 
 <h2>Three ideas</h2>
 <p><strong>Counts are exact.</strong> Every counting function returns a <code>BigInt</code>. <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo fence="true">(</mo><mfrac linethickness="0px"><mn>100</mn><mn>50</mn></mfrac><mo fence="true">)</mo></mrow><annotation encoding="application/x-tex">\binom{100}{50}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1.2451em;vertical-align:-0.35em;"></span><span class="mord"><span class="mopen delimcenter" style="top:0em;"><span class="delimsizing size1">(</span></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8951em;"><span style="top:-2.355em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">50</span></span></span></span><span style="top:-3.144em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">100</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.345em;"><span></span></span></span></span></span><span class="mclose delimcenter" style="top:0em;"><span class="delimsizing size1">)</span></span></span></span></span></span> has 30 digits and all of them are right; nothing is rounded, so identities can be checked by <code>===</code>.</p>
 <p><strong>A family is a numbered list you never have to write out.</strong> <code>permutations(20)</code> is an object that knows its size, the object at any place (<code>unrank</code>) and the place of any object (<code>rank</code>). That turns "a uniformly random permutation" into "a uniformly random number below <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>20</mn><mo stretchy="false">!</mo></mrow><annotation encoding="application/x-tex">20!</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.6944em;"></span><span class="mord">20</span><span class="mclose">!</span></span></span></span>", and it is how a search or a simulation can be split up or resumed. See <a href="enumeration.html">Enumeration</a>.</p>
+<p><strong>A "no" comes with its reason.</strong> A graph that is not bipartite comes back with an odd cycle, a directed graph with no topological order with a directed cycle, a shortest-path question spoiled by a negative cycle with that cycle, a graph with no Euler tour with its odd vertices. See <a href="connectivity.html">Connectivity</a>. The same goes for optimisation: an optimum comes with the dual prices that prove it, an impossible linear program with a Farkas combination of its constraints. See <a href="linear-programming.html">Linear programming</a>.</p>
 <p><strong>Random means reproducible.</strong> The generator is integer arithmetic from end to end. A seed fixes the stream on every platform, whole numbers of any size are exactly uniform, and probabilities are exact fractions. See <a href="random.html">The seeded generator</a>.</p>
 
 <h2>What is planned</h2>
@@ -53,16 +65,16 @@ g.shuffle([1, 2, 3, 4, 5]);                           // the same shuffle every 
 <div class="tablewrap"><table class="plan">
 <tr><th>Phase</th><th>Contents</th><th>Estimate</th></tr>
 <tr><td>1</td><td>Counting, enumeration with ranking, the seeded generator</td><td>built</td></tr>
-<tr><td>2</td><td>Graphs: structure, traversal, paths, trees, families</td><td>1,300</td></tr>
+<tr><td>2</td><td>Graphs: structure, traversal, paths, trees, families</td><td>built</td></tr>
 <tr><td>3</td><td>Generating functions and recurrences</td><td>900</td></tr>
 <tr><td>4</td><td>Matchings, flows, colouring, planarity, isomorphism, spectra</td><td>1,600</td></tr>
-<tr><td>5</td><td>Exact linear programming; matrix and bimatrix games</td><td>1,100</td></tr>
+<tr><td>5</td><td>Exact linear programming; matrix and bimatrix games</td><td>built</td></tr>
 <tr><td>6</td><td>Combinatorial, extensive-form and cooperative games; voting</td><td>1,000</td></tr>
 <tr><td>7</td><td>Sets, relations, partial orders; Pólya counting</td><td>600</td></tr>
 <tr><td>8</td><td>Codes and designs</td><td>700</td></tr>
 <tr><td>9</td><td>Graph drawing</td><td>900 in graphics</td></tr>
 </table></div>
-<p>This part depends only on Core. The statistics library will draw its random data from the generator here.</p>
+<p>So far the package depends only on Core: linear programming is its own exact simplex method, and spectra will bring in linalg. The statistics library draws its random data from the generator here.</p>
 <section class="runbox" aria-label="Runnable code">
   <div class="runbox-head"><strong>Try it</strong><span>Edit the code and run it with <code>@ratmath/discrete</code> and Core's <code>Rational</code> in scope. The last line's value is shown; <code>PRINT(…)</code> adds lines, <code>TEX(…)</code> typesets math.</span></div>
   <textarea spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code">// How many poker hands, and how many of each kind?
@@ -94,7 +106,7 @@ plan.map((p) =&gt; `${p.phase}. ${p.contents}`)</textarea>
 </main>
 </div>
 <script type="module">
-import { topicCards } from "./assets/site.js?v=645067272b";
+import { topicCards } from "./assets/site.js?v=b2be70433e";
 topicCards(document.getElementById("cards"));
 </script>
 </body>

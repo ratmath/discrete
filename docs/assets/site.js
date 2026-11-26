@@ -1,8 +1,8 @@
 // Shared page furniture for the discrete docs: the contents column, the theme
 // switch and the code boxes. Add each topic page to PAGES as it is written.
 
-import * as A from "./discrete.js?v=645067272b";
-import { mountRunboxes } from "./runbox.js?v=645067272b";
+import * as A from "./discrete.js?v=b2be70433e";
+import { mountRunboxes } from "./runbox.js?v=b2be70433e";
 
 export { A };
 
@@ -15,6 +15,17 @@ export const PAGES = [
   { href: "inclusion-exclusion.html", title: "Inclusion and exclusion", blurb: "Unions by adding and subtracting, the sieve formula, pigeonholes" },
   { href: "enumeration.html", title: "Enumeration", blurb: "Every family as a numbered list: rank, unrank, iterate, draw" },
   { href: "random.html", title: "The seeded generator", blurb: "Reproducible streams, exactly uniform integers, exact probabilities" },
+  { group: "Graphs" },
+  { href: "graphs.html", title: "Graphs", blurb: "Graphs as text, exact weights, the standard families, products and line graphs" },
+  { href: "connectivity.html", title: "Connectivity", blurb: "Searches, components, bridges, strong components, topological order, two colours" },
+  { href: "shortest-paths.html", title: "Shortest paths", blurb: "Dijkstra, Bellman–Ford, Floyd–Warshall with exact distances; negative cycles as the reason" },
+  { href: "tours.html", title: "Euler and Hamilton", blurb: "Every edge once by Hierholzer; every vertex once by exhaustive search" },
+  { href: "trees.html", title: "Trees", blurb: "Minimum spanning trees, the matrix-tree theorem, Prüfer codes and Cayley's formula" },
+  { group: "Optimisation and games" },
+  { href: "linear-programming.html", title: "Linear programming", blurb: "An exact simplex method; every answer with its proof: dual prices, a Farkas vector or a ray" },
+  { href: "integer-programs.html", title: "Integer programs", blurb: "Branch and bound on exact relaxations, for small problems" },
+  { href: "matrix-games.html", title: "Matrix games", blurb: "Zero-sum games: optimal mixed strategies and the value as fractions" },
+  { href: "bimatrix-games.html", title: "Bimatrix games", blurb: "Dominance, every Nash equilibrium by support enumeration, Lemke–Howson" },
 ];
 
 export const h = (tag, attrs = {}, ...kids) => {

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Integer programs · RatMath Discrete</title>
+<meta name="description" content="Small integer and mixed integer programs in @ratmath/discrete by branch and bound on exact linear programs, with the linear relaxation as a bound.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Optimisation and games</div>
+<h1>Integer programs</h1>
+<p class="lede">When the answer must be whole numbers (items packed, machines bought, people assigned), rounding the linear optimum is not enough. Branch and bound splits the problem until every piece is either whole, impossible, or provably no better than what has been found.</p>
+<h2>A knapsack</h2>
+<pre><code>import { integerProgram } from "@ratmath/discrete";
+
+const pack = integerProgram({
+  maximize: { a: 8, b: 11, c: 6, d: 4 },                    // values
+  constraints: [
+    [{ a: 5, b: 7, c: 4, d: 3 }, "&lt;=", 14],                   // weights, capacity 14
+    [{ a: 1 }, "&lt;=", 1], [{ b: 1 }, "&lt;=", 1], [{ c: 1 }, "&lt;=", 1], [{ d: 1 }, "&lt;=", 1],
+  ],
+});
+String(pack);   // "optimal: 21 at a = 0, b = 1, c = 1, d = 1 (13 subproblems; relaxation 22)"</code></pre>
+<p>The <strong>linear relaxation</strong> drops the requirement that the variables be whole and is solved exactly. Its optimum bounds the integer optimum: here no packing is worth more than 22. If its solution is already whole, it is the answer. Otherwise some variable has a fractional value \(v\), and every integer solution has either \(x \le \lfloor v\rfloor\) or \(x \ge \lfloor v\rfloor + 1\). Each case is a new linear program. A branch is closed when its relaxation is infeasible, whole, or no better than the best whole solution found so far.</p>
+
+<h2>Rounding is not enough</h2>
+<pre><code>const r = integerProgram({ maximize: [5, 4], constraints: [[[6, 4], "&lt;=", 24], [[1, 2], "&lt;=", 6]] });
+r.relaxation.solution;   // { x1: 3, x2: 3/2 }: the linear optimum, worth 21
+String(r);               // "optimal: 20 at x1 = 4, x2 = 0 (5 subproblems; relaxation 21)"</code></pre>
+<p>Rounding the relaxation's \((3, 3/2)\) gives \((3, 1)\), worth 19, or the infeasible \((3, 2)\). The best integer point, \((4, 0)\), is not near it. Integer programming is NP-hard in general, so the search can grow exponentially. This solver is for small problems and for teaching; it refuses with <code>"too-hard"</code> beyond <code>maxNodes</code> subproblems (20,000 by default). Pass <code>integer: ["x"]</code> to require only some variables to be whole.</p>
+<p>The <code>check()</code> of an integer result confirms feasibility and wholeness. Unlike a linear optimum it carries no short proof of optimality: that rests on the search, and the test suite compares the search with every integer point of hundreds of small random problems.</p>
+<template data-runbox>
+// Branch and bound against brute force on a small problem.
+const P = { maximize: [3, 5], constraints: [[[2, 3], "&lt;=", 12], [[-1, 1], "&lt;=", "3/2"], [[1, 0], "&lt;=", 5]] };
+const ip = integerProgram(P);
+PRINT(String(ip));
+PRINT("relaxation:", String(ip.relaxation));
+let best = null, at = null;
+for (let x = 0; x &lt;= 6; x++) for (let y = 0; y &lt;= 6; y++) {
+  if (!isFeasible(P, [x, y])) continue;
+  const v = 3 * x + 5 * y;
+  if (best === null || v &gt; best) { best = v; at = [x, y]; }
+}
+PRINT("brute force:", best, "at", at.join(", "));
+ip.check()
+</template>
+</article>
+</main>
+</div>
+</body>
+</html>

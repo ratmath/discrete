@@ -8,12 +8,12 @@
 <meta property="og:description" content="Discrete mathematics for RatMath: counting and enumeration, graphs, generating functions, games and exact linear programming.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://ratmath.com/discrete/explore.html">
-<meta name="description" content="Try @ratmath/discrete without writing code: counting numbers, ranked families of objects, and seeded random draws.">
+<meta name="description" content="Try @ratmath/discrete without writing code: counting numbers, ranked families of objects, seeded random draws, and graphs.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=645067272b">
-<script type="module" src="assets/site.js?v=645067272b"></script>
+<link rel="stylesheet" href="assets/style.css?v=b2be70433e">
+<script type="module" src="assets/site.js?v=b2be70433e"></script>
 </head>
 <body>
 <div class="shell">
@@ -22,7 +22,7 @@
 <article>
 <div class="eyebrow">Explore</div>
 <h1>Explore</h1>
-<p class="lede">Pick n and k and see every count at once. Then walk through a family of objects by rank, or draw from it with a seed.</p>
+<p class="lede">Pick n and k and see every count at once. Walk through a family of objects by rank, or draw from it with a seed. Then type a graph and see what can be said about it.</p>
 
 <h2>Counts</h2>
 <div class="demo">
@@ -46,6 +46,22 @@
 <div class="demo-row"><label for="ex-seed2">Seed</label><input id="ex-seed2" class="text grow" value="my experiment" spellcheck="false"><label for="ex-sides">Die sides</label><input id="ex-sides" class="text" type="number" min="1" value="6" size="5"></div>
 <div id="ex-draws"></div>
 </div>
+<h2>A graph</h2>
+<div class="demo">
+<div class="demo-row"><label for="gx-fam">Start from</label><select id="gx-fam"></select><label><input type="checkbox" id="gx-dir"> directed</label></div>
+<div class="demo-row"><label for="gx-text">Edges</label><input id="gx-text" class="text grow" value="a-b:2 b-c:1/2 c-a:3 c-d:1 d-e:5/2 e-c:1" spellcheck="false"></div>
+<div class="demo-row"><label for="gx-s">Path from</label><input id="gx-s" class="text" value="a" size="6" spellcheck="false"><label for="gx-t">to</label><input id="gx-t" class="text" value="e" size="6" spellcheck="false"></div>
+<div id="gx-pic"></div>
+<div id="gx-out"></div>
+</div>
+<p>Write edges as <code>u-v</code> (<code>u&gt;v</code> when directed), with an optional exact weight after a colon, and lone vertices by name. The picture places the vertices on a circle; proper graph drawing is planned for the graphics library.</p>
+<h2>A game</h2>
+<div class="demo">
+<div class="demo-row"><label for="gm-a">Row player's payoffs</label><input id="gm-a" class="text grow" value="2 0; 0 1" spellcheck="false"></div>
+<div class="demo-row"><label for="gm-b">Column player's payoffs</label><input id="gm-b" class="text grow" value="1 0; 0 2" spellcheck="false"></div>
+<div id="gm-out"></div>
+</div>
+<p>Rows are separated by semicolons and entries by spaces; fractions such as <code>1/2</code> are welcome. Leave the second matrix empty for a zero-sum game, which is then solved by linear programming as well. See <a href="matrix-games.html">Matrix games</a> and <a href="bimatrix-games.html">Bimatrix games</a>.</p>
 <section class="runbox" aria-label="Runnable code">
   <div class="runbox-head"><strong>Try it</strong><span>Edit the code and run it with <code>@ratmath/discrete</code> and Core's <code>Rational</code> in scope. The last line's value is shown; <code>PRINT(…)</code> adds lines, <code>TEX(…)</code> typesets math.</span></div>
   <textarea spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code">// The page above, as code.
@@ -55,7 +71,11 @@ const f = combinations(n, k);
 PRINT(f.name + ":", f.count, " at rank 57:", f.unrank(57).join(" "), " and back:", f.rank(f.unrank(57)));
 const g = rng("my experiment");
 PRINT("ten rolls:", Array.from({ length: 10 }, () =&gt; g.between(1, 6)).join(" "));
-f.random(g)</textarea>
+PRINT(String(f.random(g)));
+const G = graph("a-b:2 b-c:1/2 c-a:3 c-d:1 d-e:5/2 e-c:1");
+PRINT("components", components(G).length, " bipartite", isBipartite(G), " Euler", eulerTour(G).exists, " Hamilton", hamiltonCycle(G).exists);
+const p = shortestPath(G, "a", "e");
+`a to e: ${p.distance} by ${p.path.join("-")}; lightest spanning tree ${minimumSpanningTree(G).weight}`</textarea>
   <div class="runbox-bar"><button type="button" data-run>Run</button><button type="button" class="ghost" data-reset>Reset</button><span class="runbox-meta">Ctrl/⌘ + Enter runs</span></div>
   <div class="runbox-out" aria-live="polite"></div>
 </section>
@@ -64,7 +84,7 @@ f.random(g)</textarea>
 </main>
 </div>
 <script type="module">
-import { A as S, h } from "./assets/site.js?v=645067272b";
+import { A as S, h } from "./assets/site.js?v=b2be70433e";
 const $ = (id) => document.getElementById(id);
 const line = (label, f) => {
   let text;
@@ -203,6 +223,160 @@ for (const id of ["ex-seed2", "ex-sides"]) $(id).addEventListener("input", draws
 counts();
 family();
 drawsPanel();
+const GFAM = {
+  "(as typed)": null,
+  "Petersen": () => S.petersen(),
+  "cube Q3": () => S.hypercube(3),
+  "K5": () => S.complete(5),
+  "K3,3": () => S.completeBipartite(3, 3),
+  "dodecahedron": () => S.platonic("dodecahedron"),
+  "grid 3×4": () => S.grid(3, 4),
+  "wheel W6": () => S.wheel(6),
+  "Königsberg": () => S.graph("A-B A-B A-C A-C A-D B-D C-D", { multi: true }),
+  "random G(10, 1/4)": () => S.randomGraph(10, "1/4", S.rng("explore")),
+  "random tree on 10": () => S.randomTree(10, "explore"),
+  "tasks (directed)": () => S.digraph("wake>shower wake>coffee coffee>leave shower>dress dress>leave"),
+};
+$("gx-fam").append(...Object.keys(GFAM).map((name) => h("option", { value: name }, name)));
+$("gx-fam").addEventListener("change", () => {
+  const f = GFAM[$("gx-fam").value];
+  if (!f) return;
+  const g = f();
+  $("gx-dir").checked = g.directed;
+  $("gx-text").value = String(g);
+  const vs = g.vertices();
+  $("gx-s").value = String(vs[0]);
+  $("gx-t").value = String(vs[vs.length - 1]);
+  graphPanel();
+});
+const NS = "http://www.w3.org/2000/svg";
+const svg = (tag, attrs) => {
+  const el = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  return el;
+};
+function picture(g, highlight) {
+  const vs = g.vertices();
+  const W = 320;
+  const r = vs.length > 1 ? 120 : 0;
+  const at = new Map(vs.map((v, i) => [v, [W / 2 + r * Math.sin((2 * Math.PI * i) / vs.length), W / 2 - r * Math.cos((2 * Math.PI * i) / vs.length)]]));
+  const root = svg("svg", { viewBox: `0 0 ${W} ${W}`, width: W, height: W, role: "img", "aria-label": "the graph, vertices on a circle" });
+  root.style.maxWidth = "100%";
+  for (const e of g.edges()) {
+    const [x1, y1] = at.get(e.from);
+    const [x2, y2] = at.get(e.to);
+    const on = highlight.has(e.id);
+    root.append(svg("line", { x1, y1, x2, y2, stroke: on ? "var(--accent, #c0392b)" : "currentColor", "stroke-width": on ? 3 : 1.2, opacity: on ? 1 : 0.55 }));
+    if (g.directed) {
+      const t = 0.78;
+      root.append(svg("circle", { cx: x1 + (x2 - x1) * t, cy: y1 + (y2 - y1) * t, r: 3, fill: "currentColor" }));
+    }
+  }
+  for (const v of vs) {
+    const [x, y] = at.get(v);
+    root.append(svg("circle", { cx: x, cy: y, r: 12, fill: "var(--bg, #fff)", stroke: "currentColor" }));
+    const t = svg("text", { x, y: y + 4, "text-anchor": "middle", "font-size": 10, fill: "currentColor" });
+    t.textContent = String(v).length > 5 ? String(v).slice(0, 5) : String(v);
+    root.append(t);
+  }
+  return root;
+}
+function graphPanel() {
+  const out = $("gx-out");
+  let g;
+  try {
+    const text = $("gx-text").value;
+    try {
+      g = $("gx-dir").checked ? S.digraph(text) : S.graph(text);
+    } catch (e) {
+      if (e.code !== "bad-argument") throw e;
+      g = $("gx-dir").checked ? S.digraph(text, { multi: true, loops: true }) : S.graph(text, { multi: true, loops: true });
+    }
+    if (g.order > 60) throw new RangeError("keep the graph to 60 vertices here");
+  } catch (e) {
+    $("gx-pic").replaceChildren();
+    out.replaceChildren(h("div", { class: "out err" }, e.message));
+    return;
+  }
+  let highlight = new Set();
+  const rows = [
+    line("vertices, edges", () => `${g.order}, ${g.size}${g.weighted ? `, total weight ${g.totalWeight()}` : ""}`),
+    line("degrees", () => g.degreeSequence().join(" ")),
+    line("components", () => S.components(g).map((c) => `{${c.join(" ")}}`).join(" ")),
+  ];
+  if (g.directed) {
+    rows.push(line("strong components", () => S.stronglyConnectedComponents(g).map((c) => `{${c.join(" ")}}`).join(" ")));
+    rows.push(line("topological order", () => {
+      const t = S.topologicalOrder(g);
+      return t.acyclic ? t.order.join(" → ") : `none: there is a cycle ${t.cycle.join(" → ")}`;
+    }));
+  } else {
+    rows.push(line("bridges", () => S.bridges(g).map((e) => `${e.from}-${e.to}`).join(" ") || "none"));
+    rows.push(line("cut vertices", () => S.cutVertices(g).join(" ") || "none"));
+    rows.push(line("two colours?", () => {
+      const b = S.bipartition(g);
+      return b.bipartite ? `yes: {${b.parts[0].join(" ")}} and {${b.parts[1].join(" ")}}` : `no, odd cycle ${b.oddCycle.join("-")}`;
+    }));
+  }
+  rows.push(line("girth", () => {
+    const r = S.girth(g);
+    return r.cycle ? `${r.girth}: ${r.cycle.join("-")}` : "no cycle";
+  }));
+  rows.push(line("Euler tour", () => {
+    const e = S.eulerTour(g);
+    return e.exists ? `${e.closed ? "closed" : "open"}: ${e.vertices.join(" ")}` : `none: ${e.reason}`;
+  }));
+  rows.push(line("Hamilton cycle", () => {
+    if (g.order > 16) return "only searched up to 16 vertices here";
+    const c = S.hamiltonCycle(g);
+    return c.exists ? c.cycle.join(" ") : `none: ${c.reason}`;
+  }));
+  rows.push(line(`shortest ${$("gx-s").value} to ${$("gx-t").value}`, () => {
+    const lab = (x) => (/^-?(0|[1-9]\d*)$/.test(x.trim()) ? Number(x.trim()) : x.trim());
+    const p = S.shortestPath(g, lab($("gx-s").value), lab($("gx-t").value));
+    if (!p) return "no path";
+    highlight = new Set(p.edges.map((e) => e.id));
+    return `${p.distance}: ${p.path.join(" ")}`;
+  }));
+  if (!g.directed) {
+    rows.push(line("lightest spanning tree", () => {
+      const t = S.minimumSpanningTree(g);
+      return `${t.weight}${t.connected ? "" : " (a forest)"}: ${t.edges.map((e) => `${e.from}-${e.to}`).join(" ")}`;
+    }));
+    rows.push(line("spanning trees", () => S.spanningTreeCount(g)));
+  }
+  out.replaceChildren(h("dl", { class: "kv out" }, ...rows));
+  $("gx-pic").replaceChildren(picture(g, highlight));
+}
+for (const id of ["gx-text", "gx-s", "gx-t", "gx-dir"]) $(id).addEventListener("input", () => {
+  if (id === "gx-text") $("gx-fam").value = "(as typed)";
+  graphPanel();
+});
+graphPanel();
+const parseMatrix = (t) => t.split(";").map((r) => r.trim().split(/[\s,]+/).filter(Boolean)).filter((r) => r.length);
+function gamePanel() {
+  const out = $("gm-out");
+  const rows = [];
+  try {
+    const A = parseMatrix($("gm-a").value);
+    const bt = $("gm-b").value.trim();
+    const B = bt ? parseMatrix(bt) : undefined;
+    const g = S.bimatrixGame(A, B);
+    if (!B) {
+      rows.push(line("zero-sum solution", () => String(S.matrixGame(A))));
+      rows.push(line("saddle points", () => S.saddlePoints(A).map((p) => `r${p.row + 1}, c${p.column + 1}`).join("; ") || "none"));
+    }
+    rows.push(line("after removing dominated strategies", () => { const d = g.dominance(); return `rows ${d.rows.join(", ")}; columns ${d.columns.join(", ")}`; }));
+    rows.push(line("pure equilibria", () => g.pureEquilibria().map(String).join("; ") || "none"));
+    rows.push(line("all equilibria", () => { const e = g.equilibria(); return e.map(String).join("; ") + (e.complete ? "" : " (the game is degenerate, so there may be more)"); }));
+    rows.push(line("Lemke–Howson from label 0", () => String(g.lemkeHowson(0))));
+    out.replaceChildren(h("dl", { class: "kv out" }, ...rows));
+  } catch (e) {
+    out.replaceChildren(h("div", { class: "out err" }, e.message));
+  }
+}
+for (const id of ["gm-a", "gm-b"]) $(id).addEventListener("input", gamePanel);
+gamePanel();
 </script>
 </body>
 </html>

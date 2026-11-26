@@ -1,6 +1,6 @@
-// @ratmath/discrete: counting, enumeration with ranking, and a seeded random
-// generator. Graphs, generating functions, games and linear programming are
-// planned: see `plan`.
+// @ratmath/discrete: counting, enumeration with ranking, a seeded random
+// generator, graphs, exact linear programming and matrix and bimatrix games.
+// Generating functions and more are planned: see `plan`.
 
 export {
   factorial, doubleFactorial, fallingFactorial, risingFactorial,
@@ -15,4 +15,26 @@ export {
   compositions, partitions, setPartitions, dyckWords,
 } from "./src/enumerate.js";
 export { Random, rng } from "./src/random.js";
+export {
+  Graph, graph, digraph, toWeight,
+  cartesianProduct, tensorProduct, strongProduct, lexicographicProduct, disjointUnion, join, union,
+} from "./src/graph.js";
+export {
+  complete, emptyGraph, pathGraph, cycleGraph, star, wheel, completeBipartite, completeMultipartite, turan,
+  hypercube, grid, circulant, kneser, petersen, platonic, completeDigraph, transitiveTournament, directedCycle,
+  randomGraph, randomGraphWithEdges,
+} from "./src/families.js";
+export {
+  bfs, dfs, reachable, components, isConnected, biconnected, bridges, cutVertices, blocks,
+  stronglyConnectedComponents, isStronglyConnected, condensation, topologicalOrder, isAcyclic, findCycle,
+  bipartition, isBipartite, distances, distance, eccentricity, diameter, radius, center, periphery, girth,
+} from "./src/traverse.js";
+export { shortestPaths, shortestPath, allPairsShortestPaths, eulerTour, hamiltonCycle, hamiltonPath } from "./src/paths.js";
+export {
+  isTree, isForest, minimumSpanningTree, spanningTreeCount, determinant, prufer, fromPrufer, labelledTrees, randomTree,
+} from "./src/trees.js";
+export {
+  linearProgram, integerProgram, checkLinearProgram, isFeasible, parseProblem, solveSquare, Problem, LPResult, IPResult,
+} from "./src/lp.js";
+export { matrixGame, saddlePoints, bimatrixGame, MatrixGameSolution, BimatrixGame } from "./src/games.js";
 export { plan } from "./src/plan.js";
