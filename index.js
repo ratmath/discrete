@@ -1,6 +1,6 @@
 // @ratmath/discrete: counting, enumeration with ranking, a seeded random
-// generator, and graphs. Generating functions, games and linear programming
-// are planned: see `plan`.
+// generator, graphs, exact linear programming and matrix and bimatrix games.
+// Generating functions and more are planned: see `plan`.
 
 export {
   factorial, doubleFactorial, fallingFactorial, risingFactorial,
@@ -33,4 +33,8 @@ export { shortestPaths, shortestPath, allPairsShortestPaths, eulerTour, hamilton
 export {
   isTree, isForest, minimumSpanningTree, spanningTreeCount, determinant, prufer, fromPrufer, labelledTrees, randomTree,
 } from "./src/trees.js";
+export {
+  linearProgram, integerProgram, checkLinearProgram, isFeasible, parseProblem, solveSquare, Problem, LPResult, IPResult,
+} from "./src/lp.js";
+export { matrixGame, saddlePoints, bimatrixGame, MatrixGameSolution, BimatrixGame } from "./src/games.js";
 export { plan } from "./src/plan.js";

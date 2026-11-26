@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Linear programming · RatMath Discrete</title>
+<meta name="description" content="Exact linear programming in @ratmath/discrete: a rational simplex method whose every answer comes with a certificate, a dual solution, a Farkas vector or an unbounded ray, checked by arithmetic alone.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Optimisation and games</div>
+<h1>Linear programming</h1>
+<p class="lede">Maximise or minimise a linear function subject to linear inequalities. The simplex method here works in exact fractions, and every answer arrives with the evidence that proves it: an optimum with its dual prices, an impossibility with a Farkas combination, an unbounded problem with a ray.</p>
+<h2>A first problem</h2>
+<pre><code>// A workshop makes chairs (£30 profit) and tables (£50) from wood and labour.
+import { linearProgram } from "@ratmath/discrete";
+
+const plan = linearProgram({
+  maximize: { chairs: 30, tables: 50 },
+  constraints: [
+    [{ chairs: 2, tables: 4 }, "&lt;=", 100, "wood"],
+    [{ chairs: 3, tables: 2 }, "&lt;=", 90, "labour"],
+  ],
+});
+
+String(plan);     // "optimal: 1350 at chairs = 20, tables = 15"
+plan.prices;      // { wood: 45/4, labour: 5/2 }: what one more unit of each is worth
+plan.binding;     // ["wood", "labour"]: both are used up
+plan.check();     // true: the prices prove that 1350 is the best possible</code></pre>
+<p>A <strong>linear program</strong> asks for \(x\) maximising \(c\cdot x\) subject to constraints \(a_i\cdot x \le b_i\) (or \(\ge\), or \(=\)) and, unless a variable is declared <code>free</code>, \(x \ge 0\). The feasible set is a convex polyhedron, and if the optimum exists it is reached at a vertex. The <strong>simplex method</strong> walks from vertex to vertex along edges, improving the objective at each step. Here each step is an exact pivot on a tableau of fractions, and Bland's rule (always the lowest-numbered improving column) guarantees the walk never cycles.</p>
+
+<h2>Why the prices are a proof</h2>
+<p>Multiply each constraint by a non-negative price \(y_i\) and add. If the combined left side is at least the objective, coefficient by coefficient, then for every feasible \(x\)</p>
+\[ c\cdot x \;\le\; \sum_i y_i (a_i\cdot x) \;\le\; \sum_i y_i b_i = b\cdot y. \]
+<p>That is <strong>weak duality</strong>: any such \(y\) gives an upper bound. For the workshop, \(y = (45/4, 5/2)\) gives \(2\cdot\tfrac{45}{4} + 3\cdot\tfrac52 = 30\) and \(4\cdot\tfrac{45}{4} + 2\cdot\tfrac52 = 50\), exactly the profits, and a bound of \(100\cdot\tfrac{45}{4} + 90\cdot\tfrac52 = 1350\). The plan reaches 1350, so nothing does better. <strong>Strong duality</strong> says such a matching pair always exists when there is an optimum, and the simplex method finds both at once.</p>
+<p><code>check()</code> uses none of the simplex code. It confirms that \(x\) satisfies every constraint, that the prices have the right signs, that they cover the objective, and that \(c\cdot x = b\cdot y\). The prices are also sensitivities: one more unit of wood raises the profit by exactly \(45/4\), as long as the same constraints stay binding.</p>
+
+<h2>Minimising, with fractions</h2>
+<pre><code>const diet = linearProgram({
+  minimize: { bread: "1/2", milk: "3/4", beans: "6/5" },     // cost per portion
+  constraints: [
+    [{ bread: 4, milk: 8, beans: 7 }, "&gt;=", 30, "protein"],
+    [{ bread: 10, milk: 3, beans: 20 }, "&gt;=", 60, "iron"],
+    [{ bread: 300, milk: 150, beans: 200 }, "&gt;=", 2000, "energy"],
+    [{ milk: 1 }, "&lt;=", 4, "milk limit"],
+  ],
+});
+String(diet);   // "optimal: 65/18 at bread = 115/18, milk = 5/9, beans = 0"
+diet.prices;    // { protein: 1/12, iron: 0, energy: 1/1800, "milk limit": 0 }
+String(diet.problem);   // the problem written out, as the solver read it</code></pre>
+<p>Coefficients can be fractions (<code>"6/5"</code>), decimals (<code>"0.25"</code> or <code>0.25</code>) or whole numbers. Variables can be named through objects, as here, or listed by position: <code>maximize: [3, 2]</code> with rows such as <code>[[1, 1], "&lt;=", 4]</code>.</p>
+
+<h2>When there is no answer</h2>
+<pre><code>const none = linearProgram({ maximize: { x: 1, y: 1 }, constraints: [
+  [{ x: 1, y: 2 }, "&lt;=", 4, "a"], [{ x: 3, y: 1 }, "&lt;=", 6, "b"], [{ x: 1, y: 1 }, "&gt;=", 3, "c"] ] });
+none.status;    // "infeasible"
+none.farkas;    // [2/5, 1/5, −1]: (2/5)·a + (1/5)·b says x + y ≤ 14/5, but c says x + y ≥ 3
+
+const open = linearProgram({ maximize: { x: 1, y: 1 }, constraints: [
+  [{ x: 1, y: -1 }, "&lt;=", 2], [{ x: -1, y: 1 }, "&lt;=", 4] ] });
+open.status;    // "unbounded"
+open.x;         // [2, 0]: a feasible point
+open.ray;       // [1, 1]: from it, move in this direction for ever</code></pre>
+<p>An infeasible problem comes with a <strong>Farkas certificate</strong>: multipliers (non-negative on \(\le\) rows, non-positive on \(\ge\) rows) whose combination of the constraints has left side \(\ge 0\) on every \(x \ge 0\) but a negative right side. No point can satisfy that, so none can satisfy the constraints. Farkas' lemma says such multipliers exist whenever a system has no solution; phase one of the simplex method finds them. An unbounded problem comes with a feasible point and a <strong>ray</strong> \(d\) with \(a_i\cdot d\) of the right sign for every constraint and \(c\cdot d &gt; 0\). Both are checked by <code>check()</code> in the same way as an optimum.</p>
+<template data-runbox>
+// A workshop makes chairs (£30 profit) and tables (£50) from wood and labour.
+const plan = linearProgram({
+  maximize: { chairs: 30, tables: 50 },
+  constraints: [
+    [{ chairs: 2, tables: 4 }, "&lt;=", 100, "wood"],
+    [{ chairs: 3, tables: 2 }, "&lt;=", 90, "labour"],
+  ],
+});
+PRINT(String(plan));
+PRINT("prices:", Object.entries(plan.prices).map(([k, v]) =&gt; `${k} ${v}`).join(", "));
+// the proof by hand: the priced constraints cover the profits and bound the total
+const [w, l] = plan.dual;
+PRINT("chairs:", String(w.multiply(new Rational(2n)).add(l.multiply(new Rational(3n)))), " tables:", String(w.multiply(new Rational(4n)).add(l.multiply(new Rational(2n)))));
+PRINT("bound b·y =", String(w.multiply(new Rational(100n)).add(l.multiply(new Rational(90n)))));
+// one more unit of wood is worth exactly the price of wood
+const more = linearProgram({ maximize: { chairs: 30, tables: 50 },
+  constraints: [[{ chairs: 2, tables: 4 }, "&lt;=", 101, "wood"], [{ chairs: 3, tables: 2 }, "&lt;=", 90, "labour"]] });
+PRINT("with 101 wood:", String(more.value), " gain", String(more.value.subtract(plan.value)));
+plan.check()
+</template>
+</article>
+</main>
+</div>
+</body>
+</html>

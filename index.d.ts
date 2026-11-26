@@ -387,6 +387,126 @@ export function fromPrufer(code: readonly Vertex[], vertices?: readonly Vertex[]
 export function labelledTrees(spec: Whole | readonly Vertex[]): Family<Graph>;
 export function randomTree(spec: Whole | readonly Vertex[], generator?: Random | number | bigint | string): Graph;
 
+// ---- linear programming (exact, with certificates) ----
+
+export type Relation = "<=" | ">=" | "=" | "≤" | "≥" | "==";
+export type Coefficients = FractionLike[] | Record<string, FractionLike>;
+export type Constraint =
+  | [Coefficients, Relation, FractionLike]
+  | [Coefficients, Relation, FractionLike, string]
+  | { coefficients: Coefficients; relation: Relation; rhs: FractionLike; name?: string };
+export type ProblemSpec = {
+  maximize?: Coefficients;
+  minimize?: Coefficients;
+  constraints?: Constraint[];
+  subjectTo?: Constraint[];
+  names?: string[];
+  /** Variables without the sign condition x ≥ 0, by name or index. */
+  free?: (string | number)[];
+};
+export class Problem {
+  readonly sense: "maximize" | "minimize";
+  readonly names: readonly string[];
+  readonly c: readonly Rational[];
+  readonly rows: readonly { name: string; a: readonly Rational[]; relation: "<=" | ">=" | "="; b: Rational }[];
+  readonly free: readonly boolean[];
+  withRows(rows: { name: string; a: Rational[]; relation: "<=" | ">=" | "="; b: Rational }[]): Problem;
+  toString(): string;
+}
+export function parseProblem(problem: ProblemSpec | Problem): Problem;
+export class LPResult {
+  readonly problem: Problem;
+  readonly status: "optimal" | "infeasible" | "unbounded";
+  /** The solution (optimal), or a feasible point (unbounded). */
+  readonly x: readonly Rational[] | null;
+  /** Shadow prices, one per constraint: the dual solution that proves optimality. */
+  readonly dual: readonly Rational[] | null;
+  /** For an infeasible problem: multipliers that combine the constraints into 0 ≤ negative. */
+  readonly farkas: readonly Rational[] | null;
+  /** For an unbounded problem: a direction that stays feasible and improves the objective. */
+  readonly ray: readonly Rational[] | null;
+  readonly value: Rational | null;
+  readonly pivots: number;
+  readonly solution: Record<string, Rational> | null;
+  readonly prices: Record<string, Rational> | null;
+  /** The constraints that hold with equality at the solution. */
+  readonly binding: string[] | null;
+  /** Check the certificate by arithmetic on the problem; true, or throws. */
+  check(): true;
+  toString(): string;
+}
+export function linearProgram(problem: ProblemSpec | Problem, options?: { maxPivots?: number }): LPResult;
+export function checkLinearProgram(
+  problem: ProblemSpec | Problem,
+  result: { status: string; x?: readonly FractionLike[] | null; dual?: readonly Rational[] | null; farkas?: readonly Rational[] | null; ray?: readonly Rational[] | null },
+): true;
+export function isFeasible(problem: ProblemSpec | Problem, x: readonly FractionLike[]): boolean;
+/** Solve a square linear system exactly; null when it is singular. */
+export function solveSquare(M: Rational[][], rhs: Rational[]): Rational[] | null;
+export class IPResult {
+  readonly problem: Problem;
+  readonly integer: readonly string[];
+  readonly status: "optimal" | "infeasible";
+  readonly x: readonly Rational[] | null;
+  readonly value: Rational | null;
+  /** Subproblems solved. */
+  readonly nodes: number;
+  /** The linear relaxation: a bound on the value. */
+  readonly relaxation: LPResult;
+  readonly solution: Record<string, Rational> | null;
+  check(): true;
+  toString(): string;
+}
+export function integerProgram(problem: ProblemSpec | Problem, options?: { integer?: (string | number)[] | true; maxNodes?: number }): IPResult;
+
+// ---- games ----
+
+export class MatrixGameSolution {
+  readonly payoffs: readonly (readonly Rational[])[];
+  readonly value: Rational;
+  readonly row: readonly Rational[];
+  readonly column: readonly Rational[];
+  readonly rowNames: readonly string[];
+  readonly columnNames: readonly string[];
+  readonly fair: boolean;
+  guarantee(p?: readonly FractionLike[]): Rational;
+  cap(q?: readonly FractionLike[]): Rational;
+  check(): true;
+  toString(): string;
+}
+export function matrixGame(A: FractionLike[][], options?: { rows?: string[]; columns?: string[] }): MatrixGameSolution;
+export function saddlePoints(A: FractionLike[][]): { row: number; column: number; value: Rational }[];
+export interface Equilibrium {
+  readonly row: readonly Rational[];
+  readonly column: readonly Rational[];
+  readonly payoffs: { readonly row: Rational; readonly column: Rational };
+  readonly pure: boolean;
+  check(): true;
+  toString(): string;
+}
+export class BimatrixGame {
+  readonly A: readonly (readonly Rational[])[];
+  readonly B: readonly (readonly Rational[])[];
+  readonly rowNames: readonly string[];
+  readonly columnNames: readonly string[];
+  readonly m: number;
+  readonly n: number;
+  payoffs(p: readonly FractionLike[], q: readonly FractionLike[]): { row: Rational; column: Rational };
+  isEquilibrium(p: readonly FractionLike[], q: readonly FractionLike[]): boolean;
+  pureEquilibria(): Equilibrium[];
+  dominance(options?: { pureOnly?: boolean }): {
+    rows: string[];
+    columns: string[];
+    steps: { player: "row" | "column"; removed: string; by: Record<string, Rational> }[];
+  };
+  /** Every equilibrium of a nondegenerate game; `complete` is false when the game is degenerate. */
+  equilibria(options?: { limit?: number }): readonly Equilibrium[] & { complete: boolean };
+  lemkeHowson(label?: number, options?: { maxPivots?: number }): Equilibrium;
+  toString(): string;
+}
+/** A two-player game; with one matrix, the column player's payoffs are its negative. */
+export function bimatrixGame(A: FractionLike[][], B?: FractionLike[][], options?: { rows?: string[]; columns?: string[] }): BimatrixGame;
+
 // ---- the plan ----
 
 export interface PlannedPhase {

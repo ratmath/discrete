@@ -54,6 +54,15 @@ spanningTreeCount(complete(10));                        // 100000000n (Cayley)
   Bellman–Ford (negative cycles reported) and Floyd–Warshall. Euler tours and
   Hamilton cycles. Minimum spanning trees, the matrix-tree theorem, Prüfer
   codes and all labelled trees as a `Family`.
+- **Linear programming**: `linearProgram`, an exact two-phase simplex method.
+  Every answer has a certificate checked by arithmetic alone
+  (`checkLinearProgram`): an optimum with its dual prices, an infeasible
+  problem with a Farkas vector, an unbounded one with a ray. `integerProgram`
+  by branch and bound for small problems.
+- **Games**: `matrixGame` (zero-sum: optimal mixed strategies and the value as
+  fractions), `saddlePoints`, and `bimatrixGame` with iterated dominance by
+  pure or mixed strategies, pure equilibria, every equilibrium by support
+  enumeration, and Lemke–Howson.
 
 ## Planned
 
@@ -63,13 +72,12 @@ From the [library roadmap](https://github.com/ratmath/ratmath/blob/main/docs/des
 |---|---|
 | 3 | Generating functions and recurrences |
 | 4 | Matchings, flows, colouring, planarity, isomorphism, spectra |
-| 5 | Exact linear programming; matrix and bimatrix games |
 | 6 | Combinatorial, extensive-form and cooperative games; voting |
 | 7 | Sets, relations, partial orders; Pólya counting |
 | 8 | Codes and designs |
 | 9 | Graph drawing |
 
-It depends on Core only so far; spectra and linear programming will bring in linalg. The statistics package uses it for discrete probability.
+It depends on Core only so far; spectra will bring in linalg. The statistics package uses it for discrete probability.
 
 ## Layout
 

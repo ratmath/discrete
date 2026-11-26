@@ -13,8 +13,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
 <link rel="stylesheet" href="https://ratmath.com/assets/katex/0.19.1/katex.min.css">
-<link rel="stylesheet" href="assets/style.css?v=836c07e2c5">
-<script type="module" src="assets/site.js?v=836c07e2c5"></script>
+<link rel="stylesheet" href="assets/style.css?v=b2be70433e">
+<script type="module" src="assets/site.js?v=b2be70433e"></script>
 </head>
 <body>
 <div class="shell">
@@ -107,12 +107,24 @@
 <tr><td><code>prufer(tree), fromPrufer(code, vertices)</code></td><td>Prüfer codes, both ways.</td></tr>
 <tr><td><code>labelledTrees(n or labels)</code>, <code>randomTree(n, rng)</code></td><td>The n<sup>n−2</sup> labelled trees as a Family; a uniform one.</td></tr>
 </table></div>
+<h2>Linear programming and games</h2>
+<div class="tablewrap"><table class="ref">
+<tr><th>Export</th><th>What it does</th></tr>
+<tr><td><code>linearProgram({ maximize | minimize, constraints, names, free })</code></td><td>Exact two-phase simplex (Bland's rule). Coefficients as arrays or objects keyed by name; constraints <code>[coefficients, "&lt;=" | "&gt;=" | "=", rhs, name?]</code>. Returns an <code>LPResult</code>.</td></tr>
+<tr><td><code>LPResult</code></td><td><code>status</code> (<code>"optimal"</code>, <code>"infeasible"</code>, <code>"unbounded"</code>), <code>value</code>, <code>x</code>, <code>solution</code>, <code>dual</code>, <code>prices</code>, <code>binding</code>, <code>farkas</code>, <code>ray</code>, <code>pivots</code>, <code>check()</code>.</td></tr>
+<tr><td><code>checkLinearProgram(problem, result)</code>, <code>isFeasible(problem, x)</code></td><td>Check a certificate by arithmetic on the constraints alone; throws <code>certificate-fails</code> with the reason.</td></tr>
+<tr><td><code>integerProgram(problem, { integer, maxNodes })</code></td><td>Branch and bound: <code>{ status, value, x, solution, nodes, relaxation, check() }</code>.</td></tr>
+<tr><td><code>parseProblem(spec)</code>, <code>Problem</code>, <code>solveSquare(M, b)</code></td><td>The normalised problem (prints itself); an exact square solve.</td></tr>
+<tr><td><code>matrixGame(A, { rows, columns })</code></td><td>Zero-sum game: <code>value</code>, <code>row</code>, <code>column</code>, <code>fair</code>, <code>guarantee(p)</code>, <code>cap(q)</code>, <code>check()</code>.</td></tr>
+<tr><td><code>saddlePoints(A)</code></td><td>Pure saddle points <code>{ row, column, value }</code>.</td></tr>
+<tr><td><code>bimatrixGame(A, B?, { rows, columns })</code></td><td>A <code>BimatrixGame</code>: <code>payoffs(p, q)</code>, <code>isEquilibrium(p, q)</code>, <code>pureEquilibria()</code>, <code>dominance({ pureOnly })</code>, <code>equilibria()</code> (with <code>complete</code>), <code>lemkeHowson(label)</code>. Each equilibrium has <code>row</code>, <code>column</code>, <code>payoffs</code>, <code>pure</code>, <code>check()</code>.</td></tr>
+</table></div>
 <h2>Random</h2>
 <div class="tablewrap"><table class="ref">
 <tr><th>Export</th><th>What it does</th></tr>
 <tr><td><code>rng(seed)</code></td><td>A <code>Random</code> from a whole number of any size or text.</td></tr>
 <tr><td><code>Random</code></td><td><code>u32()</code>, <code>bits(k)</code>, <code>int(n)</code>, <code>between(lo, hi)</code>, <code>bool(p)</code>, <code>rational(denominator)</code>, <code>float()</code>, <code>pick(items)</code>, <code>shuffle(items)</code>, <code>sample(items, k)</code>, <code>weighted(items, weights)</code>, <code>weightedIndex(weights)</code>, <code>fork(label)</code>, <code>clone()</code>, <code>state</code>. <code>new Random(state)</code> resumes.</td></tr>
-<tr><td><code>DiscreteError</code></td><td>Thrown with a <code>code</code>: <code>not-in-family</code>, <code>too-large</code>, <code>no-rank</code>, <code>bad-argument</code>.</td></tr>
+<tr><td><code>DiscreteError</code></td><td>Thrown with a <code>code</code>: <code>not-in-family</code>, <code>too-large</code>, <code>no-rank</code>, <code>bad-argument</code>, <code>bad-problem</code>, <code>certificate-fails</code>, <code>too-hard</code>.</td></tr>
 <tr><td><code>plan</code></td><td>The phases still to come.</td></tr>
 </table></div>
 <section class="runbox" aria-label="Runnable code">

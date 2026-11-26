@@ -2,7 +2,20 @@
 
 ## 0.2.0
 
-Phase 2 of the roadmap: graphs.
+Phases 2 and 5 of the roadmap: graphs, and exact linear programming with games.
+
+- `linearProgram`: an exact two-phase simplex method with Bland's rule. An
+  optimum comes with dual prices, an infeasible problem with a Farkas vector,
+  an unbounded one with a feasible point and a ray; `checkLinearProgram`
+  checks each by arithmetic on the constraints alone. `integerProgram` by
+  branch and bound.
+- `matrixGame` and `saddlePoints` for zero-sum games; `bimatrixGame` with
+  dominance (pure or mixed), pure equilibria, all equilibria by support
+  enumeration, and Lemke–Howson.
+- Tests check every optimum by its dual and compare with brute force over
+  vertices, integer points and hundreds of random games.
+- Docs pages for linear programming, integer programs, matrix games and
+  bimatrix games; a game panel on the Explore page.
 
 - `Graph`, `graph`, `digraph`: directed and undirected graphs, multigraphs and
   loops on request, built from text (`"a-b b-c:3/2"`), edge lists or adjacency

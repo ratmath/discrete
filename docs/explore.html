@@ -12,8 +12,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=836c07e2c5">
-<script type="module" src="assets/site.js?v=836c07e2c5"></script>
+<link rel="stylesheet" href="assets/style.css?v=b2be70433e">
+<script type="module" src="assets/site.js?v=b2be70433e"></script>
 </head>
 <body>
 <div class="shell">
@@ -55,6 +55,13 @@
 <div id="gx-out"></div>
 </div>
 <p>Write edges as <code>u-v</code> (<code>u&gt;v</code> when directed), with an optional exact weight after a colon, and lone vertices by name. The picture places the vertices on a circle; proper graph drawing is planned for the graphics library.</p>
+<h2>A game</h2>
+<div class="demo">
+<div class="demo-row"><label for="gm-a">Row player's payoffs</label><input id="gm-a" class="text grow" value="2 0; 0 1" spellcheck="false"></div>
+<div class="demo-row"><label for="gm-b">Column player's payoffs</label><input id="gm-b" class="text grow" value="1 0; 0 2" spellcheck="false"></div>
+<div id="gm-out"></div>
+</div>
+<p>Rows are separated by semicolons and entries by spaces; fractions such as <code>1/2</code> are welcome. Leave the second matrix empty for a zero-sum game, which is then solved by linear programming as well. See <a href="matrix-games.html">Matrix games</a> and <a href="bimatrix-games.html">Bimatrix games</a>.</p>
 <section class="runbox" aria-label="Runnable code">
   <div class="runbox-head"><strong>Try it</strong><span>Edit the code and run it with <code>@ratmath/discrete</code> and Core's <code>Rational</code> in scope. The last line's value is shown; <code>PRINT(…)</code> adds lines, <code>TEX(…)</code> typesets math.</span></div>
   <textarea spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code">// The page above, as code.
@@ -77,7 +84,7 @@ const p = shortestPath(G, "a", "e");
 </main>
 </div>
 <script type="module">
-import { A as S, h } from "./assets/site.js?v=836c07e2c5";
+import { A as S, h } from "./assets/site.js?v=b2be70433e";
 const $ = (id) => document.getElementById(id);
 const line = (label, f) => {
   let text;
@@ -346,6 +353,30 @@ for (const id of ["gx-text", "gx-s", "gx-t", "gx-dir"]) $(id).addEventListener("
   graphPanel();
 });
 graphPanel();
+const parseMatrix = (t) => t.split(";").map((r) => r.trim().split(/[\s,]+/).filter(Boolean)).filter((r) => r.length);
+function gamePanel() {
+  const out = $("gm-out");
+  const rows = [];
+  try {
+    const A = parseMatrix($("gm-a").value);
+    const bt = $("gm-b").value.trim();
+    const B = bt ? parseMatrix(bt) : undefined;
+    const g = S.bimatrixGame(A, B);
+    if (!B) {
+      rows.push(line("zero-sum solution", () => String(S.matrixGame(A))));
+      rows.push(line("saddle points", () => S.saddlePoints(A).map((p) => `r${p.row + 1}, c${p.column + 1}`).join("; ") || "none"));
+    }
+    rows.push(line("after removing dominated strategies", () => { const d = g.dominance(); return `rows ${d.rows.join(", ")}; columns ${d.columns.join(", ")}`; }));
+    rows.push(line("pure equilibria", () => g.pureEquilibria().map(String).join("; ") || "none"));
+    rows.push(line("all equilibria", () => { const e = g.equilibria(); return e.map(String).join("; ") + (e.complete ? "" : " (the game is degenerate, so there may be more)"); }));
+    rows.push(line("Lemke–Howson from label 0", () => String(g.lemkeHowson(0))));
+    out.replaceChildren(h("dl", { class: "kv out" }, ...rows));
+  } catch (e) {
+    out.replaceChildren(h("div", { class: "out err" }, e.message));
+  }
+}
+for (const id of ["gm-a", "gm-b"]) $(id).addEventListener("input", gamePanel);
+gamePanel();
 </script>
 </body>
 </html>

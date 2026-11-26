@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Matrix games · RatMath Discrete</title>
+<meta name="description" content="Two-player zero-sum games solved exactly in @ratmath/discrete: optimal mixed strategies and the value as fractions, by linear programming, with von Neumann&#x27;s minimax theorem as the check.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Optimisation and games</div>
+<h1>Matrix games</h1>
+<p class="lede">In a zero-sum game one player's gain is the other's loss. Von Neumann's theorem says each player has a mixed strategy that guarantees the same number, the value of the game. Linear programming finds both strategies and the value, here as exact fractions.</p>
+<h2>Rock, paper, scissors</h2>
+<pre><code>import { matrixGame, saddlePoints } from "@ratmath/discrete";
+
+const names = ["rock", "paper", "scissors"];
+const rps = matrixGame([[0, -1, 1], [1, 0, -1], [-1, 1, 0]], { rows: names, columns: names });
+String(rps);   // "value 0; row plays rock 1/3, paper 1/3, scissors 1/3; column plays rock 1/3, …"
+rps.fair;      // true
+rps.check();   // true</code></pre>
+<p>The matrix \(A\) lists what the column player pays the row player: \(A_{ij}\) when row \(i\) meets column \(j\). If the row player mixes with probabilities \(p\) and the column player with \(q\), the expected payment is \(p^{\top} A q\). The row player wants it large and the column player small.</p>
+
+<h2>The minimax theorem</h2>
+<p>A mixture \(p\) <em>guarantees</em> \(\min_j (p^{\top}A)_j\), the worst it earns against any column. A mixture \(q\) <em>caps</em> the row player at \(\max_i (Aq)_i\). Every guarantee is at most every cap, and von Neumann's theorem says the best guarantee equals the best cap:</p>
+\[ \max_p \min_q\, p^{\top}Aq \;=\; \min_q \max_p\, p^{\top}Aq \;=\; v. \]
+<p>The row player's problem is a linear program: maximise \(v\) subject to \((p^{\top}A)_j \ge v\) for every column, \(\sum p_i = 1\), \(p \ge 0\). Its dual is exactly the column player's problem, so one exact solve gives both strategies, and LP duality is the theorem. <code>check()</code> confirms the guarantee of \(p\) and the cap of \(q\) are both \(v\): neither player can do better, so no further proof is needed.</p>
+<pre><code>const g = matrixGame([[3, -1], [-2, 1]]);
+String(g);                          // "value 1/7; row plays r1 3/7, r2 4/7; column plays c1 2/7, c2 5/7"
+g.guarantee(["1/2", "1/2"]);        // 0: a fifty-fifty row player can be held to 0
+g.cap(["1/2", "1/2"]);              // 1
+g.guarantee();                      // 1/7, and g.cap() is 1/7 too</code></pre>
+<p>For a 2×2 game without a saddle point the optimal \(p\) makes the column player indifferent: \(3p - 2(1-p) = -p + (1-p)\) gives \(p = 3/7\).</p>
+
+<h2>Saddle points</h2>
+<pre><code>saddlePoints([[4, 2, 3], [1, 0, 5], [3, 1, 2]]);   // [{ row: 0, column: 1, value: 2 }]
+matrixGame([[4, 2, 3], [1, 0, 5], [3, 1, 2]]).value;   // 2: pure strategies suffice</code></pre>
+<p>An entry that is the smallest in its row and the largest in its column is a <strong>saddle point</strong>. There, pure strategies are optimal and the value is that entry. Many games have none, like rock, paper, scissors, and then mixing is essential.</p>
+
+<h2>Morra</h2>
+<p>In two-finger Morra each player shows one or two fingers and calls a guess of the total. A player who guesses right and whose opponent guesses wrong wins the total. Keeping the four sensible strategies (show 1 and call 2 or 3; show 2 and call 3 or 4) gives a fair game with a curious answer:</p>
+<pre><code>const s = ["1,2", "1,3", "2,3", "2,4"];   // fingers shown, total called
+const morra = matrixGame([[0, 2, -3, 0], [-2, 0, 0, 3], [3, 0, 0, -4], [0, -3, 4, 0]], { rows: s, columns: s });
+String(morra);   // "value 0; row plays 1,3 4/7, 2,3 3/7; column plays 1,3 3/5, 2,3 2/5"</code></pre>
+<p>Optimal strategies need not be unique. Here any mixture of "1,3" and "2,3" between \(4/7 : 3/7\) and \(3/5 : 2/5\) is optimal; the simplex method returns one vertex of that set.</p>
+<template data-runbox>
+// Random games: the guarantee and the cap always meet.
+const r = rng("matrix games");
+for (let t = 0; t &lt; 5; t++) {
+  const A = Array.from({ length: 3 }, () =&gt; Array.from({ length: 4 }, () =&gt; r.between(-5, 5)));
+  const g = matrixGame(A);
+  PRINT(A.map((row) =&gt; row.join(" ")).join(" | "), "→ value", String(g.value), " guarantee", String(g.guarantee()), " cap", String(g.cap()));
+}
+// shifting every payoff by 10 shifts the value by 10 and leaves the strategies alone
+const g = matrixGame([[3, -1], [-2, 1]]);
+const h = matrixGame([[13, 9], [8, 11]]);
+PRINT(String(g.value), "→", String(h.value), " same row strategy:", g.row.every((v, i) =&gt; v.equals(h.row[i])));
+g.check()
+</template>
+</article>
+</main>
+</div>
+</body>
+</html>
