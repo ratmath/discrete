@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Connectivity · RatMath Discrete</title>
+<meta property="og:title" content="Connectivity · RatMath Discrete">
+<meta property="og:description" content="Discrete mathematics for RatMath: counting and enumeration, graphs, generating functions, games and exact linear programming.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ratmath.com/discrete/connectivity.html">
+<meta name="description" content="Breadth- and depth-first search, components, bridges and cut vertices, strong components, topological order, bipartite graphs and distances in @ratmath/discrete, each answer with its evidence.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="https://ratmath.com/assets/katex/0.19.1/katex.min.css">
+<link rel="stylesheet" href="assets/style.css?v=836c07e2c5">
+<script type="module" src="assets/site.js?v=836c07e2c5"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Connectivity</div>
+<h1>Connectivity</h1>
+<p class="lede">Searching a graph, and what the search reveals: the pieces it falls into, the edges and vertices it hangs on, an order for a directed graph without cycles, and whether two colours are enough. When the answer is no, the reason comes with it.</p>
+<h2>Two ways to search</h2>
+<pre><code>const g = graph("1-2 1-3 2-4 3-4 4-5 6-7");
+bfs(g, 1).order;            // [1, 2, 3, 4, 5]: nearest first
+bfs(g, 1).depth.get(5);     // 3 edges away
+dfs(g, 1).order;            // [1, 2, 4, 3, 5]: as deep as possible first
+components(g);              // [[1, 2, 3, 4, 5], [6, 7]]
+isConnected(g);             // false</code></pre>
+<p><strong>Breadth-first search</strong> keeps a queue: it visits the start, then everything one edge away, then everything two edges away, and so on, which is why the depth it records is the distance. <strong>Depth-first search</strong> keeps a stack: it follows edges as far as it can and backs up only when stuck. Each visits every vertex it can reach once and looks at every edge at most twice, so both take time proportional to <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">∣</mi><mi>V</mi><mi mathvariant="normal">∣</mi><mo>+</mo><mi mathvariant="normal">∣</mi><mi>E</mi><mi mathvariant="normal">∣</mi></mrow><annotation encoding="application/x-tex">|V| + |E|</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">∣</span><span class="mord mathnormal" style="margin-right:0.2222em;">V</span><span class="mord">∣</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">∣</span><span class="mord mathnormal" style="margin-right:0.0576em;">E</span><span class="mord">∣</span></span></span></span>. Both are written without recursion, so a path of a million vertices does not overflow the stack.</p>
+
+<h2>Weak points: bridges and cut vertices</h2>
+<pre><code>const g = graph("a-b b-c c-a c-d d-e e-f f-d");   // two triangles joined by c-d
+bridges(g).map((e) =&gt; e.from + "-" + e.to);   // ["c-d"]
+cutVertices(g);             // ["c", "d"]
+blocks(g);                  // [["d", "e", "f"], ["c", "d"], ["a", "b", "c"]]</code></pre>
+<p>A <em>bridge</em> is an edge whose removal disconnects its component, and a <em>cut vertex</em> is a vertex whose removal does. An edge is a bridge exactly when it lies on no cycle. One depth-first search finds them all (Hopcroft and Tarjan): number the vertices in the order they are discovered, and let <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">l</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">w</mi></mrow><mo stretchy="false">(</mo><mi>v</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">\mathrm{low}(v)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathrm" style="margin-right:0.0139em;">low</span></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.0359em;">v</span><span class="mclose">)</span></span></span></span> be the smallest number reachable from <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>v</mi></mrow><annotation encoding="application/x-tex">v</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.0359em;">v</span></span></span></span>'s subtree using at most one edge that is not in the search tree. A tree edge <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>u</mi><mo>→</mo><mi>v</mi></mrow><annotation encoding="application/x-tex">u \to v</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.4306em;"></span><span class="mord mathnormal">u</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">→</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.0359em;">v</span></span></span></span> is a bridge when <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">l</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">w</mi></mrow><mo stretchy="false">(</mo><mi>v</mi><mo stretchy="false">)</mo><mo>&gt;</mo><mrow><mi mathvariant="normal">n</mi><mi mathvariant="normal">u</mi><mi mathvariant="normal">m</mi></mrow><mo stretchy="false">(</mo><mi>u</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">\mathrm{low}(v) &gt; \mathrm{num}(u)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathrm" style="margin-right:0.0139em;">low</span></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.0359em;">v</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">&gt;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathrm">num</span></span><span class="mopen">(</span><span class="mord mathnormal">u</span><span class="mclose">)</span></span></span></span>, and <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>u</mi></mrow><annotation encoding="application/x-tex">u</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.4306em;"></span><span class="mord mathnormal">u</span></span></span></span> is a cut vertex when <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">l</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">w</mi></mrow><mo stretchy="false">(</mo><mi>v</mi><mo stretchy="false">)</mo><mo>≥</mo><mrow><mi mathvariant="normal">n</mi><mi mathvariant="normal">u</mi><mi mathvariant="normal">m</mi></mrow><mo stretchy="false">(</mo><mi>u</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">\mathrm{low}(v) \ge \mathrm{num}(u)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathrm" style="margin-right:0.0139em;">low</span></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.0359em;">v</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≥</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathrm">num</span></span><span class="mopen">(</span><span class="mord mathnormal">u</span><span class="mclose">)</span></span></span></span> for some child <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>v</mi></mrow><annotation encoding="application/x-tex">v</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.0359em;">v</span></span></span></span> (the root is a cut vertex when it has two or more children). The <em>blocks</em> are the pieces between cut vertices; every edge lies in exactly one.</p>
+
+<h2>Directed graphs: strong components and topological order</h2>
+<pre><code>const d = digraph("1&gt;2 2&gt;1 2&gt;3 3&gt;4 4&gt;3 4&gt;5");
+stronglyConnectedComponents(d);   // [[5], [3, 4], [1, 2]]
+condensation(d).graph.toString(); // "1&gt;2 2&gt;3": the components, in order
+
+const tasks = digraph("wake&gt;shower wake&gt;coffee coffee&gt;leave shower&gt;dress dress&gt;leave");
+topologicalOrder(tasks);          // { acyclic: true, order: ["wake", "shower", "coffee", "dress", "leave"] }
+topologicalOrder(digraph("a&gt;b b&gt;c c&gt;a"));   // { acyclic: false, cycle: ["a", "b", "c", "a"] }</code></pre>
+<p>Two vertices are <em>strongly connected</em> when each can reach the other. That is an equivalence relation, and its classes are the strong components; shrinking each to a point gives the <em>condensation</em>, which never has a cycle. A <em>topological order</em> lists the vertices so that every edge points forward. It exists exactly when there is no directed cycle, and Kahn's method finds it by repeatedly taking a vertex with nothing left pointing into it. When it gets stuck, every remaining vertex has an edge coming in, so following edges backwards must eventually repeat a vertex: that cycle is returned as the proof that no order exists.</p>
+
+<h2>Two colours: bipartite graphs</h2>
+<pre><code>bipartition(grid(2, 3));      // { bipartite: true, parts: [[…], […]] }
+bipartition(cycleGraph(5));   // { bipartite: false, oddCycle: [3, 2, 1, 5, 4, 3] }</code></pre>
+<p>A graph is <em>bipartite</em> when its vertices split into two sides with every edge crossing between them. König's theorem says this happens exactly when there is no cycle of odd length. One direction is easy: going round a cycle switches sides at every step, so a cycle must have even length. The search proves the other: colour by breadth-first search, alternating with depth; if an edge ever joins two vertices of the same colour, the two search paths back to where they meet, together with that edge, form an odd cycle, which is returned as the certificate.</p>
+
+<h2>Distances</h2>
+<pre><code>const P = petersen();
+distance(P, "1,2", "3,4");   // 1: disjoint pairs are joined
+diameter(P);                 // 2
+girth(P);                    // { girth: 5, cycle: [ … ] }: no triangles, no squares
+center(pathGraph(5));        // [3]</code></pre>
+<p>The distance between two vertices is the fewest edges on a path between them (weights are for <a href="shortest-paths.html">shortest paths</a>). The <em>eccentricity</em> of a vertex is its distance to the farthest vertex; the <em>diameter</em> and <em>radius</em> are the largest and smallest eccentricities, and the <em>centre</em> is where the radius is attained. The <em>girth</em> is the length of a shortest cycle, found by a breadth-first search from every vertex; a shortest cycle through the start appears as the first non-tree edge that closes two branches meeting only at the start.</p>
+<section class="runbox" aria-label="Runnable code">
+  <div class="runbox-head"><strong>Try it</strong><span>Edit the code and run it with <code>@ratmath/discrete</code> and Core's <code>Rational</code> in scope. The last line's value is shown; <code>PRINT(…)</code> adds lines, <code>TEX(…)</code> typesets math.</span></div>
+  <textarea spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code">// A random graph and its pieces.
+const g = randomGraph(14, "1/6", rng("pieces"));
+PRINT("components:", components(g).map((c) =&gt; "{" + c.join(" ") + "}").join(" "));
+const b = biconnected(g);
+PRINT("bridges:", b.bridges.map((e) =&gt; e.from + "-" + e.to).join(" ") || "none", "  cut vertices:", b.cutVertices.join(" ") || "none");
+
+// Check against the definition: removing a bridge raises the number of components.
+for (const e of b.bridges) { const h = g.copy(); h.removeEdge(e); PRINT("  without", e.from + "-" + e.to, ":", components(h).length, "components, was", components(g).length); }
+
+// A course plan in a valid order, and what happens with a circular prerequisite.
+const courses = digraph("calc1&gt;calc2 calc2&gt;calc3 calc2&gt;diffeq linalg&gt;diffeq calc1&gt;linalg proofs&gt;algebra linalg&gt;algebra");
+PRINT("order:", topologicalOrder(courses).order.join(" → "));
+courses.addEdge("algebra", "calc1");
+PRINT("with algebra before calc1:", JSON.stringify(topologicalOrder(courses)));
+
+// Odd cycles are exactly what stops two colours.
+for (const n of [4, 5, 6, 7]) PRINT("C" + n, isBipartite(cycleGraph(n)) ? "two colours" : "odd cycle " + bipartition(cycleGraph(n)).oddCycle.join("-"));
+
+// Girth and diameter of the cubes Q1…Q6.
+[1, 2, 3, 4, 5, 6].map((d) =&gt; `Q${d}: diameter ${diameter(hypercube(d))}, girth ${girth(hypercube(d)).girth}`)</textarea>
+  <div class="runbox-bar"><button type="button" data-run>Run</button><button type="button" class="ghost" data-reset>Reset</button><span class="runbox-meta">Ctrl/⌘ + Enter runs</span></div>
+  <div class="runbox-out" aria-live="polite"></div>
+</section>
+<footer class="sitelinks"><a href="https://github.com/ratmath/discrete">GitHub</a> · <a href="https://ratmath.com/">ratmath.com</a> · <a href="https://ratmath.com/shelf/">shelf</a> · <a href="https://ratmath.com/core/">core</a></footer>
+</article>
+</main>
+</div>
+</body>
+</html>

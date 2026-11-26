@@ -1,6 +1,6 @@
 {
   "name": "@ratmath/discrete",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Discrete mathematics for RatMath: counting and enumeration, graphs, generating functions, games and exact linear programming",
   "type": "module",
   "main": "index.js",

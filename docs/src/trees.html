@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Trees · RatMath Discrete</title>
+<meta name="description" content="Trees in @ratmath/discrete: minimum spanning trees by Kruskal and Prim with exact weights, counting spanning trees by the matrix-tree theorem, Prüfer codes and the family of all labelled trees.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Trees</div>
+<h1>Trees</h1>
+<p class="lede">Trees are the connected graphs with no cycles, the skeletons of every connected graph. Here: the lightest spanning tree, the exact number of spanning trees, and a numbered list of all labelled trees through their Prüfer codes.</p>
+<h2>What a tree is</h2>
+<p>For a graph with \(n\) vertices the following say the same thing: it is connected and has no cycle; it is connected and has \(n - 1\) edges; it has no cycle and \(n - 1\) edges; between any two vertices there is exactly one path. <code>isTree</code> checks the second, <code>isForest</code> checks for a cycle.</p>
+<pre><code>isTree(graph("1-2 2-3 2-4"));    // true
+isTree(cycleGraph(4));           // false
+isForest(graph("1-2 3-4"));      // true: two trees</code></pre>
+
+<h2>The lightest spanning tree</h2>
+<pre><code>const g = graph("a-b:4 a-c:1 b-c:2 b-d:5 c-d:8 d-e:3 c-e:9/2");
+const t = minimumSpanningTree(g);
+t.weight.toString();                 // "21/2": a-c, b-c, d-e, c-e
+t.edges.map((e) =&gt; e.from + "-" + e.to);
+minimumSpanningTree(g, { method: "prim" }).weight.toString();    // the same
+minimumSpanningTree(g, { maximum: true }).weight.toString();     // the heaviest: "43/2"</code></pre>
+<p>A <em>spanning tree</em> uses every vertex and some of the edges. Both methods rest on the <em>cut property</em>: for any split of the vertices into two sides, a lightest edge crossing the split belongs to some minimum spanning tree (if a tree avoided it, adding it makes a cycle that crosses the split a second time, and swapping out that other crossing edge cannot make the tree heavier). <strong>Kruskal's method</strong> takes the edges from lightest up and keeps each one that joins two different pieces, tracked with a union–find structure. <strong>Prim's method</strong> grows one tree from a vertex, always adding the lightest edge leaving it. With exact weights, ties are real ties, broken by the order the edges were added, so the answer never depends on rounding. A disconnected graph gets a spanning forest, with <code>connected: false</code>.</p>
+
+<h2>How many spanning trees</h2>
+<pre><code>spanningTreeCount(complete(10));          // 100000000n = 10⁸ (Cayley)
+spanningTreeCount(platonic("cube"));      // 384n
+spanningTreeCount(petersen());            // 2000n
+spanningTreeCount(completeBipartite(3, 4)); // 432n = 3³ · 4²</code></pre>
+<p>Kirchhoff's <em>matrix-tree theorem</em>: let \(L = D - A\) be the Laplacian, the diagonal matrix of degrees minus the adjacency matrix. Then the number of spanning trees equals any cofactor of \(L\), for example the determinant of \(L\) with its first row and column removed. The determinant is computed exactly with integers by Bareiss elimination, in which every division is exact, so the count is right however large it is. Parallel edges count as different trees.</p>
+
+<h2>Prüfer codes, and Cayley's formula</h2>
+<pre><code>const t = graph("1-4 2-4 3-4 4-5 5-6");
+prufer(t);                       // [4, 4, 4, 5]
+fromPrufer([4, 4, 4, 5]);        // the same tree back
+const trees = labelledTrees(6);
+trees.count;                     // 1296n = 6⁴
+trees.unrank(1000);              // the tree with code number 1000
+trees.random(rng("forest"));     // a uniformly random labelled tree</code></pre>
+<p>To encode a tree on the labels \(1 \ldots n\), remove the smallest leaf and write down its neighbour; repeat until two vertices remain. The result is a sequence of \(n - 2\) labels, and the tree can be rebuilt from it: the first removed leaf is the smallest label that does not appear in the code, and so on. So the code is a bijection between labelled trees and sequences of length \(n - 2\) over \(n\) labels, which proves Cayley's formula</p>
+\[ \#\{\text{labelled trees on } n \text{ vertices}\} = n^{\,n-2}. \]
+<p>A vertex's degree is one more than the number of times it appears in the code, so leaves are exactly the labels that never appear. <code>labelledTrees(n)</code> is a <a href="enumeration.html">family</a> numbered by code, so ranking, unranking and uniform random trees come for free; the tests check that it lists all \(6^4 = 1296\) trees on six vertices, each once, and that \(n^{n-2}\) agrees with the matrix-tree count for \(K_n\).</p>
+<template data-runbox>
+// Cayley two ways: the matrix-tree theorem on K_n, and n^(n-2).
+for (let n = 2; n &lt;= 8; n++) PRINT("n =", n, " Kirchhoff:", spanningTreeCount(complete(n)), " Cayley:", BigInt(n) ** BigInt(n - 2));
+
+// A road network with exact costs: Kruskal and Prim agree.
+const roads = graph("A-B:7/2 A-C:2 B-C:3/2 B-D:5 C-D:4 C-E:6 D-E:1 D-F:9/4 E-F:3");
+const k = minimumSpanningTree(roads), p = minimumSpanningTree(roads, { method: "prim" });
+PRINT("Kruskal:", String(k.weight), k.edges.map((e) =&gt; e.from + e.to).join(" "));
+PRINT("Prim:   ", String(p.weight), p.edges.map((e) =&gt; e.from + e.to).join(" "));
+
+// Prüfer codes: a random tree, its code, and the degrees read off from the code.
+const t = randomTree(9, rng("prufer"));
+const code = prufer(t);
+PRINT("tree:", String(t));
+PRINT("code:", code.join(" "));
+PRINT("degree of each vertex = 1 + appearances in the code:", t.vertices().sort((a, b) =&gt; a - b).every((v) =&gt; t.degree(v) === 1 + code.filter((x) =&gt; x === v).length));
+
+// How many labelled trees on 7 vertices are paths? stars? Count by walking the family.
+let paths = 0, stars = 0;
+for (const tr of labelledTrees(7)) { const ds = tr.degreeSequence(); if (ds[0] === 2) paths++; if (ds[0] === 6) stars++; }
+[`paths: ${paths} (7!/2 = ${5040 / 2})`, `stars: ${stars}`]
+</template>
+</article>
+</main>
+</div>
+</body>
+</html>

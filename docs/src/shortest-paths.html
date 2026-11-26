@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Shortest paths · RatMath Discrete</title>
+<meta name="description" content="Shortest paths with exact rational weights in @ratmath/discrete: Dijkstra, Bellman–Ford and Floyd–Warshall, with negative cycles reported as the reason no answer exists.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Shortest paths</div>
+<h1>Shortest paths</h1>
+<p class="lede">The cheapest route from one vertex to another, with weights that are exact fractions. Ties are real ties, and when a negative cycle makes the question meaningless, the cycle is what you get back.</p>
+<h2>One route</h2>
+<pre><code>const g = graph("s-a:0.1 a-b:0.2 b-t:0.3 s-t:0.6");
+shortestPath(g, "s", "t");
+// { distance: 3/5, path: ["s", "t"], edges: [ … ] }: the other route is also 3/5
+shortestPath(g, "s", "b").distance.toString();    // "3/10"</code></pre>
+<p>In floating point, <code>0.1 + 0.2 + 0.3</code> is <code>0.6000000000000001</code>, so the route through <code>a</code> and <code>b</code> would look slightly longer than the direct edge of weight 0.6. Here weights and distances are Core <code>Rational</code>s, so the two routes are recognised as exactly equal: both are 3/5, and either is a correct answer. A weight may be written as a whole number, a fraction <code>"3/7"</code> or a decimal string <code>"0.1"</code>; a JavaScript non-integer such as <code>0.1</code> is refused, because the number it stands for is not one tenth.</p>
+
+<h2>From one vertex to all others</h2>
+<pre><code>const d = digraph("A&gt;B:4 A&gt;C:2 C&gt;B:1 B&gt;D:5 C&gt;D:8 D&gt;E:3");
+const sp = shortestPaths(d, "A");
+sp.method;                         // "dijkstra"
+[...sp.distance].map(([v, x]) =&gt; `${{v}}:${{x}}`);   // ["A:0", "B:3", "C:2", "D:8", "E:11"]
+sp.pathTo("E").path;               // ["A", "C", "B", "D", "E"]</code></pre>
+<p><strong>Dijkstra's method</strong> settles vertices in order of distance. It keeps the best distance found so far for each vertex, repeatedly settles the unsettled vertex with the smallest one, and tries the edges out of it. When no weight is negative, a settled vertex can never be improved later: any other route to it passes through some unsettled vertex that is already at least as far. With a binary heap this takes time about \((|V| + |E|) \log |V|\) comparisons of fractions.</p>
+<p>When every weight is 1 (an unweighted graph), breadth-first search does the same job, and <code>method</code> says so.</p>
+
+<h2>Negative weights, and negative cycles</h2>
+<pre><code>const d = digraph("s&gt;a:4 s&gt;b:2 b&gt;a:-3 a&gt;t:1");
+shortestPath(d, "s", "t").distance.toString();    // "0": via b, then back to a
+shortestPaths(d, "s").method;                     // "bellman-ford"
+
+const loop = digraph("s&gt;a:1 a&gt;b:-2 b&gt;a:1 b&gt;t:1");
+shortestPaths(loop, "s").negativeCycle;           // ["a", "b", "a"]
+shortestPath(loop, "s", "t");                     // throws: the cycle a → b → a has negative total weight</code></pre>
+<p>A negative weight breaks Dijkstra's argument, so the <strong>Bellman–Ford</strong> method is used instead: relax every edge, \(|V| - 1\) times over. A shortest path, if one exists, has at most \(|V| - 1\) edges, so after that many rounds every distance is right. If one more round still improves something, there is a cycle of negative total weight within reach, and going round it again and again makes the "distance" as small as you like. Then no shortest path exists, and instead of a number the answer is the cycle, found by walking back along the last improvements. In an undirected graph a single negative edge already is such a cycle (walk it back and forth), so it is reported at once.</p>
+
+<h2>All pairs</h2>
+<pre><code>const ap = allPairsShortestPaths(d);
+ap.distance("s", "t").toString();    // "0"
+ap.path("s", "t");                   // ["s", "b", "a", "t"]
+ap.matrix;                           // Rationals, null where there is no path</code></pre>
+<p>The <strong>Floyd–Warshall</strong> method allows the vertices as stopovers one at a time: after step \(k\), entry \((i, j)\) holds the shortest distance from \(i\) to \(j\) using only the first \(k\) vertices in between, by</p>
+\[ d_k(i, j) = \min\bigl(d_{k-1}(i, j),\; d_{k-1}(i, k) + d_{k-1}(k, j)\bigr). \]
+<p>That is \(|V|^3\) steps, simple and exact; a negative number on the diagonal at the end reveals a negative cycle, which is then found and returned as above.</p>
+<p>The tests of this library compare all three methods with the minimum over every simple path, on several hundred random weighted graphs.</p>
+<template data-runbox>
+// Exactness: in floating point 0.1 + 0.2 + 0.3 is not 0.6, so two equal routes look different.
+const g = graph("s-a:0.1 a-b:0.2 b-t:0.3 s-t:0.6");
+PRINT("in floating point:", 0.1 + 0.2 + 0.3, "vs", 0.6);
+const p = shortestPath(g, "s", "t");
+PRINT("exact distance", String(p.distance), "by", p.path.join("-"), " the direct edge:", String(g.weight("s", "t")), " equal:", p.distance.equals(g.weight("s", "t")));
+
+// A grid with random fractional weights: the cheapest way from corner to corner.
+const r = rng("grid weights");
+const G = grid(4, 4);
+const W = new Graph();
+for (const e of G.edges()) W.addEdge(e.from, e.to, `${r.between(1, 9)}/${r.between(1, 4)}`);
+const best = shortestPath(W, "1,1", "4,4");
+PRINT("corner to corner:", String(best.distance), "via", best.path.join(" "));
+
+// Costs with rebates: some legs pay you back. A cycle with negative total cost means no cheapest route exists.
+const fx = digraph("USD&gt;EUR:5 EUR&gt;GBP:-2 GBP&gt;USD:-4 USD&gt;JPY:1 JPY&gt;GBP:2");
+const sp = shortestPaths(fx, "USD");
+PRINT("negative cycle:", sp.negativeCycle ? sp.negativeCycle.join(" → ") : "none");
+
+// All pairs on a small directed graph.
+const d = digraph("1&gt;2:3 2&gt;3:-1 1&gt;3:4 3&gt;4:1/2 4&gt;1:2");
+const ap = allPairsShortestPaths(d);
+ap.matrix.map((row) =&gt; row.map((x) =&gt; (x === null ? "∞" : String(x)).padStart(5)).join(""))
+</template>
+</article>
+</main>
+</div>
+</body>
+</html>

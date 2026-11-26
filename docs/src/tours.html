@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Euler and Hamilton · RatMath Discrete</title>
+<meta name="description" content="Euler tours by Hierholzer&#x27;s method and Hamilton cycles by exhaustive search in @ratmath/discrete, with the reason when none exists.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Euler and Hamilton</div>
+<h1>Euler and Hamilton</h1>
+<p class="lede">Two questions that sound alike: can you walk every edge exactly once, or visit every vertex exactly once? The first has a simple test and a fast answer. The second has neither, and is answered here by exhaustive search on small graphs.</p>
+<h2>Every edge once: Euler</h2>
+<pre><code>const k = graph("A-B A-B A-C A-C A-D B-D C-D", { multi: true });   // the bridges of Königsberg
+eulerTour(k);
+// { exists: false, reason: "a tour needs 0 or 2 vertices of odd degree; this graph has 4", odd: ["A", "B", "C", "D"] }
+
+eulerTour(complete(5));     // every degree is 4: a closed tour
+// { exists: true, closed: true, vertices: [1, 2, 3, 1, 4, 2, 5, 3, 4, 5, 1], edges: [ … ] }
+eulerTour(graph("1-2 2-3 3-1 3-4"));   // two odd vertices: a tour from one to the other</code></pre>
+<p>Euler's theorem (1736): a connected graph has a closed walk using every edge exactly once if and only if every vertex has even degree, and an open one if and only if exactly two vertices have odd degree, where it must start and end. Necessity is the counting argument: every time the walk passes through a vertex it uses two edges there. In Königsberg all four land masses had odd degree, so no walk could cross each of the seven bridges once.</p>
+<p>Sufficiency is constructive, and the construction is <strong>Hierholzer's method</strong>: walk from the start along unused edges until you are stuck, which with even degrees can only happen back at the start. If unused edges remain, some vertex on the circuit has one; walk a second circuit from there and splice it in. Done with a stack, each edge is handled once, so the whole tour takes time proportional to \(|E|\). In a directed graph the condition is that every vertex has as many edges in as out (or one vertex has one extra out and another one extra in).</p>
+
+<h2>Every vertex once: Hamilton</h2>
+<pre><code>hamiltonCycle(platonic("dodecahedron"));   // Hamilton's "icosian game" (1857): { exists: true, cycle: [ … ] }
+hamiltonCycle(petersen());
+// { exists: false, reason: "no cycle through every vertex: an exhaustive search over all 1024 vertex sets found none" }
+hamiltonCycle(star(4));     // { exists: false, reason: "1 has fewer than two neighbours", vertex: 1 }
+hamiltonPath(grid(3, 3));   // a path exists, though no cycle does</code></pre>
+<p>No test as simple as Euler's is known for Hamilton cycles, and deciding whether one exists is NP-complete. So the answer is found by search, limited to 20 vertices. The search is the Held–Karp dynamic programme: for each set \(S\) of vertices containing a fixed start, record which vertices can end a path from the start that visits exactly \(S\). Each set is extended by one vertex at a time, so the work is about \(2^n\) sets times \(n\), not \(n!\) orders. When no Hamilton cycle exists, that is proved by the search having covered every set.</p>
+<p>Before searching, some quick reasons are tried, since they are easier to read than "the search found none": a disconnected graph, a vertex with fewer than two neighbours, or a cut vertex (a cycle through every vertex has no cut vertex). Some graphs need the full search: the Petersen graph has none of these defects and still has no Hamilton cycle.</p>
+<template data-runbox>
+// Which small graphs have Euler circuits, Euler trails, Hamilton cycles?
+const named = { K4: complete(4), K5: complete(5), "K3,3": completeBipartite(3, 3), Petersen: petersen(), cube: platonic("cube"), octahedron: platonic("octahedron"), "grid 3x3": grid(3, 3), wheel6: wheel(6) };
+for (const [name, g] of Object.entries(named)) {
+  const e = eulerTour(g);
+  const h = hamiltonCycle(g);
+  PRINT(name.padEnd(11), "Euler:", (e.exists ? (e.closed ? "circuit" : "trail") : "none").padEnd(8), " Hamilton:", h.exists ? "cycle" : "none — " + h.reason);
+}
+
+// Königsberg, then with one bridge added between B and C: now exactly two odd vertices.
+const k = graph("A-B A-B A-C A-C A-D B-D C-D", { multi: true });
+PRINT("Königsberg:", eulerTour(k).reason);
+k.addEdge("B", "C");
+PRINT("with a bridge B-C:", eulerTour(k).vertices.join(" "));
+
+// A knight's tour on a 4×5 board is a Hamilton path in the knight's graph.
+const knight = new Graph();
+for (let r = 1; r &lt;= 4; r++) for (let c = 1; c &lt;= 5; c++) {
+  knight.addVertex(`${r},${c}`);
+  for (const [dr, dc] of [[1, 2], [2, 1], [2, -1], [1, -2]]) {
+    const rr = r + dr, cc = c + dc;
+    if (rr &gt;= 1 &amp;&amp; rr &lt;= 4 &amp;&amp; cc &gt;= 1 &amp;&amp; cc &lt;= 5) knight.addEdge(`${r},${c}`, `${rr},${cc}`);
+  }
+}
+const tour = hamiltonPath(knight);
+tour.exists ? tour.path.join(" ") : tour.reason
+</template>
+</article>
+</main>
+</div>
+</body>
+</html>

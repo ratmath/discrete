@@ -18,7 +18,7 @@
 <article>
 <div class="eyebrow">Reference</div>
 <h1>Everything in the library</h1>
-<p class="lede">Every export of <code>@ratmath/discrete</code>. Whole-number arguments may be numbers, <code>BigInt</code>s or digit strings; counts and ranks come back as <code>BigInt</code>s.</p>
+<p class="lede">Every export of <code>@ratmath/discrete</code>. Whole-number arguments may be numbers, <code>BigInt</code>s or digit strings; counts and ranks come back as <code>BigInt</code>s. Edge weights and distances are exact Core <code>Rational</code>s; distances counted in edges are plain numbers.</p>
 <h2>Counting</h2>
 <div class="tablewrap"><table class="ref">
 <tr><th>Export</th><th>What it does</th></tr>
@@ -59,6 +59,49 @@
 <tr><td><code>setPartitions(n or items, k)</code></td><td>Partitions of a set into blocks; exactly k blocks.</td></tr>
 <tr><td><code>dyckWords(n, { open, close })</code></td><td>Balanced bracket strings.</td></tr>
 </table></div>
+<h2>Graphs</h2>
+<div class="tablewrap"><table class="ref">
+<tr><th>Export</th><th>What it does</th></tr>
+<tr><td><code>graph(spec, { multi, loops, vertices })</code></td><td>An undirected graph from text <code>"a-b b-c:3/2 d"</code>, a list of edges <code>[[u, v, weight?]]</code>, an adjacency object, or <code>{ vertices, edges }</code>.</td></tr>
+<tr><td><code>digraph(spec, options)</code></td><td>A directed graph; in text write <code>a&gt;b</code>.</td></tr>
+<tr><td><code>Graph</code></td><td><code>order</code>, <code>size</code>, <code>directed</code>, <code>weighted</code>, <code>vertices()</code>, <code>edges()</code> (each <code>{ id, from, to, weight }</code>), <code>hasVertex</code>, <code>hasEdge</code>, <code>edge</code>, <code>edgesBetween</code>, <code>weight</code>, <code>addVertex</code>, <code>addEdge</code>, <code>removeVertex</code>, <code>removeEdge</code>, <code>neighbors</code>, <code>inNeighbors</code>, <code>outEdges</code>, <code>inEdges</code>, <code>degree</code>, <code>inDegree</code>, <code>outDegree</code>, <code>degreeSequence</code>, <code>copy</code>, <code>subgraph</code>, <code>edgeSubgraph</code>, <code>complement</code>, <code>reverse</code>, <code>underlying</code>, <code>lineGraph</code>, <code>adjacencyMatrix</code>, <code>totalWeight</code>, <code>toString</code>.</td></tr>
+<tr><td><code>cartesianProduct, tensorProduct, strongProduct, lexicographicProduct</code></td><td>Products; vertices named <code>"a,b"</code>.</td></tr>
+<tr><td><code>disjointUnion, join, union</code></td><td>Side by side; side by side and fully joined; on shared vertex names.</td></tr>
+<tr><td><code>complete, emptyGraph, pathGraph, cycleGraph, star, wheel</code></td><td>The basic families on 1…n (star and wheel have centre 0).</td></tr>
+<tr><td><code>completeBipartite, completeMultipartite, turan</code></td><td>Complete multipartite graphs; Turán's extremal graph.</td></tr>
+<tr><td><code>hypercube(d), grid(m, n), circulant(n, jumps), kneser(n, k), petersen(), platonic(name)</code></td><td>Named families.</td></tr>
+<tr><td><code>completeDigraph, transitiveTournament, directedCycle</code></td><td>Directed families.</td></tr>
+<tr><td><code>randomGraph(n, p, rng, { directed })</code>, <code>randomGraphWithEdges(n, m, rng)</code></td><td>G(n, p) with exact p; G(n, m).</td></tr>
+<tr><td><code>toWeight(w)</code></td><td>A weight as a Rational; refuses non-whole JavaScript numbers.</td></tr>
+</table></div>
+<h2>Searching and connectivity</h2>
+<div class="tablewrap"><table class="ref">
+<tr><th>Export</th><th>What it does</th></tr>
+<tr><td><code>bfs(g, start)</code></td><td><code>{ order, depth, parent }</code>.</td></tr>
+<tr><td><code>dfs(g, start?)</code></td><td><code>{ order, post, parent, discovered, finished }</code>; a forest when no start is given.</td></tr>
+<tr><td><code>reachable, components, isConnected</code></td><td>Components are weak for a directed graph, largest first.</td></tr>
+<tr><td><code>biconnected(g)</code>, <code>bridges, cutVertices, blocks</code></td><td>One depth-first pass gives all three.</td></tr>
+<tr><td><code>stronglyConnectedComponents, isStronglyConnected, condensation</code></td><td>Tarjan's method; the condensation is numbered in topological order.</td></tr>
+<tr><td><code>topologicalOrder(g)</code></td><td><code>{ acyclic: true, order }</code> or <code>{ acyclic: false, cycle }</code>.</td></tr>
+<tr><td><code>findCycle, isAcyclic</code></td><td>A closed list <code>[v₁, …, v₁]</code> or null.</td></tr>
+<tr><td><code>bipartition(g), isBipartite</code></td><td><code>{ bipartite: true, parts }</code> or <code>{ bipartite: false, oddCycle }</code>.</td></tr>
+<tr><td><code>distances, distance, eccentricity, diameter, radius, center, periphery</code></td><td>Distances counted in edges; Infinity when unreachable.</td></tr>
+<tr><td><code>girth(g)</code></td><td><code>{ girth, cycle }</code>: a shortest cycle.</td></tr>
+</table></div>
+<h2>Paths, tours and trees</h2>
+<div class="tablewrap"><table class="ref">
+<tr><th>Export</th><th>What it does</th></tr>
+<tr><td><code>shortestPath(g, s, t, { weighted })</code></td><td><code>{ distance, path, edges }</code> or null; throws <code>negative-cycle</code> with <code>.cycle</code>.</td></tr>
+<tr><td><code>shortestPaths(g, s)</code></td><td><code>{ distance: Map, parent, pathTo(t), method, negativeCycle }</code>: breadth-first, Dijkstra or Bellman–Ford.</td></tr>
+<tr><td><code>allPairsShortestPaths(g)</code></td><td>Floyd–Warshall: <code>{ matrix, distance(u, v), path(u, v), negativeCycle }</code>.</td></tr>
+<tr><td><code>eulerTour(g, { closed })</code></td><td><code>{ exists, closed, vertices, edges }</code>, or the reason with the odd (or unbalanced) vertices.</td></tr>
+<tr><td><code>hamiltonCycle(g), hamiltonPath(g)</code></td><td>Exhaustive search (Held–Karp), up to 20 vertices; quick reasons first.</td></tr>
+<tr><td><code>isTree, isForest</code></td><td></td></tr>
+<tr><td><code>minimumSpanningTree(g, { method, maximum })</code></td><td>Kruskal or Prim: <code>{ weight, edges, tree, connected }</code>.</td></tr>
+<tr><td><code>spanningTreeCount(g)</code>, <code>determinant(rows)</code></td><td>The matrix-tree theorem, by exact Bareiss elimination.</td></tr>
+<tr><td><code>prufer(tree), fromPrufer(code, vertices)</code></td><td>Prüfer codes, both ways.</td></tr>
+<tr><td><code>labelledTrees(n or labels)</code>, <code>randomTree(n, rng)</code></td><td>The n<sup>n−2</sup> labelled trees as a Family; a uniform one.</td></tr>
+</table></div>
 <h2>Random</h2>
 <div class="tablewrap"><table class="ref">
 <tr><th>Export</th><th>What it does</th></tr>
@@ -81,6 +124,9 @@ for (const f of [permutations(6), permutations(6, 3), derangements(6), combinati
 }
 const g = rng("reference");
 PRINT("rng           ", g.int(100), g.between(1, 6), g.bool("2/3"), String(g.rational(12)), g.shuffle(["a", "b", "c"]).join(""));
+const G = graph("a-b b-c c-a c-d:5/2");
+PRINT("graph         ", String(G), " degrees", G.degreeSequence().join(","), " bridges", bridges(G).map((e) =&gt; e.from + e.to).join(" "));
+PRINT("shortestPath  ", String(shortestPath(G, "a", "d").distance), " spanning trees", spanningTreeCount(G), " prufer", prufer(randomTree(6, 1)).join(" "));
 Object.keys(pigeonhole(10, 3))
 </template>
 </article>
