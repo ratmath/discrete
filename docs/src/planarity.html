@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Planarity · RatMath Discrete</title>
+<meta name="description" content="Planarity testing in @ratmath/discrete: an embedding with its faces when a graph is planar, and a Kuratowski subdivision of K5 or K3,3 when it is not, with Euler&#x27;s formula as the check.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Graph theory</div>
+<h1>Planarity</h1>
+<p class="lede">A graph is planar when it can be drawn in the plane without crossings. Kuratowski's theorem says the only obstructions are subdivisions of \(K_5\) and \(K_{3,3}\), so every answer here comes with evidence: faces for yes, one of those two subgraphs for no.</p>
+<h2>Yes, with faces</h2>
+<pre><code>import { complete, planarity, isPlanar, hypercube, platonic } from "@ratmath/discrete";
+
+planarity(complete(4));
+// { planar: true, faces: [[[3,1,4], [4,3,2], [1,4,2], [2,3,1]]], edges: 6, vertices: 4 }
+isPlanar(platonic("icosahedron"));   // true
+isPlanar(hypercube(4));              // false</code></pre>
+<p>Each 2-connected block is embedded by the Demoucron–Malgrange–Pertuiset algorithm: start from a cycle, and repeatedly route a piece of the remaining graph through a face that holds all its attachment points, choosing a piece that fits in the fewest faces first. Faces are listed per block. Euler's formula is the check on every block:</p>
+\[ V - E + F = 2. \]
+<p>For \(K_4\): \(4 - 6 + 4 = 2\).</p>
+<h2>No, with a Kuratowski subgraph</h2>
+<pre><code>import { petersen, checkKuratowski } from "@ratmath/discrete";
+const r = planarity(petersen());
+r.kuratowski.kind;     // "K3,3"
+r.kuratowski.branch;   // the six branch vertices
+r.kuratowski.paths;    // nine paths joining them, internally disjoint
+checkKuratowski(petersen(), r.kuratowski).ok;   // true</code></pre>
+<p>When the embedding fails, edges are deleted one at a time while the graph stays non-planar. What is left is edge-minimal non-planar, and by Kuratowski's theorem it is a subdivision of \(K_5\) or \(K_{3,3}\): the vertices of degree three or four are the branch vertices and the rest lie on paths between them. <code>checkKuratowski</code> confirms the paths use real edges, are disjoint apart from their ends, and join the right pairs.</p>
+<h2>Quick counting arguments</h2>
+<p>A simple planar graph with \(V \ge 3\) has \(E \le 3V - 6\), since every face has at least three edges and each edge borders two faces. Without triangles it is \(E \le 2V - 4\). So \(K_5\) (10 &gt; 9) and \(K_{3,3}\) (9 &gt; 8) are out at once; Petersen has 15 edges, within both bounds, and needs the search.</p>
+<template data-runbox>
+// Planar or not, with the evidence, for some well-known graphs.
+for (const [name, g] of [["K5", complete(5)], ["K3,3", completeBipartite(3, 3)], ["Q3", hypercube(3)], ["Q4", hypercube(4)], ["dodecahedron", platonic("dodecahedron")], ["K2,7", completeBipartite(2, 7)], ["Petersen", petersen()]]) {
+  const r = planarity(g);
+  if (r.planar) {
+    const F = r.faces.reduce((s, b) =&gt; s + b.length, 0);
+    PRINT(name.padEnd(13), "planar:", r.faces.length, "block(s),", F, "faces; V − E + F per block =", r.faces.map((f) =&gt; g.vertices().length - g.edges().length + f.length).join(","));
+  } else PRINT(name.padEnd(13), "not planar:", r.kuratowski.kind, "subdivision with", r.kuratowski.edges.length, "edges, check", checkKuratowski(g, r.kuratowski).ok);
+}
+</template>
+</article>
+</main>
+</div>
+</body>
+</html>

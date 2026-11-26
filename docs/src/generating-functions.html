@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Generating functions · RatMath Discrete</title>
+<meta name="description" content="Formal power series with exact rational coefficients in @ratmath/discrete: products, reciprocals, composition, exp and log, exponential generating functions, and rational series.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Generating functions and recurrences</div>
+<h1>Generating functions</h1>
+<p class="lede">A generating function packs a whole sequence into one object, \(A(x) = \sum a_n x^n\), and turns questions about sequences into algebra. Here a series is computed lazily: you ask for as many coefficients as you need, and each one is an exact fraction.</p>
+<h2>Series as objects</h2>
+<pre><code>import { series, knownSeries, egf } from "@ratmath/discrete";
+
+series([1, 1]).pow(5).toString(7);       // "1 + 5x + 10x^2 + 10x^3 + 5x^4 + x^5 + O(x^7)"
+series([1, -1]).reciprocal().toString(5); // "1 + x + x^2 + x^3 + x^4 + O(x^5)"
+series([1, 1]).log().toString(5);         // "x − (1/2)x^2 + (1/3)x^3 − (1/4)x^4 + O(x^5)"
+knownSeries.binomial("1/2").toString(5);  // "1 + (1/2)x − (1/8)x^2 + (1/16)x^3 − (5/128)x^4 + O(x^5)"</code></pre>
+<p>A series is given by a coefficient list, a constant, or a rule \(n \mapsto a_n\). Every operation returns another lazy series: sums, products, \(1/f\) when \(f(0) \ne 0\), \(f \circ g\) when \(g(0) = 0\), derivative and integral, and \(e^f\), \(\log f\), \(\sqrt f\) and \(f^a\) for rational \(a\). Coefficients are remembered once computed, so asking for 200 terms after 100 does only the new work.</p>
+<p>The rules behind the operations are the usual recurrences for coefficients. For the reciprocal \(g = 1/f\), comparing coefficients of \(fg = 1\) gives</p>
+\[ g_0 = \frac{1}{f_0}, \qquad g_n = -\frac{1}{f_0}\sum_{k=1}^{n} f_k\, g_{n-k}, \]
+<p>and for \(h = e^f\), differentiating gives \(h' = f'h\), so \(n h_n = \sum_{k=1}^{n} k f_k h_{n-k}\). Both are exact over the rationals.</p>
+<h2>Counting with products</h2>
+<p>Multiplying ordinary generating functions convolves sequences, which is how choices combine. Euler's product for partitions, \(\prod_k 1/(1-x^k)\), counts the ways to write \(n\) as a sum of positive parts; <code>knownSeries.partitions()</code> computes it by his pentagonal-number recurrence. The Catalan series solves \(C = 1 + xC^2\).</p>
+<pre><code>knownSeries.partitions().terms(15).join(" ");   // "1 1 2 3 5 7 11 15 22 30 42 56 77 101 135"
+knownSeries.catalan().toString(8);              // "1 + x + 2x^2 + 5x^3 + 14x^4 + 42x^5 + 132x^6 + 429x^7 + O(x^8)"</code></pre>
+<h2>Exponential generating functions</h2>
+<p>For labelled objects the right tool is \(\sum a_n x^n / n!\). Products then count ways to split a label set and build one structure on each part. A set partition is a set of non-empty blocks, so the Bell numbers have the EGF \(e^{e^x - 1}\):</p>
+<pre><code>series([0, 1]).exp().subtract(1).exp().terms(10, { egf: true }).join(" ");
+// "1 1 2 5 15 52 203 877 4140 21147": the Bell numbers
+egf(() =&gt; 1).multiply(egf(() =&gt; 1)).terms(6, { egf: true });   // 1, 2, 4, 8, 16, 32: e^x·e^x = e^{2x}</code></pre>
+<p><code>terms(n, { egf: true })</code> multiplies the \(k\)th coefficient by \(k!\), so it reads off the counts.</p>
+<h2>Rational generating functions</h2>
+<p>A quotient of polynomials \(P(x)/Q(x)\) with \(Q(0) \ne 0\) is the generating function of a sequence satisfying a linear recurrence, read off from \(Q\). <code>rationalSeries</code> keeps the two polynomials, so the recurrence comes back exactly:</p>
+<pre><code>import { rationalSeries } from "@ratmath/discrete";
+const j = rationalSeries([1], [1, -1, -2]);   // 1/(1 − x − 2x²)
+j.terms(8).join(" ");                         // "1 1 3 5 11 21 43 85"
+String(j.recurrence());                       // "a(n) = a(n−1) + 2·a(n−2), from a(0) = 1, a(1) = 1"</code></pre>
+<p>Going the other way, every linear recurrence has <code>generatingFunction()</code>; see <a href="recurrences.html">Recurrences</a>.</p>
+<template data-runbox>
+// Derangements: the EGF is e^(−x)/(1 − x). Compare with the count.
+const d = series((n) =&gt; 1).multiply(egf((n) =&gt; (n % 2 ? -1 : 1)));
+PRINT("derangements by EGF ", d.terms(10, { egf: true }).join(" "));
+PRINT("derangementCount    ", Array.from({ length: 10 }, (_, n) =&gt; derangementCount(n)).join(" "));
+// Involutions: e^(x + x²/2)
+PRINT("involutions         ", series([0, 1, "1/2"]).exp().terms(10, { egf: true }).join(" "));
+// Partitions into distinct parts equal partitions into odd parts (Euler)
+let distinct = series(1), odd = series(1);
+for (let k = 1; k &lt;= 20; k++) {
+  distinct = distinct.multiply(series([1, ...Array(k - 1).fill(0), 1]));
+  if (k % 2) odd = odd.multiply(series([1, ...Array(k - 1).fill(0), -1]).reciprocal());
+}
+PRINT("distinct parts      ", distinct.terms(20).join(" "));
+PRINT("odd parts           ", odd.terms(20).join(" "));
+distinct.terms(40).every((c, n) =&gt; c.equals(odd.coefficient(n)))
+</template>
+</article>
+</main>
+</div>
+</body>
+</html>

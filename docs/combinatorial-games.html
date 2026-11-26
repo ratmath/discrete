@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Combinatorial games · RatMath Discrete</title>
+<meta property="og:title" content="Combinatorial games · RatMath Discrete">
+<meta property="og:description" content="Discrete mathematics for RatMath: counting and enumeration, graphs and graph theory, generating functions and recurrences, games and voting, orders, codes and designs, and exact linear programming.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ratmath.com/discrete/combinatorial-games.html">
+<meta name="description" content="Impartial games and Sprague–Grundy values, nim, subtraction games, Conway&#x27;s partizan games in canonical form (numbers, nimbers, up), and backward induction in game trees, in @ratmath/discrete.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="https://ratmath.com/assets/katex/0.19.1/katex.min.css">
+<link rel="stylesheet" href="assets/style.css?v=a9f47ac7f9">
+<script type="module" src="assets/site.js?v=a9f47ac7f9"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Optimisation and games</div>
+<h1>Combinatorial games</h1>
+<p class="lede">Two players move in turn, everything is known, and whoever cannot move loses. Every impartial position is worth a nim heap, and every partizan position has a canonical value in Conway's sense: numbers, nimbers, up, and more.</p>
+<h2>Nim and the Sprague–Grundy theorem</h2>
+<pre><code>import { nim, impartialGame, subtractionGame, mex } from "@ratmath/discrete";
+
+nim([3, 4, 5]);   // nimSum 2n, losing false, winningMoves [{ heap: 0, from: 3n, to: 1n }]
+const g = impartialGame((n) =&gt; [1, 2].filter((m) =&gt; m &lt;= n).map((m) =&gt; n - m));
+[0, 1, 2, 3, 4, 5, 6].map(g.grundy).join("");   // "0120120"
+subtractionGame([1, 3, 4], 30).period;           // { start: 0, length: 7 }</code></pre>
+<p>The Grundy value of a position is the smallest non-negative integer not among its options' values,</p>
+<span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi mathvariant="script">G</mi><mo stretchy="false">(</mo><mi>P</mi><mo stretchy="false">)</mo><mo>=</mo><mi mathvariant="normal">mex</mi><mo>⁡</mo><mo stretchy="false">{</mo><mi mathvariant="script">G</mi><mo stretchy="false">(</mo><mi>Q</mi><mo stretchy="false">)</mo><mo>:</mo><mi>P</mi><mo>→</mo><mi>Q</mi><mo stretchy="false">}</mo><mo separator="true">,</mo></mrow><annotation encoding="application/x-tex"> \mathcal G(P) = \operatorname{mex}\{\mathcal G(Q) : P \to Q\}, </annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathcal" style="margin-right:0.0593em;">G</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.1389em;">P</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mop"><span class="mord mathrm">mex</span></span><span class="mopen">{</span><span class="mord mathcal" style="margin-right:0.0593em;">G</span><span class="mopen">(</span><span class="mord mathnormal">Q</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">:</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.1389em;">P</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">→</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">Q</span><span class="mclose">}</span><span class="mpunct">,</span></span></span></span></span>
+<p>and a position is lost for the player to move exactly when <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="script">G</mi><mo stretchy="false">(</mo><mi>P</mi><mo stretchy="false">)</mo><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\mathcal G(P) = 0</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathcal" style="margin-right:0.0593em;">G</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.1389em;">P</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span>. The Sprague–Grundy theorem says a sum of games has value the nim-sum (bitwise XOR) of the parts, which is why nim is solved by XOR. Subtraction games with a finite set are eventually periodic; the period is found by looking for a repeat as long as the largest move.</p>
+<h2>Partizan games</h2>
+<pre><code>import { cgame, starGame, up, down } from "@ratmath/discrete";
+String(cgame([0], []));         // "1"
+String(cgame([0], [1]));        // "1/2"
+String(cgame([0], [0]));        // "*"
+String(starGame(2).add(starGame(3)));   // "*": nimbers add by XOR
+String(up().add(up()));         // "⇑"
+up().compare(0);                // "&gt;": up is positive …
+up().compare(starGame(1));      // "‖": … yet confused with *
+cgame([2], [-1]).outcome;       // "first player"</code></pre>
+<p>A game is <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>G</mi><mo>=</mo><mo stretchy="false">{</mo><msup><mi>G</mi><mi>L</mi></msup><mo>∣</mo><msup><mi>G</mi><mi>R</mi></msup><mo stretchy="false">}</mo></mrow><annotation encoding="application/x-tex">G = \{G^L \mid G^R\}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.6833em;"></span><span class="mord mathnormal">G</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:1.0913em;vertical-align:-0.25em;"></span><span class="mopen">{</span><span class="mord"><span class="mord mathnormal">G</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8413em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">L</span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∣</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:1.0913em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathnormal">G</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8413em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.0077em;">R</span></span></span></span></span></span></span></span><span class="mclose">}</span></span></span></span>, its options for Left and for Right. <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>G</mi><mo>≥</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">G \ge 0</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.8193em;vertical-align:-0.136em;"></span><span class="mord mathnormal">G</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≥</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span> means Left wins moving second, and the order, sum and negation follow Conway's recursive definitions. Each game is reduced to canonical form by removing dominated options and bypassing reversible ones, so equal games print the same: <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false">{</mo><mn>0</mn><mo>∣</mo><mn>1</mn><mo stretchy="false">}</mo><mo>=</mo><mn>1</mn><mi mathvariant="normal">/</mi><mn>2</mn></mrow><annotation encoding="application/x-tex">\{0 \mid 1\} = 1/2</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">{</span><span class="mord">0</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∣</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">1</span><span class="mclose">}</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">1/2</span></span></span></span>, <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false">{</mo><mn>0</mn><mo>∣</mo><mn>0</mn><mo stretchy="false">}</mo><mo>=</mo><mo>∗</mo></mrow><annotation encoding="application/x-tex">\{0\mid 0\} = *</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">{</span><span class="mord">0</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∣</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">0</span><span class="mclose">}</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:0.4653em;"></span><span class="mord">∗</span></span></span></span>, <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false">{</mo><mn>0</mn><mo>∣</mo><mo>∗</mo><mo stretchy="false">}</mo><mo>=</mo><mo>↑</mo></mrow><annotation encoding="application/x-tex">\{0 \mid *\} = \uparrow</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">{</span><span class="mord">0</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∣</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">∗</span><span class="mclose">}</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=↑</span></span></span></span>.</p>
+<h2>Hackenbush</h2>
+<p><code>partizanGame</code> computes the value of any position from the two players' move functions. In blue-red Hackenbush on a single stalk, the value is a binary fraction you can read off the colours:</p>
+<pre><code>import { partizanGame } from "@ratmath/discrete";
+const stalk = (s) =&gt; partizanGame(s,
+  (p) =&gt; [...p].map((c, i) =&gt; (c === "B" ? p.slice(0, i) : null)).filter((x) =&gt; x !== null),
+  (p) =&gt; [...p].map((c, i) =&gt; (c === "R" ? p.slice(0, i) : null)).filter((x) =&gt; x !== null));
+String(stalk("BR"));     // "1/2"
+String(stalk("BBRB"));   // "7/4"</code></pre>
+<h2>Backward induction</h2>
+<pre><code>import { backwardInduction } from "@ratmath/discrete";
+const entry = { player: "A", moves: {
+  in:  { player: "B", moves: { fight: { payoff: { A: -1, B: -1 } }, share: { payoff: { A: 1, B: 1 } } } },
+  out: { payoff: { A: 0, B: 2 } } } };
+backwardInduction(entry).path;   // ["in", "share"]: the threat to fight is not credible</code></pre>
+<p>In a finite game tree with perfect information, solving from the leaves up gives a subgame-perfect equilibrium. Ties are reported rather than broken silently.</p>
+<section class="runbox" aria-label="Runnable code">
+  <div class="runbox-head"><strong>Try it</strong><span>Edit the code and run it with <code>@ratmath/discrete</code> and Core's <code>Rational</code> in scope. The last line's value is shown; <code>PRINT(…)</code> adds lines, <code>TEX(…)</code> typesets math.</span></div>
+  <textarea spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code">// Sprague–Grundy at work: a sum of three different games.
+const take12 = impartialGame((n) =&gt; [1, 2].filter((m) =&gt; m &lt;= n).map((m) =&gt; n - m));
+const sub = subtractionGame([1, 3, 4], 40).values;
+const position = { take12: 7, subtract: 9, heap: 5 };
+const values = [take12.grundy(7), sub[9], 5];
+PRINT("Grundy values", values.join(", "), " nim-sum", values.reduce((a, b) =&gt; a ^ b));
+// Numbers, nimbers and infinitesimals side by side
+for (const G of [cgame([0], [1]), cgame(["1/2"], ["3/4"]), starGame(1).add(starGame(1)), up().add(starGame(1)), up().add(up()).add(down())]) {
+  PRINT(String(G).padEnd(6), "compared with 0:", G.compare(0), " outcome:", G.outcome);
+}</textarea>
+  <div class="runbox-bar"><button type="button" data-run>Run</button><button type="button" class="ghost" data-reset>Reset</button><span class="runbox-meta">Ctrl/⌘ + Enter runs</span></div>
+  <div class="runbox-out" aria-live="polite"></div>
+</section>
+<footer class="sitelinks"><a href="https://github.com/ratmath/discrete">GitHub</a> · <a href="https://ratmath.com/">ratmath.com</a> · <a href="https://ratmath.com/shelf/">shelf</a> · <a href="https://ratmath.com/core/">core</a></footer>
+</article>
+</main>
+</div>
+</body>
+</html>

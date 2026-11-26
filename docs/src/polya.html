@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pólya counting · RatMath Discrete</title>
+<meta name="description" content="Counting colourings up to symmetry with Burnside&#x27;s lemma and Pólya&#x27;s cycle index: necklaces, bracelets and cube colourings, with the pattern inventory, in @ratmath/discrete.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Orders and structures</div>
+<h1>Pólya counting</h1>
+<p class="lede">How many different necklaces of six beads in two colours are there, when turning or flipping a necklace gives the same one? Burnside's lemma counts orbits by averaging fixed points, and Pólya's cycle index makes that a polynomial you can substitute into.</p>
+<h2>Burnside's lemma</h2>
+<p>A group \(G\) acting on a finite set has</p>
+\[ \#\text{orbits} = \frac{1}{|G|} \sum_{g \in G} |\operatorname{Fix}(g)| \]
+<p>orbits. For colourings of \(n\) positions with \(k\) colours, a permutation with \(c(g)\) cycles fixes \(k^{c(g)}\) colourings, since each cycle must be one colour.</p>
+<pre><code>import { symmetry, countColourings, cycleIndex, patternInventory } from "@ratmath/discrete";
+
+countColourings(symmetry.cyclic(6), 2);      // 14n necklaces
+countColourings(symmetry.dihedral(6), 2);    // 13n bracelets
+countColourings(symmetry.cubeFaces(), 3);    // 57n ways to colour a cube's faces</code></pre>
+<h2>The cycle index</h2>
+<pre><code>cycleIndex(symmetry.dihedral(4)).toString();
+// "(1/4) s4 + (1/4) s1^2 s2 + (3/8) s2^2 + (1/8) s1^4"
+patternInventory(symmetry.dihedral(4), ["r", "b"]).toString();
+// "r^4 + r^3b + 2r^2b^2 + rb^3 + b^4"</code></pre>
+<p>The cycle index records the cycle type of every group element: \(Z(G) = \frac{1}{|G|}\sum_g \prod_i s_i^{c_i(g)}\), where \(c_i(g)\) is the number of \(i\)-cycles. Substituting \(s_i = k\) gives the count above. Substituting \(s_i = r^i + b^i\) gives the pattern inventory, which counts orbits by how many of each colour they use: the square has two different colourings with two red and two blue corners, adjacent or opposite.</p>
+<h2>Groups</h2>
+<p><code>symmetry</code> provides the cyclic, dihedral and symmetric groups and the 24 rotations of a cube acting on its faces. Any group works when given as <code>{ degree, generators }</code> with 0-based permutations, or as a <code>PermGroup</code> from <code>@ratmath/algebraic</code>, such as the automorphism group of a graph from <a href="isomorphism-spectra.html">Isomorphism and spectra</a>.</p>
+<template data-runbox>
+// Burnside's count against listing orbits directly.
+const orbits = (G, k) =&gt; {
+  const seen = new Set();
+  let count = 0;
+  for (const col of words(k, G.degree)) {
+    const key = col.join();
+    if (seen.has(key)) continue;
+    count++;
+    for (const g of G.elements) { const img = []; g.forEach((gi, i) =&gt; (img[gi] = col[i])); seen.add(img.join()); }
+  }
+  return count;
+};
+for (const [name, G, k] of [["necklaces C6, 2", symmetry.cyclic(6), 2], ["bracelets D6, 3", symmetry.dihedral(6), 3], ["cube faces, 3", symmetry.cubeFaces(), 3]]) {
+  PRINT(name.padEnd(16), "Pólya", String(countColourings(G, k)).padStart(4), "  listed", String(orbits(G, k)).padStart(4));
+}
+// Colourings of the Petersen graph's vertices in 2 colours, up to its 120 symmetries
+const A = automorphisms(petersen());
+PRINT("Petersen, 2 colours:", String(countColourings(A.group, 2)));
+cycleIndex(symmetry.cubeFaces()).toString()
+</template>
+</article>
+</main>
+</div>
+</body>
+</html>

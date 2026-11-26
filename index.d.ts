@@ -389,12 +389,12 @@ export function randomTree(spec: Whole | readonly Vertex[], generator?: Random |
 
 // ---- linear programming (exact, with certificates) ----
 
-export type Relation = "<=" | ">=" | "=" | "≤" | "≥" | "==";
+export type ConstraintSense = "<=" | ">=" | "=" | "≤" | "≥" | "==";
 export type Coefficients = FractionLike[] | Record<string, FractionLike>;
 export type Constraint =
-  | [Coefficients, Relation, FractionLike]
-  | [Coefficients, Relation, FractionLike, string]
-  | { coefficients: Coefficients; relation: Relation; rhs: FractionLike; name?: string };
+  | [Coefficients, ConstraintSense, FractionLike]
+  | [Coefficients, ConstraintSense, FractionLike, string]
+  | { coefficients: Coefficients; relation: ConstraintSense; rhs: FractionLike; name?: string };
 export type ProblemSpec = {
   maximize?: Coefficients;
   minimize?: Coefficients;
@@ -506,6 +506,485 @@ export class BimatrixGame {
 }
 /** A two-player game; with one matrix, the column player's payoffs are its negative. */
 export function bimatrixGame(A: FractionLike[][], B?: FractionLike[][], options?: { rows?: string[]; columns?: string[] }): BimatrixGame;
+
+// ---- generating functions and recurrences ----
+
+/** A formal power series with exact coefficients, computed lazily and remembered. */
+export class PowerSeries {
+  readonly name: string;
+  /** The coefficient of xⁿ. */
+  coefficient(n: number): Rational;
+  /** The first n coefficients; with egf, multiplied by k! (the counts an exponential generating function holds). */
+  terms(n: number, options?: { egf?: boolean }): Rational[];
+  add(other: SeriesLike): PowerSeries;
+  subtract(other: SeriesLike): PowerSeries;
+  negate(): PowerSeries;
+  scale(c: FractionLike): PowerSeries;
+  multiply(other: SeriesLike): PowerSeries;
+  /** x^k · f. */
+  shift(k: number): PowerSeries;
+  /** 1/f; needs f(0) ≠ 0. */
+  reciprocal(): PowerSeries;
+  divide(other: SeriesLike): PowerSeries;
+  derivative(): PowerSeries;
+  /** ∫₀ˣ f, constant term 0. */
+  integral(): PowerSeries;
+  /** f(g(x)); needs g(0) = 0. */
+  compose(g: SeriesLike): PowerSeries;
+  /** f^a for a whole a, or a rational a when f(0) = 1. */
+  pow(a: FractionLike): PowerSeries;
+  /** e^f; needs f(0) = 0. */
+  exp(): PowerSeries;
+  /** log f; needs f(0) = 1. */
+  log(): PowerSeries;
+  /** √f; needs f(0) = 1. */
+  sqrt(): PowerSeries;
+  toString(terms?: number): string;
+}
+/** A series, a constant, a coefficient list (constant first), or a rule n ↦ aₙ. */
+export type SeriesLike = PowerSeries | FractionLike | FractionLike[] | ((n: number) => FractionLike);
+export function series(input: SeriesLike): PowerSeries;
+/** The exponential generating function Σ aₙ xⁿ/n!. */
+export function egf(sequence: FractionLike[] | ((n: number) => FractionLike)): PowerSeries;
+/** Named series: 1/(1 − rx), eˣ, −log(1 − x), (1 + x)^a, Catalan, partitions (by Euler's pentagonal recurrence). */
+export const knownSeries: {
+  geometric(r?: FractionLike): PowerSeries;
+  exp(): PowerSeries;
+  logInverse(): PowerSeries;
+  binomial(a: FractionLike): PowerSeries;
+  catalan(): PowerSeries;
+  partitions(): PowerSeries;
+};
+/** Polynomial helpers on Rational arrays, constant first. */
+export const seriesPoly: {
+  trim(p: Rational[]): Rational[];
+  add(p: Rational[], q: Rational[]): Rational[];
+  sub(p: Rational[], q: Rational[]): Rational[];
+  mul(p: Rational[], q: Rational[]): Rational[];
+  scale(p: Rational[], c: Rational): Rational[];
+  at(p: Rational[], x: Rational): Rational;
+  format(p: Rational[], variable?: string): string;
+};
+/** P(x)/Q(x) with Q(0) ≠ 0: its series, and the linear recurrence its coefficients satisfy. */
+export class RationalSeries {
+  constructor(numerator: FractionLike[], denominator: FractionLike[]);
+  readonly numerator: Rational[];
+  readonly denominator: Rational[];
+  readonly series: PowerSeries;
+  coefficient(n: number): Rational;
+  terms(n: number): Rational[];
+  add(other: RationalSeries): RationalSeries;
+  multiply(other: RationalSeries): RationalSeries;
+  recurrence(): LinearRecurrence;
+  toString(): string;
+}
+export function rationalSeries(numerator: FractionLike[], denominator: FractionLike[]): RationalSeries;
+
+/** One part of a closed form: Σⱼ cⱼ nʲ · rootⁿ, with exact algebraic numbers. */
+export interface ClosedFormPart {
+  root: unknown;
+  multiplicity: number;
+  coefficients: unknown[];
+}
+export interface ClosedForm {
+  parts: ClosedFormPart[];
+  /** The formula gives aₙ from this n on (later when zero roots are stripped). */
+  validFrom: number;
+  /** The formula was compared with the terms, exactly, past the ones used to fit it. */
+  checked: boolean;
+  /** aₙ as an algebraic number. */
+  at(n: number): unknown;
+  toString(): string;
+}
+/**
+ * aₙ = c₁aₙ₋₁ + … + c_k aₙ₋ₖ (+ p(n)·baseⁿ). The non-homogeneous part is
+ * absorbed into a longer homogeneous recurrence; `given` keeps the original.
+ */
+export class LinearRecurrence {
+  constructor(spec: { coefficients: FractionLike[]; initial: FractionLike[]; plus?: FractionLike[] | { poly: FractionLike[]; base: FractionLike } });
+  readonly coefficients: readonly Rational[];
+  readonly initial: readonly Rational[];
+  readonly order: number;
+  readonly given: { coefficients: Rational[]; plus: unknown } | null;
+  terms(n: number): Rational[];
+  /** aₙ by a power of the companion matrix: fast for large n. */
+  term(n: Whole): Rational;
+  /** The characteristic polynomial, constant first. */
+  characteristic(): Rational[];
+  generatingFunction(): RationalSeries;
+  closedForm(): ClosedForm;
+  toString(): string;
+}
+export function recurrence(spec: ConstructorParameters<typeof LinearRecurrence>[0]): LinearRecurrence;
+/** The shortest linear recurrence that produces the terms (Berlekamp–Massey over the rationals). */
+export function guessRecurrence(terms: FractionLike[]): LinearRecurrence;
+/** Σₖ₌₀ⁿ p(k)·r^k in closed form, for a polynomial p (constant first). */
+export function closedSum(p: FractionLike[], r?: FractionLike): { polynomial: Rational[]; at(n: Whole): Rational; toString(): string };
+/** T(n) = a·T(n/b) + Θ(n^d log^j n): the case, the bound, and why. */
+export function masterTheorem(spec: { a: FractionLike; b: FractionLike; d: FractionLike; j?: number }): {
+  case: 1 | 2 | 3;
+  critical: string;
+  bound: string;
+  reason: string;
+};
+/** Exact values of T(n) = a·T(n/b) + f(n) at n = b^m. */
+export function divideAndConquer(spec: { a: FractionLike; b: Whole; f: (n: bigint) => FractionLike; t1?: FractionLike }, count?: number): { n: bigint; value: Rational }[];
+
+// ---- matchings and flows ----
+
+export interface TutteBergeCertificate {
+  /** The set U removed. */
+  set: Vertex[];
+  /** The odd components of G − U. */
+  oddComponents: Vertex[][];
+  /** (|V| + |U| − odd(G − U))/2, which no matching exceeds. */
+  bound: number;
+}
+export interface MatchingCheck {
+  ok: boolean;
+  size: number;
+  bound: number;
+  errors: string[];
+}
+/** A maximum matching of any graph (Edmonds' blossoms), with a Tutte–Berge set proving no larger one exists. */
+export function maximumMatching(g: Graph | GraphSpec): {
+  size: number;
+  edges: [Vertex, Vertex][];
+  perfect: boolean;
+  unmatched: Vertex[];
+  certificate: TutteBergeCertificate;
+  check(): MatchingCheck;
+};
+export function checkMatching(g: Graph, edges: [Vertex, Vertex][], tutteSet: Vertex[]): MatchingCheck;
+/** Bipartite matching with a König vertex cover and, when some left vertex is unmatched, a Hall violator. */
+export function bipartiteMatching(g: Graph | GraphSpec, options?: { left?: Vertex[] }): {
+  size: number;
+  edges: [Vertex, Vertex][];
+  perfect: boolean;
+  cover: Vertex[];
+  hall: { set: Vertex[]; neighbours: Vertex[] } | null;
+};
+/** The cheapest (or dearest) assignment of rows to columns, with dual prices that prove it. */
+export function assignment(costs: FractionLike[][], options?: { maximize?: boolean }): {
+  assignment: number[];
+  cost: Rational;
+  rowPrices: Rational[];
+  columnPrices: Rational[];
+  check(): { ok: boolean; errors: string[] };
+};
+/** Gale–Shapley, proposers first. */
+export function stableMatching(proposers: Record<string, string[]>, receivers: Record<string, string[]>): {
+  matching: Record<string, string>;
+  proposals: number;
+  blockingPairs: [string, string][];
+};
+export function blockingPairs(proposers: Record<string, string[]>, receivers: Record<string, string[]>, matching: Record<string, string>): [string, string][];
+export interface FlowEdge {
+  from: Vertex;
+  to: Vertex;
+  amount: Rational;
+}
+/** Maximum flow by shortest augmenting paths, exact capacities, with a minimum cut of the same value. */
+export function maxFlow(g: Graph | GraphSpec, source: Vertex, sink: Vertex): {
+  value: Rational;
+  flow: FlowEdge[];
+  cut: { source: Vertex[]; sink: Vertex[]; edges: [Vertex, Vertex][]; capacity: Rational };
+  augmentations: unknown[];
+  check(): { ok: boolean; errors: string[] };
+};
+export function checkFlow(g: Graph, source: Vertex, sink: Vertex, flow: FlowEdge[], cut?: unknown): { ok: boolean; errors: string[] };
+
+// ---- colouring, cliques ----
+
+export function isProperColouring(g: Graph, colouring: Map<Vertex, number> | Record<string, number>): { ok: boolean; clash: [Vertex, Vertex] | null };
+export function greedyColouring(g: Graph, order?: Vertex[]): Map<Vertex, number>;
+export function maximumClique(g: Graph): Vertex[];
+export function maximalCliques(g: Graph): Vertex[][];
+export function maximumIndependentSet(g: Graph): Vertex[];
+/** χ(G) with a colouring that uses that many colours and the reason no fewer will do (a clique, an odd cycle, or a complete search). */
+export function chromaticNumber(g: Graph): { number: number; colouring: Map<Vertex, number>; lowerBound: unknown };
+/** P(G, k), the number of proper k-colourings, by deletion–contraction. */
+export function chromaticPolynomial(g: Graph): { coefficients: bigint[]; at(k: Whole): bigint; toString(): string };
+
+// ---- planarity ----
+
+export interface KuratowskiWitness {
+  kind: "K5" | "K3,3";
+  branch: Vertex[];
+  paths: Vertex[][];
+  edges: [Vertex, Vertex][];
+}
+/** A planar embedding (faces, per block) or a Kuratowski subdivision. */
+export function planarity(g: Graph):
+  | { planar: true; faces: Vertex[][][]; edges: number; vertices: number }
+  | { planar: false; kuratowski: KuratowskiWitness };
+export function isPlanar(g: Graph): boolean;
+export function checkKuratowski(g: Graph, witness: KuratowskiWitness): { ok: boolean; errors: string[] };
+
+// ---- isomorphism and spectra ----
+
+export function isomorphism(g: Graph, h: Graph): { isomorphic: true; map: Map<Vertex, Vertex> } | { isomorphic: false; reason: string };
+export function isIsomorphic(g: Graph, h: Graph): boolean;
+/** Aut(G): order, a few generators (0-based permutations of g.vertices()), orbits, and a PermGroup when the order is at most 50,000. */
+export function automorphisms(g: Graph): { order: bigint; generators: number[][]; orbits: Vertex[][]; group: unknown | null; vertices: Vertex[] };
+export function adjacency(g: Graph): { vertices: Vertex[]; matrix: bigint[][] };
+export function laplacian(g: Graph): { vertices: Vertex[]; matrix: bigint[][] };
+/** det(xI − M), constant first. */
+export function characteristicPolynomial(matrix: Whole[][]): bigint[];
+export function spectrum(g: Graph, options?: { laplacian?: boolean }): {
+  polynomial: bigint[];
+  polynomialText: string;
+  eigenvalues: { value: unknown; multiplicity: number; text: string }[];
+  toString(): string;
+};
+/** A^k: walks of length k between every pair, and the closed ones in all. */
+export function walks(g: Graph, k: number): { vertices: Vertex[]; matrix: bigint[][]; closed: bigint };
+/** τ(G) from the Laplacian's characteristic polynomial (the matrix-tree theorem). */
+export function spanningTreesFromSpectrum(g: Graph): bigint;
+
+// ---- combinatorial games ----
+
+export function mex(values: Iterable<number>): number;
+/** An impartial game given by its moves: Sprague–Grundy values, losing positions, winning moves. */
+export function impartialGame<P>(moves: (position: P) => P[], options?: { key?: (position: P) => string }): {
+  grundy(position: P): number;
+  isLoss(position: P): boolean;
+  winningMoves(position: P): P[];
+};
+export function nim(heaps: Whole[]): { nimSum: bigint; losing: boolean; winningMoves: { heap: number; from: bigint; to: bigint }[] };
+/** A subtraction game: Grundy values for heaps 0 … length − 1 and their eventual period. */
+export function subtractionGame(subtract: number[], length?: number): { values: number[]; period: { start: number; length: number } | null };
+export type GameLike = Game | FractionLike;
+/** A short partizan game { L | R } in canonical form (Conway). */
+export class Game {
+  /** Left's and Right's options, in canonical form. */
+  readonly L: readonly Game[];
+  readonly R: readonly Game[];
+  le(other: GameLike): boolean;
+  ge(other: GameLike): boolean;
+  equals(other: GameLike): boolean;
+  /** ">", "<", "=" or "‖" (confused with). */
+  compare(other: GameLike): ">" | "<" | "=" | "‖";
+  /** Who wins: "Left", "Right", "second player" or "first player". */
+  readonly outcome: string;
+  add(other: GameLike): Game;
+  negate(): Game;
+  subtract(other: GameLike): Game;
+  /** The number it equals, or null. */
+  readonly number: Rational | null;
+  /** n when it equals *n, else null. */
+  readonly nimber: number | null;
+  toString(): string;
+}
+export function cgame(left: GameLike[], right: GameLike[]): Game;
+/** *n. Exported from the package as starGame (star is the graph). */
+export function starGame(n?: number): Game;
+export function up(): Game;
+export function down(): Game;
+/** The canonical value of a position, from Left's and Right's moves. */
+export function partizanGame<P>(position: P, leftMoves: (p: P) => P[], rightMoves: (p: P) => P[], options?: { key?: (p: P) => string }): Game;
+export type GameTree = { payoff: Record<string, FractionLike> } | { player: string; moves: Record<string, GameTree> };
+/** Subgame-perfect play in a finite game tree. */
+export function backwardInduction(tree: GameTree): {
+  value: Record<string, Rational>;
+  plan: { path: string[]; player: string; choice: string; ties: string[] }[];
+  path: string[];
+};
+
+// ---- cooperative games and voting ----
+
+export interface CooperativeGame {
+  players: string[];
+  value(coalition: string[]): Rational;
+}
+export function cooperativeGame(players: string[], value: ((coalition: string[]) => FractionLike) | Record<string, FractionLike>): CooperativeGame;
+export function shapley(game: CooperativeGame): Record<string, Rational>;
+/** A core allocation, or a balanced collection proving the core empty. */
+export function core(game: CooperativeGame):
+  | { empty: false; allocation: Record<string, Rational> }
+  | { empty: true; balanced: { coalition: string[]; weight: Rational }[]; reason: string };
+export function inCore(game: CooperativeGame, allocation: Record<string, FractionLike>): { inCore: boolean; blocking: string[] | null; reason?: string };
+export function weightedVoting(spec: { quota: FractionLike; weights: Record<string, FractionLike> }): {
+  game: CooperativeGame;
+  shapleyShubik: Record<string, Rational>;
+  banzhaf: Record<string, Rational>;
+  swings: Record<string, bigint>;
+  dummies: string[];
+};
+/** A ballot: a ranking, or { ranking, count }. */
+export type Ballot = string[] | { ranking: string[]; count: Whole };
+export function plurality(ballots: Ballot[]): { winners: string[]; tally: Record<string, bigint> };
+export function borda(ballots: Ballot[]): { winners: string[]; tally: Record<string, bigint> };
+export function instantRunoff(ballots: Ballot[]): { winners: string[]; rounds: { tally: Record<string, bigint>; eliminated: string[] }[] };
+export function condorcet(ballots: Ballot[]): {
+  pairwise: Record<string, Record<string, bigint>>;
+  winner: string | null;
+  copeland: Record<string, number>;
+  cycle: string[] | null;
+};
+export function approval(ballots: string[][]): { winners: string[]; tally: Record<string, bigint> };
+export type ApportionMethod = "hamilton" | "jefferson" | "webster" | "adams" | "huntington-hill";
+export function apportion(populations: Record<string, Whole>, seats: Whole, options?: { method?: ApportionMethod }): {
+  seats: Record<string, bigint>;
+  quotas: Record<string, Rational>;
+  method: ApportionMethod;
+  tie: unknown | null;
+};
+/** Brams–Taylor adjusted winner for two parties with 100 points each. */
+export function adjustedWinner(a: Record<string, FractionLike>, b: Record<string, FractionLike>): {
+  A: Record<string, Rational>;
+  B: Record<string, Rational>;
+  points: { A: Rational; B: Rational };
+};
+
+// ---- relations, orders, Pólya counting ----
+
+export interface PropertyResult {
+  holds: boolean;
+  /** A counterexample when it fails. */
+  witness?: unknown[];
+}
+export class Relation<T = unknown> {
+  readonly elements: readonly T[];
+  readonly pairs: readonly [T, T][];
+  has(a: T, b: T): boolean;
+  properties(): Record<"reflexive" | "irreflexive" | "symmetric" | "antisymmetric" | "asymmetric" | "transitive" | "total", PropertyResult>;
+  inverse(): Relation<T>;
+  compose(other: Relation<T>): Relation<T>;
+  reflexiveClosure(): Relation<T>;
+  symmetricClosure(): Relation<T>;
+  transitiveClosure(): Relation<T>;
+  /** Equivalence classes; refuses when the relation is not an equivalence. */
+  classes(): T[][];
+  toString(): string;
+}
+export function relation<T>(elements: T[], pairs: [T, T][] | ((a: T, b: T) => boolean)): Relation<T>;
+export function fromPartition<T>(blocks: T[][]): Relation<T>;
+export class Poset<T = unknown> {
+  readonly elements: readonly T[];
+  leq(a: T, b: T): boolean;
+  lt(a: T, b: T): boolean;
+  comparable(a: T, b: T): boolean;
+  /** Covering pairs. */
+  hasse(): [T, T][];
+  minimal(): T[];
+  maximal(): T[];
+  least(): T | null;
+  greatest(): T | null;
+  levels(): T[][];
+  longestChain(): T[];
+  /** Dilworth: the largest antichain and a partition into that many chains. */
+  width(): { width: number; antichain: T[]; chains: T[][] };
+  linearExtensions(options?: { limit?: number }): T[][];
+  countLinearExtensions(): bigint;
+  mobius(a: T, b: T): bigint;
+  meet(a: T, b: T): T | null;
+  join(a: T, b: T): T | null;
+  isLattice(): { lattice: boolean; witness?: unknown };
+  isDistributive(): { distributive: boolean; witness?: T[] };
+}
+/** The order generated by the pairs (reflexive–transitive closure); refuses a cycle. */
+export function poset<T>(elements: T[], pairs: [T, T][] | ((a: T, b: T) => boolean)): Poset<T>;
+export function divisorLattice(n: Whole): Poset<number>;
+export function booleanLattice(n: number): Poset<string>;
+export function partitionLattice(n: number): Poset<string>;
+/** A permutation group: { degree, generators } with 0-based permutations, or a PermGroup from @ratmath/algebraic. */
+export interface PermutationGroupLike {
+  degree: number;
+  generators: number[][];
+  elements?: number[][];
+  order?: number;
+}
+export function cycleIndex(group: PermutationGroupLike): { terms: { coefficient: Rational; cycles: unknown }[]; order: number; degree: number; toString(): string };
+/** Colourings with k colours up to the group (Burnside/Pólya). */
+export function countColourings(group: PermutationGroupLike, k: Whole): bigint;
+export function patternInventory(group: PermutationGroupLike, colours: string[]): { rows: unknown[]; toString(): string };
+export const symmetry: {
+  cyclic(n: number): PermutationGroupLike;
+  dihedral(n: number): PermutationGroupLike;
+  symmetric(n: number): PermutationGroupLike;
+  cubeFaces(): PermutationGroupLike;
+};
+
+// ---- codes and designs ----
+
+/** A linear [n, k] code over Z_p (p prime), from a generator matrix. Words are arrays of residues. */
+export class LinearCode {
+  constructor(generator: number[][], options?: { p?: number });
+  readonly p: number;
+  readonly n: number;
+  readonly k: number;
+  readonly generator: number[][];
+  readonly parityCheck: number[][];
+  readonly pivots: readonly number[];
+  readonly name: string;
+  readonly redundancy: number;
+  encode(message: number[]): number[];
+  messageOf(codeword: number[]): number[];
+  syndrome(word: number[]): number[];
+  isCodeword(word: number[]): boolean;
+  codewords(options?: { limit?: number }): number[][];
+  /** Aᵢ, the number of codewords of weight i. */
+  weightDistribution(): number[];
+  minimumDistance(): { distance: number; codeword: number[] };
+  dual(): LinearCode;
+  cosetLeaders(options?: { limit?: number }): Map<string, number[]>;
+  /** Syndrome decoding, with the steps. */
+  decode(received: number[]): { codeword: number[]; message: number[]; error: number[]; syndrome: number[]; steps: string[] };
+  toString(): string;
+}
+export function linearCode(generator: number[][], options?: { p?: number }): LinearCode;
+/** The Hamming code with r check symbols over Z_p: [(p^r − 1)/(p − 1), that − r, 3]. */
+export function hammingCode(r: number, options?: { p?: number }): LinearCode;
+export function repetitionCode(n: number, options?: { p?: number }): LinearCode;
+export function parityCode(n: number, options?: { p?: number }): LinearCode;
+/** Words within distance t of a word: Σ C(n, i)(q − 1)^i. */
+export function ballSize(n: number, t: number, q?: number): bigint;
+/** Upper (Hamming, Singleton) and lower (Gilbert–Varshamov) bounds on the size of a code. */
+export function codeBounds(n: number, d: number, q?: number): { hamming: bigint; singleton: bigint; gilbertVarshamov: bigint };
+export function isPerfect(code: LinearCode): boolean;
+/** Reed–Solomon over Z_p, decoded by Berlekamp–Welch with the steps. */
+export function reedSolomon(spec: { p: number; n: number; k: number; points?: number[] }): {
+  p: number;
+  n: number;
+  k: number;
+  points: number[];
+  /** n − k + 1. */
+  distance: number;
+  /** ⌊(n − k)/2⌋ errors. */
+  corrects: number;
+  encode(message: number[]): number[];
+  decode(received: number[]):
+    | { message: number[]; codeword: number[]; errors: number[]; steps: string[] }
+    | { failed: true; steps: string[] };
+};
+export function isLatinSquare(square: unknown[][]): { latin: boolean; problem: string | null };
+export function areOrthogonal(a: unknown[][], b: unknown[][]): { orthogonal: boolean; repeated: unknown | null };
+export function cyclicLatinSquare(n: number): number[][];
+/** p − 1 mutually orthogonal Latin squares of prime order p. */
+export function orthogonalLatinSquares(p: number): number[][][];
+/** The parameters of a block design, with λ when every pair lies in the same number of blocks. */
+export function blockDesign<T>(blocks: T[][], points?: T[]): {
+  v: number;
+  b: number;
+  k: number | null;
+  r: number | null;
+  lambda: number | null;
+  balanced: boolean;
+  symmetric: boolean;
+  checks: unknown;
+};
+export function fromDifferenceSet(D: number[], v: number): number[][];
+/** The projective plane of prime order p: p² + p + 1 points and lines. */
+export function projectivePlane(p: number): number[][];
+export function affinePlane(p: number): number[][];
+/** A Steiner triple system on v points (v = 7, or v ≡ 3 mod 6 by Bose's construction). */
+export function steinerTripleSystem(v: number): number[][];
+
+// ---- Boolean functions (from @ratmath/logic) ----
+
+export { truthTable, minterms, maxterms, countModels, fromMinterms, cnf, dnf, minimize, primeImplicants } from "@ratmath/logic";
+export * as logic from "@ratmath/logic";
 
 // ---- the plan ----
 

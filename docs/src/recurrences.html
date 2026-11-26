@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Recurrences · RatMath Discrete</title>
+<meta name="description" content="Linear recurrences in @ratmath/discrete: fast terms, generating functions, closed forms with exact algebraic roots, guessing a recurrence from terms, closed sums, and the master theorem.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Generating functions and recurrences</div>
+<h1>Recurrences</h1>
+<p class="lede">A linear recurrence \(a_n = c_1 a_{n-1} + \dots + c_k a_{n-k}\) is solved by the roots of its characteristic polynomial. Here the roots are exact algebraic numbers, so the closed form is exact too, and it is checked against the terms before it is returned.</p>
+<h2>Fibonacci, three ways</h2>
+<pre><code>import { recurrence } from "@ratmath/discrete";
+
+const fib = recurrence({ coefficients: [1, 1], initial: [0, 1] });
+fib.terms(10).join(" ");            // "0 1 1 2 3 5 8 13 21 34"
+fib.term(100);                      // 354224848179261915075, by a power of the companion matrix
+String(fib.generatingFunction());   // "x/(1 − x − x^2)"
+fib.closedForm().toString();
+// "a(n) = −(√5/5)·((1 − √5)/2)^n + (√5/5)·((1 + √5)/2)^n"</code></pre>
+<p>The characteristic polynomial of \(a_n = c_1 a_{n-1} + \dots + c_k a_{n-k}\) is \(\chi(x) = x^k - c_1 x^{k-1} - \dots - c_k\). If its distinct roots are \(r_1, \dots, r_s\) with multiplicities \(m_i\), every solution has the form</p>
+\[ a_n = \sum_{i=1}^{s} \bigl(b_{i,0} + b_{i,1} n + \dots + b_{i,m_i-1} n^{m_i-1}\bigr)\, r_i^{\,n}, \]
+<p>and the \(k\) unknowns \(b_{i,j}\) are fixed by the \(k\) initial values. <code>closedForm()</code> finds the roots with <code>@ratmath/algebraic</code>, solves that linear system over the algebraic numbers, and compares the formula with further terms; <code>checked</code> records that it did.</p>
+<h2>Repeated and complex roots</h2>
+<pre><code>recurrence({ coefficients: [4, -4], initial: [1, 4] }).closedForm().toString();
+// "a(n) = 2^n + n·2^n": χ = (x − 2)², a double root
+recurrence({ coefficients: [1, 1, 1], initial: [0, 0, 1] }).closedForm().toString();
+// tribonacci: one real root 1.839286755214… and a complex pair, as certified digits</code></pre>
+<p>A root of degree two is written with square roots; higher degrees are shown by certified digits, but the value underneath stays exact, so <code>at(n)</code> still gives the integer term.</p>
+<h2>Inhomogeneous recurrences</h2>
+<p>A term \(p(n)\,b^n\) added on the right is absorbed by multiplying \(\chi\) by \((x - b)^{\deg p + 1}\): the result is a longer homogeneous recurrence with the same terms. The original is kept in <code>given</code>.</p>
+<pre><code>const towers = recurrence({ coefficients: [2], initial: [0], plus: [1] });   // a(n) = 2a(n−1) + 1
+towers.terms(8).join(" ");             // "0 1 3 7 15 31 63 127"
+towers.closedForm().toString();        // "a(n) = −1 + 2^n"</code></pre>
+<h2>Guessing a recurrence</h2>
+<p>Given terms, the Berlekamp–Massey algorithm finds the shortest linear recurrence that produces them, over the rationals. If none is shorter than half the data, the answer is <code>null</code>: Catalan numbers, for example, satisfy no linear recurrence with constant coefficients.</p>
+<pre><code>import { guessRecurrence } from "@ratmath/discrete";
+String(guessRecurrence([0, 1, 1, 2, 3, 5, 8, 13]));   // "a(n) = a(n−1) + a(n−2), from a(0) = 0, a(1) = 1"
+guessRecurrence([1, 1, 2, 5, 14, 42, 132, 429, 1430]);   // null</code></pre>
+<h2>Sums and divide-and-conquer</h2>
+<pre><code>import { closedSum, masterTheorem, divideAndConquer } from "@ratmath/discrete";
+closedSum([0, 0, 1]).toString();       // "Σ_{k=0}^{n} k^2 = (1/3)·n^3 + (1/2)·n^2 + (1/6)·n"
+closedSum([0, 1], 2).toString();       // "Σ_{k=0}^{n} (k)·2^k = (n − 1)·2^(n+1) + 2"
+masterTheorem({ a: 2, b: 2, d: 1 }).bound;   // "Θ(n log n)": merge sort
+masterTheorem({ a: 7, b: 2, d: 2 }).bound;   // "Θ(n^(log_2 7))": Strassen</code></pre>
+<p>\(\sum_{k \le n} p(k)\) is a polynomial of one degree more, found from Newton's forward differences; \(\sum_{k\le n} p(k) r^k = Q(n) r^{n+1} - Q(-1)\) for a polynomial \(Q\) of the same degree as \(p\). The master theorem compares \(f(n) = n^d \log^j n\) with \(n^{\log_b a}\); the critical exponent is reported exactly when it is rational. <code>divideAndConquer</code> lists exact values of \(T(b^m)\) so a bound can be looked at in numbers.</p>
+<template data-runbox>
+// Closed forms checked against the recurrence, term by term.
+const recs = [
+  recurrence({ coefficients: [1, 1], initial: [2, 1] }),        // Lucas
+  recurrence({ coefficients: [2, 1], initial: [0, 1] }),        // Pell
+  recurrence({ coefficients: [0, -1], initial: [1, 0] }),       // 1, 0, −1, 0, …: roots ±i
+  recurrence({ coefficients: [3], initial: [1], plus: { poly: [0, 1], base: 2 } }),
+];
+for (const r of recs) {
+  const cf = r.closedForm();
+  PRINT(r.terms(8).join(" "), " ⇒ ", cf.toString(), cf.checked ? " ✓" : "");
+}
+PRINT(String(guessRecurrence(recs[1].terms(10))));
+PRINT(divideAndConquer({ a: 3, b: 2, f: (n) =&gt; n }, 6).map(({ n, value }) =&gt; `T(${n}) = ${value}`).join(", "));
+masterTheorem({ a: 3, b: 2, d: 1 }).bound
+</template>
+</article>
+</main>
+</div>
+</body>
+</html>

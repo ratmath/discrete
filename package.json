@@ -1,7 +1,7 @@
 {
   "name": "@ratmath/discrete",
-  "version": "0.2.0",
-  "description": "Discrete mathematics for RatMath: counting and enumeration, graphs, generating functions, games and exact linear programming",
+  "version": "0.3.0",
+  "description": "Discrete mathematics for RatMath: counting and enumeration, graphs and graph theory, generating functions and recurrences, games and voting, orders, codes and designs, and exact linear programming",
   "type": "module",
   "main": "index.js",
   "exports": {
@@ -42,7 +42,9 @@
     "url": "https://github.com/ratmath/discrete/issues"
   },
   "dependencies": {
-    "@ratmath/core": "^0.10.0"
+    "@ratmath/core": "^0.10.0",
+    "@ratmath/algebraic": "^0.1.0",
+    "@ratmath/logic": "^0.2.0"
   },
   "devDependencies": {
     "katex": "0.19.1"
@@ -54,5 +56,9 @@
   },
   "publishConfig": {
     "access": "public"
-  }
+  },
+  "workspaces": [
+    "vendor/algebraic",
+    "vendor/logic"
+  ]
 }
