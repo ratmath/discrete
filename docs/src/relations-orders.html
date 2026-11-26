@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Relations and orders · RatMath Discrete</title>
+<meta name="description" content="Binary relations with their properties and counterexamples, closures and equivalence classes, partial orders with Hasse diagrams, Dilworth&#x27;s theorem, linear extensions, Möbius functions and lattices, in @ratmath/discrete.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Orders and structures</div>
+<h1>Relations and orders</h1>
+<p class="lede">A relation is a set of ordered pairs. Whether it is reflexive, symmetric or transitive is a finite check, and when a property fails the answer names the pairs that break it. Partial orders get their own tools: Hasse diagrams, chains and antichains, linear extensions, and the Möbius function.</p>
+<h2>Relations</h2>
+<pre><code>import { relation, fromPartition } from "@ratmath/discrete";
+
+const R = relation([1, 2, 3, 4], [[1, 2], [2, 3]]);
+R.properties().transitive;        // { holds: false, witness: [1, 2, 3] }: 1R2, 2R3, but not 1R3
+String(R.transitiveClosure());    // "{(1, 2), (1, 3), (2, 3)}"
+relation([1, 2, 3], (a, b) =&gt; (a - b) % 2 === 0).classes();   // [[1, 3], [2]]</code></pre>
+<p>Each property comes with a witness when it fails: an element not related to itself, a pair whose reverse is missing, or the three elements that break transitivity. The transitive closure is computed by Warshall's algorithm. An equivalence relation and a partition are the same thing, and <code>classes()</code> and <code>fromPartition</code> go between them.</p>
+<h2>Partial orders</h2>
+<pre><code>import { poset, divisorLattice } from "@ratmath/discrete";
+const D = divisorLattice(60);
+D.hasse().length;                   // 20 covering pairs
+D.levels().map((l) =&gt; l.length);    // [1, 3, 4, 3, 1]
+D.width();   // { width: 4, antichain: [4, 6, 10, 15], chains: [[1,2,4,12,60], [3,6,30], [5,10,20], [15]] }</code></pre>
+<p>A partial order is reflexive, antisymmetric and transitive; <code>poset</code> takes generating pairs, closes them, and refuses a cycle with the two elements that would be equal. Dilworth's theorem says the largest antichain has the same size as the fewest chains covering the order. Both are found together from a maximum bipartite matching between "lower" and "upper" copies of the elements, so each is a certificate for the other.</p>
+<h2>Linear extensions and the Möbius function</h2>
+<pre><code>import { booleanLattice, partitionLattice } from "@ratmath/discrete";
+booleanLattice(3).countLinearExtensions();   // 48n
+D.mobius(1, 30);                             // −1: the number-theoretic μ(30)
+partitionLattice(4).mobius("1|2|3|4", "1234");   // −6 = (−1)^3·3!</code></pre>
+<p>A linear extension is a total order compatible with the partial one; they are counted by dynamic programming over down-sets. The Möbius function is defined by \(\mu(x, x) = 1\) and \(\sum_{x \le z \le y} \mu(x, z) = 0\) for \(x &lt; y\). It inverts sums over the order:</p>
+\[ g(y) = \sum_{x \le y} f(x) \iff f(y) = \sum_{x \le y} \mu(x, y)\, g(x), \]
+<p>which on divisors is Möbius inversion of number theory and on subsets is inclusion–exclusion.</p>
+<h2>Lattices</h2>
+<pre><code>const N5 = poset(["0", "a", "b", "c", "1"], [["0", "a"], ["a", "b"], ["0", "c"], ["b", "1"], ["c", "1"]]);
+N5.isLattice();         // { lattice: true }
+N5.isDistributive();    // { distributive: false, witness: ["b", "a", "c"] }</code></pre>
+<p>A lattice has a meet and a join for every pair. It is distributive exactly when it contains neither the pentagon \(N_5\) nor the diamond \(M_3\); when the law \(x \wedge (y \vee z) = (x \wedge y) \vee (x \wedge z)\) fails, the three elements are given.</p>
+<template data-runbox>
+// Divisor lattices: width, chains, and Möbius against the number-theoretic μ.
+const mu = (n) =&gt; { let m = 1; for (let p = 2; p * p &lt;= n; p++) if (n % p === 0) { n /= p; if (n % p === 0) return 0; m = -m; } return n &gt; 1 ? -m : m; };
+for (const n of [12, 30, 36, 60, 210]) {
+  const D = divisorLattice(n);
+  const w = D.width();
+  PRINT(`D(${n}): ${D.elements.length} divisors, width ${w.width} (antichain ${w.antichain.join(",")}), extensions ${D.countLinearExtensions()}, μ(1,${n}) = ${D.mobius(1, n)} vs ${mu(n)}`);
+}
+// Closures of a random relation
+const r = rng("relation");
+const R = relation([1, 2, 3, 4, 5], (a, b) =&gt; r.bool("1/4"));
+PRINT(String(R));
+PRINT(Object.entries(R.properties()).map(([k, v]) =&gt; `${k}: ${v.holds}`).join(", "));
+PRINT("transitive closure", String(R.transitiveClosure()));
+divisorLattice(30).isDistributive()
+</template>
+</article>
+</main>
+</div>
+</body>
+</html>

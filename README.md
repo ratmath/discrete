@@ -64,42 +64,43 @@ spanningTreeCount(complete(10));                        // 100000000n (Cayley)
   pure or mixed strategies, pure equilibria, every equilibrium by support
   enumeration, and Lemke–Howson.
 
+- **Generating functions and recurrences**: `series` and `egf`, lazy exact
+  power series with products, reciprocals, composition, `exp`, `log`, `sqrt`
+  and rational powers; `knownSeries`; `rationalSeries` with its recurrence.
+  `recurrence` with fast terms, the generating function and an exact closed
+  form over algebraic numbers (checked against the terms); `guessRecurrence`
+  (Berlekamp–Massey), `closedSum`, `masterTheorem`, `divideAndConquer`.
+- **Matchings and flows**: `maximumMatching` (blossoms, with a Tutte–Berge
+  set), `bipartiteMatching` (a König cover or a Hall violator), `assignment`
+  with dual prices, `stableMatching`, `maxFlow` with a minimum cut.
+- **Colouring, planarity, isomorphism, spectra**: `chromaticNumber` with the
+  reason no fewer colours work, `chromaticPolynomial`, cliques and independent
+  sets; `planarity` with faces or a Kuratowski subdivision; `isomorphism` and
+  `automorphisms` (a `PermGroup`); exact adjacency and Laplacian `spectrum`,
+  `walks`, and spanning trees from the spectrum.
+- **Combinatorial and cooperative games, voting**: Sprague–Grundy values, nim,
+  subtraction games; Conway games in canonical form (`cgame`, `starGame`,
+  `up`, `partizanGame`); `backwardInduction`; `shapley`, `core` (or a balanced
+  collection proving it empty), `weightedVoting`; plurality, Borda, instant
+  runoff, Condorcet, approval; five apportionment methods; adjusted winner.
+- **Relations and orders**: `relation` with properties and counterexamples,
+  closures and classes; `poset` with Hasse diagram, Dilworth's width and
+  chains, linear extensions, the Möbius function, lattices; Pólya counting
+  with `cycleIndex`, `countColourings`, `patternInventory`. Boolean functions
+  (`truthTable`, `minimize`, …) are re-exported from `@ratmath/logic`.
+- **Codes and designs**: `linearCode` over Z_p with syndrome decoding in steps,
+  `hammingCode`, bounds, `reedSolomon` with Berlekamp–Welch; Latin squares and
+  complete sets of orthogonal ones; `blockDesign`, projective and affine
+  planes, difference sets, Steiner triple systems.
+
 ## Planned
 
 From the [library roadmap](https://github.com/ratmath/ratmath/blob/main/docs/design/library-roadmap.md#7-a-discrete-mathematics-package-ratmathdiscrete).
 
 | Phase | Contents |
 |---|---|
-| 3 | Generating functions and recurrences |
-| 4 | Matchings, flows, colouring, planarity, isomorphism, spectra |
-| 6 | Combinatorial, extensive-form and cooperative games; voting |
-| 7 | Sets, relations, partial orders; Pólya counting |
-| 8 | Codes and designs |
-| 9 | Graph drawing |
+| 9 | Graph drawing (in graphics) |
 
-It depends on Core only so far; spectra will bring in linalg. The statistics package uses it for discrete probability.
-
-## Layout
-
-- `index.js`, `src/`: the library. `plan` is the list above.
-- `tests/`: `bun run test`.
-- `docs/src/*.html`: the docs pages (overview, explore, reference, then one
-  page per topic as topics are built). `bun run docs:build` writes `docs/`,
-  typesets the mathematics and runs the code box at the end of every page.
-  `docs/*.html` and `docs/assets/discrete.js` are build output.
-- `docs/assets/runbox.js` and `scripts/docs-kit.js` are shared with the other
-  RatMath docs sites and should be kept in step with them.
-
-## Development
-
-```sh
-bun install
-bun run test
-bun run docs:build
-```
-
-Each topic that is built gets its own docs page with usage, the mathematics
-explained, and a runnable code box at the end, and is then listed on the
-[Shelf page](https://ratmath.com/shelf/).
-
-MIT licensed.
+It depends on Core, on `@ratmath/algebraic` (exact roots and permutation
+groups) and on `@ratmath/logic`; both are git submodules under `vendor/` for
+development. The statistics package uses it for discrete probability.

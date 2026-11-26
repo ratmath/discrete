@@ -1,6 +1,9 @@
 // @ratmath/discrete: counting, enumeration with ranking, a seeded random
-// generator, graphs, exact linear programming and matrix and bimatrix games.
-// Generating functions and more are planned: see `plan`.
+// generator, graphs, exact linear programming and matrix and bimatrix games,
+// generating functions and recurrences, matchings, flows, colouring, planarity,
+// isomorphism and spectra, combinatorial and cooperative games and voting,
+// relations, orders and Pólya counting, codes and designs. Graph drawing is
+// planned: see `plan`.
 
 export {
   factorial, doubleFactorial, fallingFactorial, risingFactorial,
@@ -37,4 +40,37 @@ export {
   linearProgram, integerProgram, checkLinearProgram, isFeasible, parseProblem, solveSquare, Problem, LPResult, IPResult,
 } from "./src/lp.js";
 export { matrixGame, saddlePoints, bimatrixGame, MatrixGameSolution, BimatrixGame } from "./src/games.js";
+export {
+  poly as seriesPoly, PowerSeries, series, egf, known as knownSeries, RationalSeries, rationalSeries,
+} from "./src/series.js";
+export { LinearRecurrence, recurrence, guessRecurrence, closedSum, masterTheorem, divideAndConquer } from "./src/recurrence.js";
+export {
+  maximumMatching, checkMatching, bipartiteMatching, assignment, stableMatching, blockingPairs, maxFlow, checkFlow,
+} from "./src/matching.js";
+export {
+  isProperColouring, greedyColouring, maximumClique, maximalCliques, maximumIndependentSet, chromaticNumber, chromaticPolynomial,
+} from "./src/colouring.js";
+export { planarity, isPlanar, checkKuratowski } from "./src/planar.js";
+export { isomorphism, isIsomorphic, automorphisms } from "./src/iso.js";
+export { adjacency, laplacian, characteristicPolynomial, spectrum, walks, spanningTreesFromSpectrum } from "./src/spectra.js";
+export {
+  mex, impartialGame, nim, subtractionGame, Game, cgame, star as starGame, up, down, partizanGame, backwardInduction,
+} from "./src/play.js";
+export {
+  cooperativeGame, shapley, core, inCore, weightedVoting,
+  plurality, borda, instantRunoff, condorcet, approval, apportion, adjustedWinner,
+} from "./src/cooperative.js";
+export {
+  Relation, relation, fromPartition, Poset, poset, divisorLattice, booleanLattice, partitionLattice,
+  cycleIndex, countColourings, patternInventory, symmetry,
+} from "./src/orders.js";
+export {
+  LinearCode, linearCode, hammingCode, repetitionCode, parityCode, ballSize, codeBounds, isPerfect, reedSolomon,
+  isLatinSquare, areOrthogonal, cyclicLatinSquare, orthogonalLatinSquares,
+  blockDesign, fromDifferenceSet, projectivePlane, affinePlane, steinerTripleSystem,
+} from "./src/codes.js";
+// Boolean functions (truth tables, normal forms, minimisation) live in
+// @ratmath/logic; they are re-exported here for the discrete-mathematics course.
+export { truthTable, minterms, maxterms, countModels, fromMinterms, cnf, dnf, minimize, primeImplicants } from "@ratmath/logic";
+export * as logic from "@ratmath/logic";
 export { plan } from "./src/plan.js";

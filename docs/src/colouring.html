@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Colouring and cliques · RatMath Discrete</title>
+<meta name="description" content="Proper colourings, the chromatic number with a reason no fewer colours work, the chromatic polynomial by deletion–contraction, and cliques and independent sets, in @ratmath/discrete.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Graph theory</div>
+<h1>Colouring and cliques</h1>
+<p class="lede">Colour the vertices so that neighbours differ. The fewest colours that work is the chromatic number \(\chi(G)\); the number of ways to do it with \(k\) colours is a polynomial in \(k\).</p>
+<h2>The chromatic number</h2>
+<pre><code>import { petersen, wheel, chromaticNumber, greedyColouring, isProperColouring } from "@ratmath/discrete";
+
+const c = chromaticNumber(petersen());
+c.number;       // 3
+c.lowerBound;   // { kind: "odd-cycle", cycle: [...], note: "an odd cycle cannot be coloured with two colours" }
+chromaticNumber(wheel(5)).lowerBound;   // { kind: "search", note: "no 3-colouring exists: …" }
+isProperColouring(petersen(), greedyColouring(petersen()));   // { ok: true, clash: null }</code></pre>
+<p>An upper bound is a colouring, which anyone can check. A lower bound needs an argument: a clique of size \(k\) needs \(k\) colours, an odd cycle needs three, and otherwise the record that an exhaustive DSATUR search with \(k-1\) colours failed. The wheel with five spokes has no \(K_4\), yet needs four colours: the rim is an odd cycle and the hub sees all of it.</p>
+<h2>The chromatic polynomial</h2>
+<pre><code>import { chromaticPolynomial, cycleGraph } from "@ratmath/discrete";
+chromaticPolynomial(cycleGraph(5)).toString();   // "k^5 − 5k^4 + 10k^3 − 10k^2 + 4k"
+const P = chromaticPolynomial(petersen());
+P.at(3);    // 120n
+P.at(4);    // 12960n</code></pre>
+<p>For an edge \(e\), colourings of \(G - e\) either give the ends different colours (colourings of \(G\)) or the same (colourings of \(G/e\), with \(e\) contracted). So</p>
+\[ P(G, k) = P(G - e, k) - P(G / e, k), \]
+<p>down to edgeless graphs with \(P = k^n\). For a cycle this gives \(P(C_n, k) = (k-1)^n + (-1)^n (k-1)\). The recursion is memoised on graph shape, which keeps graphs like Petersen quick.</p>
+<h2>Cliques and independent sets</h2>
+<pre><code>import { maximumClique, maximalCliques, maximumIndependentSet, graph } from "@ratmath/discrete";
+maximumClique(petersen());                    // ["1,2", "3,4"]: Petersen has no triangle
+maximumIndependentSet(petersen());            // 4 vertices
+maximalCliques(graph("a-b b-c c-a c-d"));     // [["a","b","c"], ["d","c"]] (Bron–Kerbosch)</code></pre>
+<p>\(\omega(G) \le \chi(G)\), and \(\chi(G) \ge n/\alpha(G)\) since each colour class is independent. The Petersen graph has \(\alpha = 4\), so it needs at least \(\lceil 10/4 \rceil = 3\) colours.</p>
+<template data-runbox>
+// The chromatic polynomial against counting colourings one by one.
+const g = graph("a-b b-c c-d d-a a-c d-e");
+const P = chromaticPolynomial(g);
+PRINT("P(k) =", P.toString());
+const vs = g.vertices();
+for (const k of [1, 2, 3, 4]) {
+  let n = 0;
+  for (const col of words(k, vs.length)) {
+    const c = new Map(vs.map((v, i) =&gt; [v, col[i]]));
+    if (isProperColouring(g, c).ok) n++;
+  }
+  PRINT(`k = ${k}: polynomial ${P.at(k)}, counted ${n}`);
+}
+PRINT("χ =", chromaticNumber(g).number, " clique", maximumClique(g).join(""));
+chromaticPolynomial(cycleGraph(6)).toString()
+</template>
+</article>
+</main>
+</div>
+</body>
+</html>

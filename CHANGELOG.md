@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.3.0
+
+Phases 3, 4, 6, 7 and 8 of the roadmap.
+
+- Generating functions: `PowerSeries` (lazy, exact: products, reciprocals,
+  composition, derivative, integral, `exp`, `log`, `sqrt`, rational powers),
+  `egf`, `knownSeries`, `RationalSeries`.
+- Recurrences: `LinearRecurrence` with companion-matrix terms, generating
+  function and an exact closed form from `@ratmath/algebraic` roots, checked
+  against the terms; inhomogeneous terms p(n)·bⁿ; `guessRecurrence`
+  (Berlekamp–Massey), `closedSum`, `masterTheorem`, `divideAndConquer`.
+- Graph theory: `maximumMatching` with a Tutte–Berge certificate,
+  `bipartiteMatching` with König and Hall, `assignment`, `stableMatching`,
+  `maxFlow` with a minimum cut; `chromaticNumber` with a lower-bound witness,
+  `chromaticPolynomial`, cliques; `planarity` with faces or a Kuratowski
+  subgraph; `isomorphism`, `automorphisms`; exact `spectrum`, `walks`,
+  `spanningTreesFromSpectrum`.
+- Games: Sprague–Grundy, `nim`, `subtractionGame`, Conway's `Game` in
+  canonical form, `partizanGame`, `backwardInduction`; `cooperativeGame`,
+  `shapley`, `core` with a balanced-collection certificate, `weightedVoting`;
+  voting methods, `apportion`, `adjustedWinner`.
+- Orders: `Relation`, `Poset` (Dilworth, linear extensions, Möbius, lattices),
+  divisor, Boolean and partition lattices; `cycleIndex`, `countColourings`,
+  `patternInventory`, `symmetry`. Boolean functions re-exported from
+  `@ratmath/logic`, which is also available as `logic`.
+- Codes and designs: `LinearCode`, `hammingCode`, bounds, `reedSolomon`;
+  Latin squares and MOLS; `blockDesign`, finite planes, difference sets,
+  Steiner triple systems.
+- `@ratmath/algebraic` and `@ratmath/logic` are new dependencies, vendored as
+  submodules. The LP constraint-sense type in the typings is now
+  `ConstraintSense` (it was `Relation`, which is now the relation class).
+- Tests compare with brute force: matchings, colourings, orbit counts,
+  assignments, decoding every single error, closed forms against terms.
+- Twelve new docs pages, and matchings, colouring, planarity, symmetry and
+  spectrum on the Explore page.
+
 ## 0.2.0
 
 Phases 2 and 5 of the roadmap: graphs, and exact linear programming with games.

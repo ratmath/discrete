@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Error-correcting codes · RatMath Discrete</title>
+<meta name="description" content="Linear codes over prime fields: generator and parity-check matrices, syndrome decoding with steps, Hamming codes, bounds, and Reed–Solomon codes decoded by Berlekamp–Welch, in @ratmath/discrete.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Codes and designs</div>
+<h1>Error-correcting codes</h1>
+<p class="lede">Add redundancy to a message so that a few corrupted symbols can be found and fixed. A linear code is a subspace of \(\mathbb{Z}_p^n\); its minimum distance says how many errors it can correct, and its parity-check matrix says where they are.</p>
+<h2>The Hamming code</h2>
+<pre><code>import { hammingCode, isPerfect } from "@ratmath/discrete";
+
+const h = hammingCode(3);         // [7, 4] over Z_2
+h.minimumDistance().distance;     // 3: corrects one error
+isPerfect(h);                     // true
+const cw = h.encode([1, 0, 1, 1]);   // [1, 0, 1, 1, 0, 1, 0]
+h.decode([1, 0, 0, 1, 0, 1, 0]).steps;
+// ["received 1001010", "syndrome H·rᵀ = 110",
+//  "the lightest error with that syndrome is 0010000 (weight 1)", "corrected codeword 1011010, message 1011"]</code></pre>
+<p>A code with generator matrix \(G\) (\(k \times n\)) encodes \(m\) as \(mG\). Put \(G\) in systematic form \([I_k \mid A]\); then \(H = [-A^{\top} \mid I_{n-k}]\) satisfies \(G H^{\top} = 0\), and a word \(r\) is a codeword exactly when its syndrome \(Hr^{\top}\) is zero. If \(r = c + e\), the syndrome is \(He^{\top}\), so decoding is finding the lightest error with that syndrome, the coset leader. In the Hamming code the columns of \(H\) are all non-zero vectors, so the syndrome of a single error <em>is</em> its position written in binary.</p>
+<h2>Distance and bounds</h2>
+<p>A code with minimum distance \(d\) corrects \(t = \lfloor (d-1)/2 \rfloor\) errors, because balls of radius \(t\) round the codewords do not overlap. Counting the words in those balls gives the Hamming (sphere-packing) bound, and a code that meets it is <em>perfect</em>:</p>
+\[ |C| \cdot \sum_{i=0}^{t} \binom{n}{i}(q-1)^i \le q^n. \]
+<pre><code>import { codeBounds, ballSize } from "@ratmath/discrete";
+codeBounds(7, 3, 2);   // { hamming: 16n, singleton: 32n, gilbertVarshamov: 5n }
+ballSize(7, 1);        // 8n, and 16 · 8 = 2^7: the Hamming code is perfect
+h.weightDistribution();             // [1, 0, 0, 7, 7, 0, 0, 1]
+h.dual().minimumDistance().distance;   // 4: the [7, 3] simplex code</code></pre>
+<h2>Reed–Solomon</h2>
+<pre><code>import { reedSolomon } from "@ratmath/discrete";
+const rs = reedSolomon({ p: 11, n: 10, k: 4 });   // corrects 3 errors
+const w = rs.encode([3, 1, 4, 1]);                // the values of 3 + x + 4x² + x³ at 1, …, 10
+const y = w.slice(); y[0] += 1; y[5] += 3; y[9] += 7;   // three errors (mod 11)
+rs.decode(y.map((v) =&gt; v % 11)).errors;           // [0, 5, 9]</code></pre>
+<p>A message is a polynomial \(f\) of degree below \(k\), sent as its values at \(n\) distinct points. Two such polynomials agree in at most \(k - 1\) places, so the distance is \(n - k + 1\), meeting the Singleton bound. Berlekamp–Welch decoding looks for an error locator \(E\) of degree \(e\) (monic) and \(Q\) of degree below \(e + k\) with \(Q(\alpha_i) = y_i E(\alpha_i)\) for every \(i\): a linear system over \(\mathbb{Z}_p\). Then \(f = Q / E\), and \(E\) vanishes at the error positions. The steps show the system, \(E\), \(Q\) and the division.</p>
+<template data-runbox>
+// Every single-bit error in every Hamming(3) codeword is corrected.
+const h = hammingCode(3);
+let fixed = 0, total = 0;
+for (const m of words(2, 4)) {
+  const cw = h.encode(m);
+  for (let i = 0; i &lt; 7; i++) {
+    const r = cw.slice(); r[i] ^= 1; total++;
+    if (h.decode(r).codeword.join() === cw.join()) fixed++;
+  }
+}
+PRINT(`${fixed} of ${total} single errors corrected`);
+// Ternary Hamming code and Reed–Solomon with random errors
+const h3 = hammingCode(2, { p: 3 });
+PRINT(String(h3), " d =", h3.minimumDistance().distance, " perfect:", isPerfect(h3));
+const rs = reedSolomon({ p: 13, n: 12, k: 6 });
+const r = rng("reed-solomon");
+const msg = Array.from({ length: 6 }, () =&gt; r.int(13));
+const y = rs.encode(msg);
+for (const i of r.sample([...Array(12).keys()], 3)) y[i] = (y[i] + 1 + r.int(12)) % 13;
+const d = rs.decode(y);
+PRINT("sent", msg.join(" "), " decoded", d.message.join(" "), " errors at", d.errors.join(", "));
+codeBounds(23, 7, 2)
+</template>
+</article>
+</main>
+</div>
+</body>
+</html>

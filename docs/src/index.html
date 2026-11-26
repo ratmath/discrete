@@ -21,7 +21,7 @@
 <p class="lede">The numbers of combinatorics as exact integers of any size; every standard family of objects in a fixed order, with the millionth one found without listing the rest; a random generator that gives the same stream from the same seed on every machine; and graphs with exact weights, where every "no" comes with its reason.</p>
 
 <h2>What is here</h2>
-<p>Counting, enumeration and the generator (phase 1); graphs: structure, searching, paths, tours and trees (phase 2); and exact linear programming with matrix and bimatrix games (phase 5). Generating functions, matchings and flows, more games and the rest are planned and listed at the bottom of this page.</p>
+<p>Counting, enumeration and the generator (phase 1); graphs: structure, searching, paths, tours and trees (phase 2); generating functions and recurrences (phase 3); matchings, flows, colouring, planarity, isomorphism and spectra (phase 4); exact linear programming with matrix and bimatrix games (phase 5); combinatorial and cooperative games and voting (phase 6); relations, orders and Pólya counting (phase 7); and error-correcting codes and designs (phase 8). Graph drawing is still planned and listed at the bottom of this page.</p>
 <div class="cards" id="cards"></div>
 
 <h2>A first program</h2>
@@ -61,15 +61,15 @@ String(matrixGame([[3, -1], [-2, 1]]));   // "value 1/7; row plays r1 3/7, r2 4/
 <tr><th>Phase</th><th>Contents</th><th>Estimate</th></tr>
 <tr><td>1</td><td>Counting, enumeration with ranking, the seeded generator</td><td>built</td></tr>
 <tr><td>2</td><td>Graphs: structure, traversal, paths, trees, families</td><td>built</td></tr>
-<tr><td>3</td><td>Generating functions and recurrences</td><td>900</td></tr>
-<tr><td>4</td><td>Matchings, flows, colouring, planarity, isomorphism, spectra</td><td>1,600</td></tr>
+<tr><td>3</td><td>Generating functions and recurrences</td><td>built</td></tr>
+<tr><td>4</td><td>Matchings, flows, colouring, planarity, isomorphism, spectra</td><td>built</td></tr>
 <tr><td>5</td><td>Exact linear programming; matrix and bimatrix games</td><td>built</td></tr>
-<tr><td>6</td><td>Combinatorial, extensive-form and cooperative games; voting</td><td>1,000</td></tr>
-<tr><td>7</td><td>Sets, relations, partial orders; Pólya counting</td><td>600</td></tr>
-<tr><td>8</td><td>Codes and designs</td><td>700</td></tr>
+<tr><td>6</td><td>Combinatorial, extensive-form and cooperative games; voting</td><td>built</td></tr>
+<tr><td>7</td><td>Sets, relations, partial orders; Pólya counting</td><td>built</td></tr>
+<tr><td>8</td><td>Codes and designs</td><td>built</td></tr>
 <tr><td>9</td><td>Graph drawing</td><td>900 in graphics</td></tr>
 </table></div>
-<p>So far the package depends only on Core: linear programming is its own exact simplex method, and spectra will bring in linalg. The statistics library draws its random data from the generator here.</p>
+<p>The package depends on Core, on <code>@ratmath/algebraic</code> for exact roots (closed forms of recurrences, spectra) and permutation groups (automorphisms, Pólya counting), and on <code>@ratmath/logic</code>, whose Boolean functions (truth tables, normal forms, minimisation) are re-exported here and as <code>logic</code>. Linear programming is its own exact simplex method, and characteristic polynomials are computed over the integers directly. The statistics library draws its random data from the generator here.</p>
 <template data-runbox>
 // How many poker hands, and how many of each kind?
 const hands = binomial(52, 5);

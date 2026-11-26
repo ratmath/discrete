@@ -5,15 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Explore · RatMath Discrete</title>
 <meta property="og:title" content="Explore · RatMath Discrete">
-<meta property="og:description" content="Discrete mathematics for RatMath: counting and enumeration, graphs, generating functions, games and exact linear programming.">
+<meta property="og:description" content="Discrete mathematics for RatMath: counting and enumeration, graphs and graph theory, generating functions and recurrences, games and voting, orders, codes and designs, and exact linear programming.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://ratmath.com/discrete/explore.html">
-<meta name="description" content="Try @ratmath/discrete without writing code: counting numbers, ranked families of objects, seeded random draws, and graphs.">
+<meta name="description" content="Try @ratmath/discrete without writing code: counting numbers, ranked families of objects, seeded random draws, graphs with their matchings, colourings, planarity and spectra, and games.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=b2be70433e">
-<script type="module" src="assets/site.js?v=b2be70433e"></script>
+<link rel="stylesheet" href="assets/style.css?v=a9f47ac7f9">
+<script type="module" src="assets/site.js?v=a9f47ac7f9"></script>
 </head>
 <body>
 <div class="shell">
@@ -22,7 +22,7 @@
 <article>
 <div class="eyebrow">Explore</div>
 <h1>Explore</h1>
-<p class="lede">Pick n and k and see every count at once. Walk through a family of objects by rank, or draw from it with a seed. Then type a graph and see what can be said about it.</p>
+<p class="lede">Pick n and k and see every count at once. Walk through a family of objects by rank, or draw from it with a seed. Then type a graph and see what can be said about it: paths and trees, matchings, colourings, planarity, symmetry and spectrum.</p>
 
 <h2>Counts</h2>
 <div class="demo">
@@ -84,7 +84,7 @@ const p = shortestPath(G, "a", "e");
 </main>
 </div>
 <script type="module">
-import { A as S, h } from "./assets/site.js?v=b2be70433e";
+import { A as S, h } from "./assets/site.js?v=a9f47ac7f9";
 const $ = (id) => document.getElementById(id);
 const line = (label, f) => {
   let text;
@@ -344,6 +344,22 @@ function graphPanel() {
       return `${t.weight}${t.connected ? "" : " (a forest)"}: ${t.edges.map((e) => `${e.from}-${e.to}`).join(" ")}`;
     }));
     rows.push(line("spanning trees", () => S.spanningTreeCount(g)));
+    rows.push(line("maximum matching", () => {
+      const m = S.maximumMatching(g);
+      return `${m.size}${m.perfect ? " (perfect)" : ""}: ${m.edges.map(([u, v]) => `${u}-${v}`).join(" ")}`;
+    }));
+    rows.push(line("colours needed", () => {
+      if (g.order > 20) return "only searched up to 20 vertices here";
+      const c = S.chromaticNumber(g);
+      return `${c.number}; no fewer, since ${c.lowerBound.note ?? c.lowerBound.kind}`;
+    }));
+    rows.push(line("chromatic polynomial", () => (g.order > 12 || g.size > 24 ? "only up to 12 vertices here" : S.chromaticPolynomial(g).toString())));
+    rows.push(line("planar?", () => {
+      const r = S.planarity(g);
+      return r.planar ? "yes" : `no: a subdivision of ${r.kuratowski.kind} on ${r.kuratowski.branch.join(" ")}`;
+    }));
+    rows.push(line("symmetries", () => (g.order > 30 ? "only up to 30 vertices here" : `${S.automorphisms(g).order}`)));
+    rows.push(line("spectrum", () => (g.order > 12 ? "only up to 12 vertices here" : S.spectrum(g).toString())));
   }
   out.replaceChildren(h("dl", { class: "kv out" }, ...rows));
   $("gx-pic").replaceChildren(picture(g, highlight));

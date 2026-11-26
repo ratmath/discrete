@@ -15,7 +15,7 @@ import { runCode } from "../docs/assets/runbox.js";
 
 const NAME = "discrete";
 const TITLE = "RatMath Discrete mathematics";
-const DESCRIPTION = "Discrete mathematics for RatMath: counting and enumeration, graphs, generating functions, games and exact linear programming.";
+const DESCRIPTION = "Discrete mathematics for RatMath: counting and enumeration, graphs and graph theory, generating functions and recurrences, games and voting, orders, codes and designs, and exact linear programming.";
 
 const out = await Bun.build({ entrypoints: ["./scripts/docs-entry.js"], outdir: "./docs/assets", naming: `${NAME}.js`, target: "browser", format: "esm", minify: { whitespace: true, syntax: true, identifiers: true, keepNames: true } });
 if (!out.success) {

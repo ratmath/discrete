@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Isomorphism and spectra · RatMath Discrete</title>
+<meta name="description" content="Graph isomorphism with colour refinement, automorphism groups as permutation groups, and exact adjacency and Laplacian spectra in @ratmath/discrete.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Graph theory</div>
+<h1>Isomorphism and spectra</h1>
+<p class="lede">When are two graphs the same up to renaming, and what symmetries does one graph have? Colour refinement and backtracking answer both for small graphs. The eigenvalues of the adjacency matrix, computed exactly, give invariants that count walks and spanning trees.</p>
+<h2>Isomorphism</h2>
+<pre><code>import { isomorphism, petersen, kneser, cycleGraph, graph, pathGraph, star } from "@ratmath/discrete";
+
+isomorphism(petersen(), kneser(5, 2)).isomorphic;   // true, with the map
+isomorphism(cycleGraph(6), graph("a-b b-c c-a d-e e-f f-d")).reason;
+// "colour refinement … splits the vertices differently": C6 against two triangles
+isomorphism(pathGraph(4), star(3)).reason;   // "degree sequences differ: (2, 2, 1, 1) against (3, 1, 1, 1)"</code></pre>
+<p>Cheap invariants go first: vertex and edge counts, degree sequences. Then colour refinement (1-dimensional Weisfeiler–Leman): colour each vertex by its degree, then by its colour together with the multiset of its neighbours' colours, until nothing splits. An isomorphism must keep colours, so different class sizes prove there is none, and equal ones cut the backtracking search down. A "yes" is checked edge by edge.</p>
+<h2>Automorphisms</h2>
+<pre><code>import { automorphisms, hypercube } from "@ratmath/discrete";
+const a = automorphisms(petersen());
+a.order;           // 120n: the symmetric group S5 acting on 2-subsets
+a.orbits.length;   // 1: vertex-transitive
+automorphisms(hypercube(3)).order;   // 48n</code></pre>
+<p>The group is built as a chain of stabilisers: fix a vertex, find one automorphism to each vertex of its orbit, then fix the next vertex. By the orbit–stabiliser theorem</p>
+\[ |\operatorname{Aut}(G)| = \prod_i |\text{orbit of } v_i \text{ in } G_{v_1 \dots v_{i-1}}|, \]
+<p>so few generators give the order exactly. Up to order 50,000 the group also comes as a <code>PermGroup</code> from <code>@ratmath/algebraic</code>, whose own order is compared with the product. The Frucht graph is 3-regular yet has only the identity.</p>
+<h2>Spectra</h2>
+<pre><code>import { spectrum, walks, spanningTreesFromSpectrum, spanningTreeCount } from "@ratmath/discrete";
+spectrum(petersen()).toString();                     // "−2 (×4), 1 (×5), 3"
+spectrum(hypercube(3)).toString();                   // "−3, −1 (×3), 1 (×3), 3"
+spectrum(cycleGraph(5)).toString();                  // the values 2 cos(2πk/5), with √5
+spanningTreesFromSpectrum(petersen());               // 2000n, as spanningTreeCount gives
+walks(cycleGraph(5), 5).closed;                      // 10n closed walks of length 5</code></pre>
+<p>The characteristic polynomial \(\det(xI - A)\) is computed over the integers by the Faddeev–LeVerrier recursion, and its roots are found exactly with <code>@ratmath/algebraic</code>. A symmetric matrix has only real eigenvalues, which is checked. The number of closed walks of length \(k\) is \(\operatorname{tr} A^k = \sum \lambda_i^k\). For the Laplacian \(L = D - A\) with eigenvalues \(0 = \mu_1 \le \mu_2 \le \dots \le \mu_n\), the matrix-tree theorem gives the number of spanning trees:</p>
+\[ \tau(G) = \frac{1}{n}\,\mu_2 \mu_3 \cdots \mu_n, \]
+<p>which is read off the coefficient of \(x\) in the Laplacian's characteristic polynomial, with no root-finding needed.</p>
+<template data-runbox>
+// Cospectral but not isomorphic: K1,4 and C4 + K1 share the spectrum {−2, 0, 0, 0, 2}.
+const s1 = star(4), s2 = graph("a-b b-c c-d d-a e");
+PRINT(spectrum(s1).toString(), " | ", spectrum(s2).toString());
+PRINT("isomorphic?", isIsomorphic(s1, s2), "—", isomorphism(s1, s2).reason);
+// Symmetry of the Platonic solids' skeletons
+for (const n of ["tetrahedron", "cube", "octahedron", "dodecahedron", "icosahedron"]) {
+  const g = platonic(n);
+  PRINT(n.padEnd(13), "|Aut| =", String(automorphisms(g).order).padStart(4), " spectrum", spectrum(g).toString());
+}
+</template>
+</article>
+</main>
+</div>
+</body>
+</html>

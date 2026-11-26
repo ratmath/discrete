@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Reference · RatMath Discrete</title>
 <meta property="og:title" content="Reference · RatMath Discrete">
-<meta property="og:description" content="Discrete mathematics for RatMath: counting and enumeration, graphs, generating functions, games and exact linear programming.">
+<meta property="og:description" content="Discrete mathematics for RatMath: counting and enumeration, graphs and graph theory, generating functions and recurrences, games and voting, orders, codes and designs, and exact linear programming.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://ratmath.com/discrete/reference.html">
 <meta name="description" content="Every export of @ratmath/discrete.">
@@ -13,8 +13,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
 <link rel="stylesheet" href="https://ratmath.com/assets/katex/0.19.1/katex.min.css">
-<link rel="stylesheet" href="assets/style.css?v=b2be70433e">
-<script type="module" src="assets/site.js?v=b2be70433e"></script>
+<link rel="stylesheet" href="assets/style.css?v=a9f47ac7f9">
+<script type="module" src="assets/site.js?v=a9f47ac7f9"></script>
 </head>
 <body>
 <div class="shell">
@@ -118,6 +118,68 @@
 <tr><td><code>matrixGame(A, { rows, columns })</code></td><td>Zero-sum game: <code>value</code>, <code>row</code>, <code>column</code>, <code>fair</code>, <code>guarantee(p)</code>, <code>cap(q)</code>, <code>check()</code>.</td></tr>
 <tr><td><code>saddlePoints(A)</code></td><td>Pure saddle points <code>{ row, column, value }</code>.</td></tr>
 <tr><td><code>bimatrixGame(A, B?, { rows, columns })</code></td><td>A <code>BimatrixGame</code>: <code>payoffs(p, q)</code>, <code>isEquilibrium(p, q)</code>, <code>pureEquilibria()</code>, <code>dominance({ pureOnly })</code>, <code>equilibria()</code> (with <code>complete</code>), <code>lemkeHowson(label)</code>. Each equilibrium has <code>row</code>, <code>column</code>, <code>payoffs</code>, <code>pure</code>, <code>check()</code>.</td></tr>
+</table></div>
+<h2>Generating functions and recurrences</h2>
+<div class="tablewrap"><table class="ref">
+<tr><th>Export</th><th>What it does</th></tr>
+<tr><td><code>series(input)</code>, <code>egf(seq)</code>, <code>PowerSeries</code></td><td>Lazy exact power series from a list, constant or rule: <code>coefficient(n)</code>, <code>terms(n, { egf })</code>, <code>add</code>, <code>subtract</code>, <code>negate</code>, <code>scale</code>, <code>multiply</code>, <code>shift</code>, <code>reciprocal</code>, <code>divide</code>, <code>derivative</code>, <code>integral</code>, <code>compose</code>, <code>pow</code>, <code>exp</code>, <code>log</code>, <code>sqrt</code>, <code>toString(n)</code>.</td></tr>
+<tr><td><code>knownSeries</code></td><td><code>geometric(r)</code>, <code>exp()</code>, <code>logInverse()</code>, <code>binomial(a)</code>, <code>catalan()</code>, <code>partitions()</code>.</td></tr>
+<tr><td><code>rationalSeries(P, Q)</code>, <code>RationalSeries</code></td><td>P(x)/Q(x): <code>series</code>, <code>terms</code>, <code>add</code>, <code>multiply</code>, <code>recurrence()</code>. <code>seriesPoly</code> holds the polynomial helpers.</td></tr>
+<tr><td><code>recurrence({ coefficients, initial, plus })</code>, <code>LinearRecurrence</code></td><td><code>terms(n)</code>, <code>term(n)</code> (companion-matrix power), <code>characteristic()</code>, <code>generatingFunction()</code>, <code>closedForm()</code> → <code>{ parts, validFrom, checked, at(n), toString() }</code> with exact algebraic roots.</td></tr>
+<tr><td><code>guessRecurrence(terms)</code></td><td>Berlekamp–Massey over Q: the shortest recurrence, or <code>null</code>.</td></tr>
+<tr><td><code>closedSum(p, r)</code></td><td>Σ<sub>k≤n</sub> p(k)·r<sup>k</sup> in closed form: <code>{ polynomial, at(n), toString() }</code>.</td></tr>
+<tr><td><code>masterTheorem({ a, b, d, j })</code>, <code>divideAndConquer({ a, b, f, t1 }, count)</code></td><td>The case, bound and reason; exact values of T(b<sup>m</sup>).</td></tr>
+</table></div>
+<h2>Graph theory</h2>
+<div class="tablewrap"><table class="ref">
+<tr><th>Export</th><th>What it does</th></tr>
+<tr><td><code>maximumMatching(g)</code>, <code>checkMatching(g, edges, U)</code></td><td>Edmonds' blossoms: <code>{ size, edges, perfect, unmatched, certificate: { set, oddComponents, bound }, check() }</code>, a Tutte–Berge set.</td></tr>
+<tr><td><code>bipartiteMatching(g, { left })</code></td><td><code>{ size, edges, perfect, cover, hall }</code>: a König cover and a Hall violator.</td></tr>
+<tr><td><code>assignment(costs, { maximize })</code></td><td><code>{ assignment, cost, rowPrices, columnPrices, check() }</code>.</td></tr>
+<tr><td><code>stableMatching(proposers, receivers)</code>, <code>blockingPairs(…, matching)</code></td><td>Gale–Shapley: <code>{ matching, proposals, blockingPairs }</code>.</td></tr>
+<tr><td><code>maxFlow(g, s, t)</code>, <code>checkFlow(g, s, t, flow, cut)</code></td><td>Edmonds–Karp with exact capacities: <code>{ value, flow, cut: { source, sink, edges, capacity }, augmentations, check() }</code>.</td></tr>
+<tr><td><code>chromaticNumber(g)</code></td><td><code>{ number, colouring, lowerBound }</code>; the lower bound is a clique, an odd cycle, or a complete search.</td></tr>
+<tr><td><code>chromaticPolynomial(g)</code></td><td>Deletion–contraction: <code>{ coefficients, at(k), toString() }</code>.</td></tr>
+<tr><td><code>greedyColouring(g, order)</code>, <code>isProperColouring(g, c)</code></td><td>A colouring as a Map; <code>{ ok, clash }</code>.</td></tr>
+<tr><td><code>maximumClique</code>, <code>maximalCliques</code>, <code>maximumIndependentSet</code></td><td>Branch and bound; Bron–Kerbosch.</td></tr>
+<tr><td><code>planarity(g)</code>, <code>isPlanar(g)</code>, <code>checkKuratowski(g, w)</code></td><td><code>{ planar: true, faces }</code> (per block, Euler-checked) or <code>{ planar: false, kuratowski: { kind, branch, paths, edges } }</code>.</td></tr>
+<tr><td><code>isomorphism(g, h)</code>, <code>isIsomorphic(g, h)</code></td><td><code>{ isomorphic: true, map }</code> or <code>{ isomorphic: false, reason }</code>.</td></tr>
+<tr><td><code>automorphisms(g)</code></td><td><code>{ order, generators, orbits, group, vertices }</code>; <code>group</code> is a <code>PermGroup</code> up to order 50,000.</td></tr>
+<tr><td><code>spectrum(g, { laplacian })</code>, <code>characteristicPolynomial(M)</code></td><td>Exact eigenvalues with multiplicities: <code>{ polynomial, polynomialText, eigenvalues, toString() }</code>.</td></tr>
+<tr><td><code>adjacency(g)</code>, <code>laplacian(g)</code>, <code>walks(g, k)</code>, <code>spanningTreesFromSpectrum(g)</code></td><td>BigInt matrices; A<sup>k</sup> and its trace; τ(G) from the Laplacian polynomial.</td></tr>
+</table></div>
+<h2>Combinatorial and cooperative games, voting</h2>
+<div class="tablewrap"><table class="ref">
+<tr><th>Export</th><th>What it does</th></tr>
+<tr><td><code>mex</code>, <code>impartialGame(moves)</code>, <code>nim(heaps)</code>, <code>subtractionGame(S, length)</code></td><td>Grundy values, losing positions, winning moves; the period of a subtraction game.</td></tr>
+<tr><td><code>cgame(L, R)</code>, <code>Game</code>, <code>starGame(n)</code>, <code>up()</code>, <code>down()</code></td><td>Conway games in canonical form: <code>le</code>, <code>ge</code>, <code>equals</code>, <code>compare</code>, <code>outcome</code>, <code>add</code>, <code>negate</code>, <code>subtract</code>, <code>number</code>, <code>nimber</code>, <code>L</code>, <code>R</code>.</td></tr>
+<tr><td><code>partizanGame(position, leftMoves, rightMoves)</code></td><td>The canonical value of any position.</td></tr>
+<tr><td><code>backwardInduction(tree)</code></td><td><code>{ value, plan, path }</code>, with ties reported.</td></tr>
+<tr><td><code>cooperativeGame(players, v)</code>, <code>shapley(game)</code></td><td>Exact Shapley values.</td></tr>
+<tr><td><code>core(game)</code>, <code>inCore(game, x)</code></td><td>A core allocation, or a balanced collection proving the core empty; a blocking coalition.</td></tr>
+<tr><td><code>weightedVoting({ quota, weights })</code></td><td>Shapley–Shubik and Banzhaf indices, swings, dummies.</td></tr>
+<tr><td><code>plurality</code>, <code>borda</code>, <code>instantRunoff</code>, <code>condorcet</code>, <code>approval</code></td><td>Winners with tallies, rounds, the pairwise table, or a Condorcet cycle.</td></tr>
+<tr><td><code>apportion(populations, seats, { method })</code></td><td>Hamilton, Jefferson, Webster, Adams, Huntington–Hill: <code>{ seats, quotas, method, tie }</code>.</td></tr>
+<tr><td><code>adjustedWinner(a, b)</code></td><td>Brams–Taylor for two parties.</td></tr>
+</table></div>
+<h2>Relations, orders, Pólya counting</h2>
+<div class="tablewrap"><table class="ref">
+<tr><th>Export</th><th>What it does</th></tr>
+<tr><td><code>relation(elements, pairs | predicate)</code>, <code>Relation</code>, <code>fromPartition(blocks)</code></td><td><code>properties()</code> with witnesses, <code>inverse</code>, <code>compose</code>, reflexive, symmetric and transitive closures, <code>classes()</code>.</td></tr>
+<tr><td><code>poset(elements, pairs | predicate)</code>, <code>Poset</code></td><td><code>leq</code>, <code>hasse</code>, <code>minimal</code>, <code>maximal</code>, <code>least</code>, <code>greatest</code>, <code>levels</code>, <code>longestChain</code>, <code>width</code> (Dilworth), <code>linearExtensions</code>, <code>countLinearExtensions</code>, <code>mobius</code>, <code>meet</code>, <code>join</code>, <code>isLattice</code>, <code>isDistributive</code>.</td></tr>
+<tr><td><code>divisorLattice(n)</code>, <code>booleanLattice(n)</code>, <code>partitionLattice(n)</code></td><td>The standard lattices.</td></tr>
+<tr><td><code>cycleIndex(G)</code>, <code>countColourings(G, k)</code>, <code>patternInventory(G, colours)</code>, <code>symmetry</code></td><td>Burnside and Pólya; <code>symmetry.cyclic</code>, <code>dihedral</code>, <code>symmetric</code>, <code>cubeFaces</code>.</td></tr>
+<tr><td><code>truthTable</code>, <code>minterms</code>, <code>maxterms</code>, <code>countModels</code>, <code>fromMinterms</code>, <code>cnf</code>, <code>dnf</code>, <code>minimize</code>, <code>primeImplicants</code>, <code>logic</code></td><td>Boolean functions, re-exported from <code>@ratmath/logic</code>; <code>logic</code> is the whole package.</td></tr>
+</table></div>
+<h2>Codes and designs</h2>
+<div class="tablewrap"><table class="ref">
+<tr><th>Export</th><th>What it does</th></tr>
+<tr><td><code>linearCode(G, { p })</code>, <code>LinearCode</code></td><td><code>n</code>, <code>k</code>, <code>parityCheck</code>, <code>encode</code>, <code>messageOf</code>, <code>syndrome</code>, <code>isCodeword</code>, <code>codewords</code>, <code>weightDistribution</code>, <code>minimumDistance</code>, <code>dual</code>, <code>cosetLeaders</code>, <code>decode</code> (with steps).</td></tr>
+<tr><td><code>hammingCode(r, { p })</code>, <code>repetitionCode</code>, <code>parityCode</code></td><td>Standard codes over Z<sub>p</sub>.</td></tr>
+<tr><td><code>ballSize(n, t, q)</code>, <code>codeBounds(n, d, q)</code>, <code>isPerfect(code)</code></td><td>Hamming, Singleton and Gilbert–Varshamov bounds.</td></tr>
+<tr><td><code>reedSolomon({ p, n, k, points })</code></td><td><code>encode</code>, and <code>decode</code> by Berlekamp–Welch with steps and error positions.</td></tr>
+<tr><td><code>isLatinSquare</code>, <code>areOrthogonal</code>, <code>cyclicLatinSquare(n)</code>, <code>orthogonalLatinSquares(p)</code></td><td>Latin squares and complete sets of MOLS of prime order.</td></tr>
+<tr><td><code>blockDesign(blocks)</code>, <code>fromDifferenceSet(D, v)</code>, <code>projectivePlane(p)</code>, <code>affinePlane(p)</code>, <code>steinerTripleSystem(v)</code></td><td><code>{ v, b, k, r, lambda, balanced, symmetric, checks }</code> and the standard constructions.</td></tr>
 </table></div>
 <h2>Random</h2>
 <div class="tablewrap"><table class="ref">

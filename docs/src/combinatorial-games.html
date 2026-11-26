@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Combinatorial games · RatMath Discrete</title>
+<meta name="description" content="Impartial games and Sprague–Grundy values, nim, subtraction games, Conway&#x27;s partizan games in canonical form (numbers, nimbers, up), and backward induction in game trees, in @ratmath/discrete.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Optimisation and games</div>
+<h1>Combinatorial games</h1>
+<p class="lede">Two players move in turn, everything is known, and whoever cannot move loses. Every impartial position is worth a nim heap, and every partizan position has a canonical value in Conway's sense: numbers, nimbers, up, and more.</p>
+<h2>Nim and the Sprague–Grundy theorem</h2>
+<pre><code>import { nim, impartialGame, subtractionGame, mex } from "@ratmath/discrete";
+
+nim([3, 4, 5]);   // nimSum 2n, losing false, winningMoves [{ heap: 0, from: 3n, to: 1n }]
+const g = impartialGame((n) =&gt; [1, 2].filter((m) =&gt; m &lt;= n).map((m) =&gt; n - m));
+[0, 1, 2, 3, 4, 5, 6].map(g.grundy).join("");   // "0120120"
+subtractionGame([1, 3, 4], 30).period;           // { start: 0, length: 7 }</code></pre>
+<p>The Grundy value of a position is the smallest non-negative integer not among its options' values,</p>
+\[ \mathcal G(P) = \operatorname{mex}\{\mathcal G(Q) : P \to Q\}, \]
+<p>and a position is lost for the player to move exactly when \(\mathcal G(P) = 0\). The Sprague–Grundy theorem says a sum of games has value the nim-sum (bitwise XOR) of the parts, which is why nim is solved by XOR. Subtraction games with a finite set are eventually periodic; the period is found by looking for a repeat as long as the largest move.</p>
+<h2>Partizan games</h2>
+<pre><code>import { cgame, starGame, up, down } from "@ratmath/discrete";
+String(cgame([0], []));         // "1"
+String(cgame([0], [1]));        // "1/2"
+String(cgame([0], [0]));        // "*"
+String(starGame(2).add(starGame(3)));   // "*": nimbers add by XOR
+String(up().add(up()));         // "⇑"
+up().compare(0);                // "&gt;": up is positive …
+up().compare(starGame(1));      // "‖": … yet confused with *
+cgame([2], [-1]).outcome;       // "first player"</code></pre>
+<p>A game is \(G = \{G^L \mid G^R\}\), its options for Left and for Right. \(G \ge 0\) means Left wins moving second, and the order, sum and negation follow Conway's recursive definitions. Each game is reduced to canonical form by removing dominated options and bypassing reversible ones, so equal games print the same: \(\{0 \mid 1\} = 1/2\), \(\{0\mid 0\} = *\), \(\{0 \mid *\} = \uparrow\).</p>
+<h2>Hackenbush</h2>
+<p><code>partizanGame</code> computes the value of any position from the two players' move functions. In blue-red Hackenbush on a single stalk, the value is a binary fraction you can read off the colours:</p>
+<pre><code>import { partizanGame } from "@ratmath/discrete";
+const stalk = (s) =&gt; partizanGame(s,
+  (p) =&gt; [...p].map((c, i) =&gt; (c === "B" ? p.slice(0, i) : null)).filter((x) =&gt; x !== null),
+  (p) =&gt; [...p].map((c, i) =&gt; (c === "R" ? p.slice(0, i) : null)).filter((x) =&gt; x !== null));
+String(stalk("BR"));     // "1/2"
+String(stalk("BBRB"));   // "7/4"</code></pre>
+<h2>Backward induction</h2>
+<pre><code>import { backwardInduction } from "@ratmath/discrete";
+const entry = { player: "A", moves: {
+  in:  { player: "B", moves: { fight: { payoff: { A: -1, B: -1 } }, share: { payoff: { A: 1, B: 1 } } } },
+  out: { payoff: { A: 0, B: 2 } } } };
+backwardInduction(entry).path;   // ["in", "share"]: the threat to fight is not credible</code></pre>
+<p>In a finite game tree with perfect information, solving from the leaves up gives a subgame-perfect equilibrium. Ties are reported rather than broken silently.</p>
+<template data-runbox>
+// Sprague–Grundy at work: a sum of three different games.
+const take12 = impartialGame((n) =&gt; [1, 2].filter((m) =&gt; m &lt;= n).map((m) =&gt; n - m));
+const sub = subtractionGame([1, 3, 4], 40).values;
+const position = { take12: 7, subtract: 9, heap: 5 };
+const values = [take12.grundy(7), sub[9], 5];
+PRINT("Grundy values", values.join(", "), " nim-sum", values.reduce((a, b) =&gt; a ^ b));
+// Numbers, nimbers and infinitesimals side by side
+for (const G of [cgame([0], [1]), cgame(["1/2"], ["3/4"]), starGame(1).add(starGame(1)), up().add(starGame(1)), up().add(up()).add(down())]) {
+  PRINT(String(G).padEnd(6), "compared with 0:", G.compare(0), " outcome:", G.outcome);
+}
+</template>
+</article>
+</main>
+</div>
+</body>
+</html>
