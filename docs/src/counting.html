@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Counting · RatMath Discrete</title>
+<meta name="description" content="Exact counting in @ratmath/discrete: factorials, binomial and multinomial coefficients, Stirling, Bell, Catalan and Fibonacci numbers, derangements and partitions.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script type="module" src="assets/site.js"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">Counting</div>
+<h1>Counting</h1>
+<p class="lede">How many ways are there? Each classical answer is a function here, returning an exact integer of any size.</p>
+
+<h2>Arrangements and selections</h2>
+<p>Choosing \(k\) things from \(n\) splits four ways, by whether order matters and whether repeats are allowed:</p>
+<div class="tablewrap"><table class="ref">
+<tr><th></th><th>Order matters</th><th>Order does not matter</th></tr>
+<tr><td>No repeats</td><td>\(n(n-1)\cdots(n-k+1)\)<br><code>fallingFactorial(n, k)</code></td><td>\(\binom{n}{k} = \dfrac{n!}{k!\,(n-k)!}\)<br><code>binomial(n, k)</code></td></tr>
+<tr><td>Repeats allowed</td><td>\(n^k\)<br><code>BigInt(n) ** BigInt(k)</code></td><td>\(\binom{n+k-1}{k}\)<br><code>multichoose(n, k)</code></td></tr>
+</table></div>
+<pre><code>import { factorial, fallingFactorial, binomial, multichoose, multinomial, pascalRow } from "@ratmath/discrete";
+
+factorial(20);              // 2432902008176640000n
+fallingFactorial(10, 3);    // 720n: gold, silver, bronze among ten runners
+binomial(52, 5);            // 2598960n: poker hands
+multichoose(3, 10);         // 66n: ten scoops from three flavours
+multinomial(4, 4, 2, 1);    // 34650n: arrangements of the letters of MISSISSIPPI
+pascalRow(6);               // [1n, 6n, 15n, 20n, 15n, 6n, 1n]
+binomial(-3, 2);            // 6n: the coefficient of x² in (1 + x)⁻³</code></pre>
+<p>Arguments are whole numbers as numbers, <code>BigInt</code>s, digit strings or Core Rationals with denominator 1. Results are always <code>BigInt</code>. <code>binomial(n, k)</code> is 0 when \(k\) is outside \(0 \dots n\), which is what makes sums over all \(k\) come out right, and for negative \(n\) it is the coefficient in the binomial series, \((-1)^k\binom{k-n-1}{k}\).</p>
+<p>The multichoose formula is the "stars and bars" argument: a selection of \(k\) from \(n\) kinds is a row of \(k\) stars and \(n - 1\) bars, and there are \(\binom{n+k-1}{k}\) such rows.</p>
+
+<h2>Partitions of a set</h2>
+<p>The Stirling number of the second kind \(S(n, k)\) counts the ways to split \(n\) distinct things into \(k\) non-empty unlabelled groups; the Bell number \(B_n\) allows any number of groups. Labelling the groups gives the surjections, \(k!\,S(n, k)\).</p>
+<pre><code>import { stirling2, bell, surjections, stirling1 } from "@ratmath/discrete";
+
+stirling2(5, 2);     // 15n
+bell(5);             // 52n = 1 + 15 + 25 + 10 + 1
+surjections(4, 2);   // 14n: functions from 4 things onto 2
+stirling1(5, 2);     // 50n: permutations of 5 with exactly 2 cycles
+stirling1(5, 2, { signed: true });   // -50n: the coefficient of x² in x(x−1)(x−2)(x−3)(x−4)</code></pre>
+<p>Both kinds of Stirling numbers come from a triangle like Pascal's: \(S(n, k) = S(n-1, k-1) + k\,S(n-1, k)\) (the new element is alone, or joins one of \(k\) groups) and \(c(n, k) = c(n-1, k-1) + (n-1)\,c(n-1, k)\) (it is a cycle of its own, or is inserted after one of the \(n - 1\) others). They are the change of basis between powers and falling factorials: \(x^n = \sum_k S(n, k)\,x(x-1)\cdots(x-k+1)\).</p>
+
+<h2>Partitions of a number</h2>
+<p>A <em>partition</em> of \(n\) is a way to write it as a sum of positive whole numbers, order ignored; a <em>composition</em> counts the order.</p>
+<pre><code>import { partitionCount, compositionCount } from "@ratmath/discrete";
+
+partitionCount(5);      // 7n: 5, 4+1, 3+2, 3+1+1, 2+2+1, 2+1+1+1, 1+1+1+1+1
+partitionCount(200);    // 3972999029388n
+partitionCount(8, 3);   // 5n: into exactly three parts
+compositionCount(5);    // 16n = 2⁴
+compositionCount(6, 3); // 10n = C(5, 2)</code></pre>
+<p>There is no simple formula for \(p(n)\). It is computed from Euler's pentagonal number theorem, \(p(n) = \sum_{j \ge 1} (-1)^{j+1}\big(p(n - \tfrac{j(3j-1)}{2}) + p(n - \tfrac{j(3j+1)}{2})\big)\), which needs only about \(\sqrt n\) earlier values for each new one.</p>
+
+<h2>Named sequences</h2>
+<pre><code>import { catalan, fibonacci, lucas, derangementCount, eulerian } from "@ratmath/discrete";
+
+catalan(4);            // 14n: balanced strings of 4 pairs of brackets, binary trees with 4 nodes, …
+fibonacci(100);        // 354224848179261915075n
+fibonacci(-7);         // 13n: F(−n) = (−1)^(n+1) F(n)
+lucas(10);             // 123n
+derangementCount(5);   // 44n: permutations with no fixed point
+eulerian(4, 1);        // 11n: permutations of 4 with exactly one descent</code></pre>
+<p>Fibonacci numbers use the doubling identities \(F_{2k} = F_k(2F_{k+1} - F_k)\) and \(F_{2k+1} = F_k^2 + F_{k+1}^2\), so \(F_n\) takes about \(\log_2 n\) steps: <code>fibonacci(1000000)</code> is a fraction of a second. The Catalan number \(\frac{1}{n+1}\binom{2n}{n}\) counts more than two hundred known families; <a href="enumeration.html">Enumeration</a> lists one of them.</p>
+<template data-runbox>
+// The four-way table for choosing 3 from 5.
+PRINT("ordered, no repeats:  ", fallingFactorial(5, 3));
+PRINT("ordered, repeats:     ", 5n ** 3n);
+PRINT("unordered, no repeats:", binomial(5, 3));
+PRINT("unordered, repeats:   ", multichoose(5, 3));
+
+// Stirling's triangle of the second kind, and the Bell numbers as its row sums.
+for (let n = 0; n &lt;= 7; n++) {
+  const row = [];
+  for (let k = 0; k &lt;= n; k++) row.push(String(stirling2(n, k)).padStart(4));
+  PRINT(row.join(""), "   Bell:", bell(n));
+}
+
+// Identities, checked exactly. Vandermonde: Σ C(m,j) C(n,k−j) = C(m+n,k).
+let sum = 0n;
+for (let j = 0; j &lt;= 12; j++) sum += binomial(30, j) * binomial(45, 12 - j);
+PRINT("Vandermonde:", sum === binomial(75, 12));
+// x^n = Σ S(n,k) · x(x−1)…(x−k+1), at x = 10, n = 8
+let s = 0n;
+for (let k = 0; k &lt;= 8; k++) s += stirling2(8, k) * fallingFactorial(10, k);
+PRINT("powers from falling factorials:", s === 10n ** 8n);
+// Cassini: F(n−1)F(n+1) − F(n)² = (−1)^n
+PRINT("Cassini at n = 500:", fibonacci(499) * fibonacci(501) - fibonacci(500) ** 2n);
+
+// The chance that nobody gets their own hat back tends to 1/e, fast.
+for (const n of [3, 5, 10, 20]) PRINT(`n = ${n}:`, (Number(derangementCount(n)) / Number(factorial(n))).toFixed(15), "  1/e =", Math.exp(-1).toFixed(15));
+[partitionCount(100), fibonacci(300).toString().length + " digits in F(300)"]
+</template>
+</article>
+</main>
+</div>
+</body>
+</html>

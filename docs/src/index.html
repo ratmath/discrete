@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>RatMath Discrete mathematics</title>
-<meta name="description" content="Discrete mathematics for RatMath: counting and enumeration, graphs, generating functions, games and exact linear programming.">
+<title>RatMath Discrete</title>
+<meta name="description" content="Discrete mathematics for RatMath: exact counting, enumeration with ranking and unranking, and a seeded random generator.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
@@ -17,27 +17,37 @@
 <main>
 <article>
 <div class="eyebrow">@ratmath/discrete</div>
-<h1>Counting, graphs and games, exactly</h1>
-<p class="lede">Combinatorics, graph theory and game theory in one library: exact counts of any size, objects you can list, rank and sample, graph algorithms with certificates, and games solved in exact fractions.</p>
-<p class="notice"><strong>Planned, not built yet.</strong> This site is the frame the package will grow into. The full plan is in the <a href="https://github.com/ratmath/ratmath/blob/main/docs/design/library-roadmap.md#7-a-discrete-mathematics-package-ratmathdiscrete">library roadmap</a>, and the <a href="https://ratmath.com/shelf/">RatMath Shelf</a> page lists what exists across all the libraries.</p>
+<h1>Count it, list it, or pick one at random</h1>
+<p class="lede">The numbers of combinatorics as exact integers of any size; every standard family of objects in a fixed order, with the millionth one found without listing the rest; and a random generator that gives the same stream from the same seed on every machine.</p>
 
-<h2>What it will cover</h2>
-<ul>
-  <li>Counting: binomials, Stirling and Catalan numbers, partitions, inclusion and exclusion.</li>
-  <li>Enumeration with ranking and unranking, and a seeded random generator shared with statistics.</li>
-  <li>Graphs: structure, traversal, shortest paths, trees, standard families.</li>
-  <li>Generating functions and recurrences, solved in closed form.</li>
-  <li>Matchings, flows, colouring, planarity, isomorphism and spectra.</li>
-  <li>Exact linear programming, and matrix and bimatrix games.</li>
-  <li>Combinatorial, extensive-form and cooperative games; voting.</li>
-  <li>Sets, relations and partial orders; Pólya counting; codes and designs.</li>
-</ul>
+<h2>What is here</h2>
+<p>The first part of the package: counting, enumeration and the generator. Graphs, generating functions, games and linear programming are planned and listed at the bottom of this page.</p>
+<div class="cards" id="cards"></div>
 
-<h2>The order of work</h2>
-<p>The phases below come from the roadmap. Sizes are rough estimates in lines of source.</p>
+<h2>A first program</h2>
+<pre><code>import { binomial, partitionCount, permutations, setPartitions, rng } from "@ratmath/discrete";
+
+binomial(100, 50);            // 100891344545564193334812497256n: exact, however large
+partitionCount(200);          // 3972999029388n
+
+const p = permutations(20);   // all 2432902008176640000 of them, none listed yet
+p.unrank(999999);             // [1, 2, …, 10, 13, 18, 19, 14, 20, 12, 16, 15, 17, 11]
+p.rank([20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]);   // 2432902008176639999n
+
+const g = rng("my experiment");
+setPartitions(["ann", "bo", "cy", "di"]).random(g);   // a uniformly random way to split four people into groups
+g.shuffle([1, 2, 3, 4, 5]);                           // the same shuffle every time this seed is used</code></pre>
+
+<h2>Three ideas</h2>
+<p><strong>Counts are exact.</strong> Every counting function returns a <code>BigInt</code>. \(\binom{100}{50}\) has 30 digits and all of them are right; nothing is rounded, so identities can be checked by <code>===</code>.</p>
+<p><strong>A family is a numbered list you never have to write out.</strong> <code>permutations(20)</code> is an object that knows its size, the object at any place (<code>unrank</code>) and the place of any object (<code>rank</code>). That turns "a uniformly random permutation" into "a uniformly random number below \(20!\)", and it is how a search or a simulation can be split up or resumed. See <a href="enumeration.html">Enumeration</a>.</p>
+<p><strong>Random means reproducible.</strong> The generator is integer arithmetic from end to end. A seed fixes the stream on every platform, whole numbers of any size are exactly uniform, and probabilities are exact fractions. See <a href="random.html">The seeded generator</a>.</p>
+
+<h2>What is planned</h2>
+<p>From the <a href="https://github.com/ratmath/ratmath/blob/main/docs/design/library-roadmap.md#7-a-discrete-mathematics-package-ratmathdiscrete">library roadmap</a>. Sizes are rough estimates in lines of source.</p>
 <div class="tablewrap"><table class="plan">
 <tr><th>Phase</th><th>Contents</th><th>Estimate</th></tr>
-<tr><td>1</td><td>Counting, enumeration with ranking, the seeded generator</td><td>1,000</td></tr>
+<tr><td>1</td><td>Counting, enumeration with ranking, the seeded generator</td><td>built</td></tr>
 <tr><td>2</td><td>Graphs: structure, traversal, paths, trees, families</td><td>1,300</td></tr>
 <tr><td>3</td><td>Generating functions and recurrences</td><td>900</td></tr>
 <tr><td>4</td><td>Matchings, flows, colouring, planarity, isomorphism, spectra</td><td>1,600</td></tr>
@@ -47,25 +57,28 @@
 <tr><td>8</td><td>Codes and designs</td><td>700</td></tr>
 <tr><td>9</td><td>Graph drawing</td><td>900 in graphics</td></tr>
 </table></div>
-<p>It will build on: Core, and linalg for spectra and linear programming. The statistics package uses it for discrete probability.</p>
-
-<h2>How the docs will be laid out</h2>
-<p>Like every library on the Shelf: this overview, an <a href="explore.html">Explore</a> page for trying things without writing code, a <a href="reference.html">Reference</a> listing every function, and one page per topic that explains the usage and the mathematics. Every page ends with a box of code you can edit and run.</p>
-<div class="cards" id="cards"></div>
-
-<h2>Until then</h2>
-<p>The box below already runs, with <code>@ratmath/core</code> in scope. It shows the kind of exactness the package is built on, done by hand.</p>
+<p>This part depends only on Core. The statistics library will draw its random data from the generator here.</p>
 <template data-runbox>
-// Exact counting needs nothing but BigInt.
-const binomial = (n, k) =&gt; { let r = 1n; for (let i = 1n; i &lt;= BigInt(k); i += 1n) r = (r * (BigInt(n) - i + 1n)) / i; return r; };
-const catalan = (n) =&gt; binomial(2 * n, n) / BigInt(n + 1);
-PRINT("C(100, 50) =", binomial(100, 50));
-PRINT("Catalan numbers:", Array.from({ length: 12 }, (_, n) =&gt; catalan(n)).join(", "));
-// the chance that a random permutation of n things has no fixed point tends to 1/e
-let d = [1n, 0n];
-for (let n = 2; n &lt;= 20; n += 1) d.push(BigInt(n - 1) * (d[n - 1] + d[n - 2]));
-let f = 1n; for (let n = 2n; n &lt;= 20n; n += 1n) f *= n;
-PRINT("derangements of 20 / 20! =", new Rational(d[20], f).toDecimal(20));
+// How many poker hands, and how many of each kind?
+const hands = binomial(52, 5);
+const flush = 4n * binomial(13, 5);
+const fullHouse = 13n * binomial(4, 3) * 12n * binomial(4, 2);
+PRINT("hands:", hands, " flushes (with straight flushes):", flush, " full houses:", fullHouse);
+PRINT("chance of a full house:", new Rational(fullHouse, hands).toString());
+
+// The hand at place one million in the list of all hands, and back again.
+const deck = [];
+for (const s of "♠♥♦♣") for (const r of ["A", 2, 3, 4, 5, 6, 7, 8, 9, 10, "J", "Q", "K"]) deck.push(r + s);
+const all = combinations(deck, 5);
+const hand = all.unrank(1000000);
+PRINT("hand number 1,000,000:", hand.join(" "), " → rank", all.rank(hand));
+
+// Deal five random hands; the seed makes the deal repeatable.
+const g = rng("deal 1");
+for (let i = 0; i &lt; 5; i++) PRINT("  ", all.random(g).join(" "));
+
+// Twelve people into three unlabelled teams of any sizes: Stirling. Of four each: multinomial/3!.
+PRINT("three teams:", stirling2(12, 3), "  three teams of four:", multinomial(4, 4, 4) / factorial(3));
 plan.map((p) =&gt; `${p.phase}. ${p.contents}`)
 </template>
 </article>

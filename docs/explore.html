@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Discrete mathematics Explorer</title>
-<meta property="og:title" content="Discrete mathematics Explorer">
+<title>Explore · RatMath Discrete</title>
+<meta property="og:title" content="Explore · RatMath Discrete">
 <meta property="og:description" content="Discrete mathematics for RatMath: counting and enumeration, graphs, generating functions, games and exact linear programming.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://ratmath.com/discrete/explore.html">
-<meta name="description" content="Try @ratmath/discrete without writing a program.">
+<meta name="description" content="Try @ratmath/discrete without writing code: counting numbers, ranked families of objects, and seeded random draws.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=1c5d3af7d8">
-<script type="module" src="assets/site.js?v=1c5d3af7d8"></script>
+<link rel="stylesheet" href="assets/style.css?v=645067272b">
+<script type="module" src="assets/site.js?v=645067272b"></script>
 </head>
 <body>
 <div class="shell">
@@ -22,18 +22,40 @@
 <article>
 <div class="eyebrow">Explore</div>
 <h1>Explore</h1>
-<p class="lede">This page will be a calculator for everything in the library: type an expression, see an exact answer, click an example to change it.</p>
-<p class="notice"><strong>Planned, not built yet.</strong> This site is the frame the package will grow into. The full plan is in the <a href="https://github.com/ratmath/ratmath/blob/main/docs/design/library-roadmap.md#7-a-discrete-mathematics-package-ratmathdiscrete">library roadmap</a>, and the <a href="https://ratmath.com/shelf/">RatMath Shelf</a> page lists what exists across all the libraries.</p>
-<p>There is nothing to explore yet. The first phase is: <strong>Counting, enumeration with ranking, the seeded generator</strong>. When it is built its operations appear here.</p>
-<p>In the meantime the code box below runs JavaScript with <code>@ratmath/core</code> in scope.</p>
+<p class="lede">Pick n and k and see every count at once. Then walk through a family of objects by rank, or draw from it with a seed.</p>
+
+<h2>Counts</h2>
+<div class="demo">
+<div class="demo-row"><label for="ex-n">n</label><input id="ex-n" class="text" type="number" min="0" max="500" value="10" size="6"><label for="ex-k">k</label><input id="ex-k" class="text" type="number" min="0" max="500" value="3" size="6"></div>
+<div id="ex-counts"></div>
+</div>
+
+<h2>A family, by rank</h2>
+<div class="demo">
+<div class="demo-row"><label for="ex-fam">Family</label><select id="ex-fam"></select>
+<label for="ex-items">Items (optional)</label><input id="ex-items" class="text grow" value="" placeholder="a, b, c, d: names to use in place of 1…n" spellcheck="false"></div>
+<div class="demo-row"><label for="ex-rank">Rank</label><input id="ex-rank" class="text grow" value="0" spellcheck="false">
+<button class="chipbtn" id="ex-prev">◀ previous</button><button class="chipbtn" id="ex-next">next ▶</button><button class="chipbtn" id="ex-last">last</button></div>
+<div class="demo-row"><label for="ex-seed">Seed</label><input id="ex-seed" class="text" value="2026" size="12" spellcheck="false"><button class="chipbtn" id="ex-rand">draw at random</button></div>
+<div id="ex-family"></div>
+</div>
+<p>The family uses the n and k above. Rank may be any whole number below the count, however large: try <code>permutations</code> with n = 30 and a rank of thirty digits.</p>
+
+<h2>Seeded draws</h2>
+<div class="demo">
+<div class="demo-row"><label for="ex-seed2">Seed</label><input id="ex-seed2" class="text grow" value="my experiment" spellcheck="false"><label for="ex-sides">Die sides</label><input id="ex-sides" class="text" type="number" min="1" value="6" size="5"></div>
+<div id="ex-draws"></div>
+</div>
 <section class="runbox" aria-label="Runnable code">
   <div class="runbox-head"><strong>Try it</strong><span>Edit the code and run it with <code>@ratmath/discrete</code> and Core's <code>Rational</code> in scope. The last line's value is shown; <code>PRINT(…)</code> adds lines, <code>TEX(…)</code> typesets math.</span></div>
-  <textarea spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code">// Core's exact numbers are available here.
-const third = new Rational(1, 3);
-PRINT("1/3 + 1/6 =", third.add(new Rational(1, 6)).toString());
-PRINT("(2/3)^10 =", new Rational(2, 3).pow(10).toString());
-PRINT("0.1 + 0.2 in floating point:", 0.1 + 0.2, "  exactly:", new Rational(1, 10).add(new Rational(2, 10)).toString());
-plan[0].contents</textarea>
+  <textarea spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code">// The page above, as code.
+const n = 10, k = 3;
+PRINT("binomial", binomial(n, k), " arrangements", fallingFactorial(n, k), " stirling2", stirling2(n, k), " partitions of n into k", partitionCount(n, k));
+const f = combinations(n, k);
+PRINT(f.name + ":", f.count, " at rank 57:", f.unrank(57).join(" "), " and back:", f.rank(f.unrank(57)));
+const g = rng("my experiment");
+PRINT("ten rolls:", Array.from({ length: 10 }, () =&gt; g.between(1, 6)).join(" "));
+f.random(g)</textarea>
   <div class="runbox-bar"><button type="button" data-run>Run</button><button type="button" class="ghost" data-reset>Reset</button><span class="runbox-meta">Ctrl/⌘ + Enter runs</span></div>
   <div class="runbox-out" aria-live="polite"></div>
 </section>
@@ -41,5 +63,146 @@ plan[0].contents</textarea>
 </article>
 </main>
 </div>
+<script type="module">
+import { A as S, h } from "./assets/site.js?v=645067272b";
+const $ = (id) => document.getElementById(id);
+const line = (label, f) => {
+  let text;
+  let bad = false;
+  try {
+    text = f();
+  } catch (e) {
+    text = e.message;
+    bad = true;
+  }
+  return [h("dt", {}, label), h("dd", { style: bad ? "color: var(--muted)" : null }, String(text))];
+};
+const clamp = (id) => Math.min(500, Math.max(0, Math.floor(Number($(id).value) || 0)));
+const nk = () => [clamp("ex-n"), clamp("ex-k")];
+const short = (b) => {
+  const s = String(b);
+  return s.length > 60 ? `${s.slice(0, 24)}…${s.slice(-12)}  (${s.length} digits)` : s;
+};
+function counts() {
+  const [n, k] = nk();
+  $("ex-counts").replaceChildren(h("dl", { class: "kv out" },
+    line("n!", () => short(S.factorial(n))),
+    line("arrangements of k out of n", () => short(S.fallingFactorial(n, k))),
+    line("binomial(n, k)", () => short(S.binomial(n, k))),
+    line("multichoose(n, k)", () => short(S.multichoose(n, k))),
+    line("words nᵏ", () => short(BigInt(n) ** BigInt(k))),
+    line("stirling2(n, k)", () => short(S.stirling2(n, k))),
+    line("stirling1(n, k)", () => short(S.stirling1(n, k))),
+    line("surjections(n, k)", () => short(S.surjections(n, k))),
+    line("bell(n)", () => short(S.bell(n))),
+    line("partitions of n", () => short(S.partitionCount(n))),
+    line("… into k parts", () => short(S.partitionCount(n, k))),
+    line("compositions of n into k parts", () => short(S.compositionCount(n, k))),
+    line("catalan(n)", () => short(S.catalan(n))),
+    line("fibonacci(n)", () => short(S.fibonacci(n))),
+    line("derangements of n", () => short(S.derangementCount(n))),
+  ));
+}
+const FAMILIES = {
+  "permutations(n)": (g, n) => S.permutations(g),
+  "permutations(n, k)": (g, n, k) => S.permutations(g, k),
+  "derangements(n)": (g) => S.derangements(g),
+  "combinations(n, k)": (g, n, k) => S.combinations(g, k),
+  "multisets(n, k)": (g, n, k) => S.multisets(g, k),
+  "subsets(n)": (g) => S.subsets(g),
+  "subsets(n), Gray order": (g) => S.subsets(g, { order: "gray" }),
+  "subsets(n), by size": (g) => S.subsets(g, { order: "size" }),
+  "words(n, k)": (g, n, k) => S.words(g, k),
+  "compositions(n)": (g, n) => S.compositions(n),
+  "compositions(n, k)": (g, n, k) => S.compositions(n, k),
+  "partitions(n)": (g, n) => S.partitions(n),
+  "partitions(n, k)": (g, n, k) => S.partitions(n, k),
+  "setPartitions(n)": (g) => S.setPartitions(g),
+  "setPartitions(n, k)": (g, n, k) => S.setPartitions(g, k),
+  "dyckWords(n)": (g, n) => S.dyckWords(n),
+};
+$("ex-fam").append(...Object.keys(FAMILIES).map((name) => h("option", { value: name, selected: name === "combinations(n, k)" }, name)));
+const show = (x) => (typeof x === "string" ? x : Array.isArray(x[0]) ? x.map((b) => `{${b.join(", ")}}`).join("  ") : x.length ? x.join("  ") : "(empty)");
+function current() {
+  const [n, k] = nk();
+  const items = $("ex-items").value.split(",").map((t) => t.trim()).filter(Boolean);
+  if (n > 400) throw new RangeError("keep n at 400 or below for the family explorer");
+  const ground = items.length ? items : n;
+  return FAMILIES[$("ex-fam").value](ground, items.length || n, k);
+}
+function family() {
+  const out = $("ex-family");
+  try {
+    const f = current();
+    const text = $("ex-rank").value.trim() || "0";
+    if (!/^-?\d+$/.test(text)) throw new RangeError("the rank is a whole number");
+    const rows = [line("family", () => f.name), line("count", () => short(f.count)), line("order", () => f.order)];
+    if (f.count > 0n) {
+      const r = BigInt(text);
+      rows.push(line(`at rank ${short(r)}`, () => show(f.unrank(r))));
+      rows.push(line("rank of that object", () => short(f.rank(f.unrank(r)))));
+      rows.push(line("the first few", () => f.first(8).map(show).join("\n")));
+    } else rows.push(line("", () => "this family is empty"));
+    out.replaceChildren(h("dl", { class: "kv out" }, ...rows));
+    out.querySelectorAll("dd").forEach((d) => (d.style.whiteSpace = "pre-wrap"));
+  } catch (e) {
+    out.replaceChildren(h("div", { class: "out err" }, e.message));
+  }
+}
+const step = (d) => {
+  try {
+    const f = current();
+    if (f.count === 0n) return;
+    const r = BigInt($("ex-rank").value.trim() || "0");
+    const next = d === "last" ? f.count - 1n : (((r + BigInt(d)) % f.count) + f.count) % f.count;
+    $("ex-rank").value = String(next);
+  } catch {
+    $("ex-rank").value = "0";
+  }
+  family();
+};
+$("ex-prev").addEventListener("click", () => step(-1));
+$("ex-next").addEventListener("click", () => step(1));
+$("ex-last").addEventListener("click", () => step("last"));
+let draws = 0;
+$("ex-rand").addEventListener("click", () => {
+  try {
+    const f = current();
+    if (f.count === 0n) return;
+    // a new draw each press, still a function of the seed alone
+    $("ex-rank").value = String(S.rng($("ex-seed").value).fork(String(draws++)).int(f.count));
+    family();
+  } catch (e) {
+    $("ex-family").replaceChildren(h("div", { class: "out err" }, e.message));
+  }
+});
+function drawsPanel() {
+  const out = $("ex-draws");
+  try {
+    const sides = Math.max(1, Math.floor(Number($("ex-sides").value) || 6));
+    const g = S.rng($("ex-seed2").value);
+    const rolls = Array.from({ length: 24 }, () => g.between(1, sides));
+    const tally = Array(sides).fill(0);
+    const g2 = S.rng($("ex-seed2").value).fork("tally");
+    if (sides <= 20) for (let i = 0; i < 6000; i++) tally[g2.int(sides)]++;
+    out.replaceChildren(h("dl", { class: "kv out" },
+      line("24 rolls", () => rolls.join(" ")),
+      line("a shuffled hand", () => S.rng($("ex-seed2").value).fork("cards").shuffle(["A", "K", "Q", "J", "10", "9", "8"]).join(" ")),
+      line("a coin, p = 1/3", () => Array.from({ length: 30 }, ((c) => () => (c.bool("1/3") ? "H" : "·"))(S.rng($("ex-seed2").value).fork("coin"))).join("")),
+      line("a fraction k/12", () => S.rng($("ex-seed2").value).fork("q").rational(12)),
+      ...(sides <= 20 ? [line("6000 rolls, per face", () => tally.join("  "))] : []),
+      line("", () => "Change one character of the seed and everything changes; change it back and it all returns."),
+    ));
+  } catch (e) {
+    out.replaceChildren(h("div", { class: "out err" }, e.message));
+  }
+}
+for (const id of ["ex-n", "ex-k"]) $(id).addEventListener("input", () => { counts(); family(); });
+for (const id of ["ex-fam", "ex-items", "ex-rank"]) $(id).addEventListener("input", family);
+for (const id of ["ex-seed2", "ex-sides"]) $(id).addEventListener("input", drawsPanel);
+counts();
+family();
+drawsPanel();
+</script>
 </body>
 </html>

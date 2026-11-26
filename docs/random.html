@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The seeded generator · RatMath Discrete</title>
+<meta property="og:title" content="The seeded generator · RatMath Discrete">
+<meta property="og:description" content="Discrete mathematics for RatMath: counting and enumeration, graphs, generating functions, games and exact linear programming.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ratmath.com/discrete/random.html">
+<meta name="description" content="A seeded, reproducible random generator in @ratmath/discrete: exactly uniform whole numbers of any size, exact probabilities, shuffles, samples and independent streams.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="https://ratmath.com/assets/katex/0.19.1/katex.min.css">
+<link rel="stylesheet" href="assets/style.css?v=645067272b">
+<script type="module" src="assets/site.js?v=645067272b"></script>
+</head>
+<body>
+<div class="shell">
+<aside></aside>
+<main>
+<article>
+<div class="eyebrow">The seeded generator</div>
+<h1>The seeded generator</h1>
+<p class="lede">Random numbers you can have again. The same seed gives the same stream on every machine, whole numbers are exactly uniform at any size, and probabilities are exact fractions.</p>
+
+<h2>Making one</h2>
+<pre><code>import { rng } from "@ratmath/discrete";
+
+const g = rng(2026);            // a whole number of any size
+const h = rng("experiment 3");  // or text
+g.u32();                        // 3023761063: always, for this seed
+g.u32();                        // 2983606895</code></pre>
+<p>JavaScript's <code>Math.random()</code> cannot be seeded, so a simulation built on it can never be rerun. Here every result is a function of the seed alone. The first values for a given seed are fixed by the tests of this library, and will not change between versions.</p>
+
+<h2>Whole numbers, exactly uniform</h2>
+<pre><code>g.int(6);                 // 0…5, each with probability exactly 1/6
+g.between(1, 6);          // a die
+g.int(10n ** 40n);        // a BigInt below 10⁴⁰, exactly uniform
+g.bits(256);              // 256 random bits as a BigInt</code></pre>
+<p>The common shortcut, <code>Math.floor(Math.random() * n)</code> or <code>random % n</code>, is slightly biased whenever <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi></mrow><annotation encoding="application/x-tex">n</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.4306em;"></span><span class="mord mathnormal">n</span></span></span></span> does not divide the size of the generator's range: some values get one more chance than others. <code>int</code> removes the bias by <em>rejection</em>: it draws just enough bits to cover <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi></mrow><annotation encoding="application/x-tex">n</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.4306em;"></span><span class="mord mathnormal">n</span></span></span></span>, and if the draw is <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi></mrow><annotation encoding="application/x-tex">n</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.4306em;"></span><span class="mord mathnormal">n</span></span></span></span> or more it throws it away and draws again. Each accepted value is then equally likely, and fewer than two draws are needed on average.</p>
+
+<h2>Exact probabilities</h2>
+<pre><code>g.bool();                 // a fair coin
+g.bool("1/3");            // true with probability exactly 1/3
+g.weighted(["red", "green", "blue"], [5, 3, "1/2"]);   // weights are exact fractions
+g.rational(1000);         // a Core Rational k/1000, 0 ≤ k &lt; 1000
+g.float();                // a double in [0, 1): the one inexact method</code></pre>
+<p>A probability of 1/3 cannot be written as a floating-point number, so comparing a random double with <code>1/3</code> is off by a hair. <code>bool("1/3")</code> draws a uniform whole number below 3 and asks whether it is below 1. Weighted choice works the same way, over the common denominator of the weights.</p>
+
+<h2>Shuffles and samples</h2>
+<pre><code>g.shuffle([1, 2, 3, 4, 5]);       // a new array; all 120 orders equally likely
+g.sample(["a", "b", "c", "d"], 2);  // two distinct items, in random order
+g.pick(["heads", "tails"]);
+
+import { permutations, partitions } from "@ratmath/discrete";
+permutations(52).random(g);       // or through any family
+partitions(100).random(g);        // a uniformly random partition of 100</code></pre>
+<p><code>shuffle</code> is the Fisher–Yates method: for each position from the last, swap with a uniformly chosen position at or before it. It produces each of the <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi><mo stretchy="false">!</mo></mrow><annotation encoding="application/x-tex">n!</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.6944em;"></span><span class="mord mathnormal">n</span><span class="mclose">!</span></span></span></span> orders in exactly one way, so uniform choices give a uniform shuffle. The tempting variant that swaps every position with <em>any</em> position has <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>n</mi><mi>n</mi></msup></mrow><annotation encoding="application/x-tex">n^n</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.6644em;"></span><span class="mord"><span class="mord mathnormal">n</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.6644em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">n</span></span></span></span></span></span></span></span></span></span></span> equally likely runs, which cannot be spread evenly over <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi><mo stretchy="false">!</mo></mrow><annotation encoding="application/x-tex">n!</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.6944em;"></span><span class="mord mathnormal">n</span><span class="mclose">!</span></span></span></span> orders.</p>
+
+<h2>Independent streams</h2>
+<pre><code>const noise = g.fork("noise");
+const data = g.fork("data");      // a second stream, unrelated to the first
+g.clone();                        // a copy that will produce the same future
+new Random(g.state);              // resume from saved state: four 32-bit numbers</code></pre>
+<p>A simulation with one shared generator is fragile: add one extra draw in one place and every later number changes. <code>fork(label)</code> gives each part its own stream, determined by the parent's state and the label, without advancing the parent. Then changing how the noise is drawn leaves the data as it was.</p>
+
+<h2>What is inside</h2>
+<p>The generator is xoshiro128**, a small, fast, well-tested generator with a period of <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mn>2</mn><mn>128</mn></msup><mo>−</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">2^{128} - 1</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:0.8974em;vertical-align:-0.0833em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">128</span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="katex-base"><span class="katex-strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span>, seeded by hashing the seed and spreading it with SplitMix32. It uses only 32-bit integer operations, which every JavaScript engine performs identically; that is where the reproducibility comes from. It is a tool for simulation and sampling. It is not for passwords, keys or anything an adversary should not predict.</p>
+<section class="runbox" aria-label="Runnable code">
+  <div class="runbox-head"><strong>Try it</strong><span>Edit the code and run it with <code>@ratmath/discrete</code> and Core's <code>Rational</code> in scope. The last line's value is shown; <code>PRINT(…)</code> adds lines, <code>TEX(…)</code> typesets math.</span></div>
+  <textarea spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code">// The same seed, the same numbers.
+PRINT("seed 2026 twice:", rng(2026).int(1000), rng(2026).int(1000), "  seed 2027:", rng(2027).int(1000));
+
+// A fair die, checked: 60,000 rolls.
+const g = rng("dice");
+const tally = Array(6).fill(0);
+for (let i = 0; i &lt; 60000; i++) tally[g.int(6)]++;
+PRINT("rolls of each face:", tally.join("  "));
+
+// The biased shuffle against the fair one: where does item 1 of [1,2,3] end up? Counts per order.
+const count = (shuffle) =&gt; { const c = {}; for (let i = 0; i &lt; 60000; i++) { const k = shuffle().join(""); c[k] = (c[k] ?? 0) + 1; } return Object.keys(c).sort().map((k) =&gt; `${k}:${c[k]}`).join("  "); };
+const naive = () =&gt; { const a = [1, 2, 3]; for (let i = 0; i &lt; 3; i++) { const j = g.int(3); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+PRINT("fair: ", count(() =&gt; g.shuffle([1, 2, 3])));
+PRINT("naive:", count(naive), "  (27 equally likely runs cannot cover 6 orders evenly)");
+
+// Exact probability: how often is bool("1/3") true?
+let hits = 0;
+for (let i = 0; i &lt; 90000; i++) if (g.bool("1/3")) hits++;
+PRINT("bool(1/3) true", hits, "times in 90000");
+
+// Streams that do not disturb each other.
+const base = rng("study");
+const before = base.fork("data").int(1000);
+base.fork("noise").int(1000); base.fork("noise").int(1000);   // draw noise, as often as you like
+PRINT("the data stream is unchanged:", before === rng("study").fork("data").int(1000));
+
+// Monte Carlo against the exact answer: the chance two cards from a deck share a rank.
+const deck = Array.from({ length: 52 }, (_, i) =&gt; i % 13);
+let same = 0;
+for (let i = 0; i &lt; 40000; i++) { const [a, b] = g.sample(deck, 2); if (a === b) same++; }
+[`simulated ${(same / 40000).toFixed(4)}`, `exact ${new Rational(3, 51)} = ${(3 / 51).toFixed(4)}`]</textarea>
+  <div class="runbox-bar"><button type="button" data-run>Run</button><button type="button" class="ghost" data-reset>Reset</button><span class="runbox-meta">Ctrl/⌘ + Enter runs</span></div>
+  <div class="runbox-out" aria-live="polite"></div>
+</section>
+<footer class="sitelinks"><a href="https://github.com/ratmath/discrete">GitHub</a> · <a href="https://ratmath.com/">ratmath.com</a> · <a href="https://ratmath.com/shelf/">shelf</a> · <a href="https://ratmath.com/core/">core</a></footer>
+</article>
+</main>
+</div>
+</body>
+</html>
