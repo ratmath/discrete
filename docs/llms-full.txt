@@ -1,0 +1,2591 @@
+# @ratmath/discrete 0.3.0: full documentation
+
+> Discrete mathematics for RatMath: counting and enumeration, graphs and graph theory, generating functions and recurrences, games and voting, orders, codes and designs, and exact linear programming. From https://ratmath.com/discrete/, commit c153b3c. Each page ends with a runnable example; in it, PRINT(...) prints.
+
+
+---
+
+Page: https://ratmath.com/discrete/index.html
+
+@ratmath/discrete
+
+## Count it, list it, pick one at random, or draw the graph
+
+The numbers of combinatorics as exact integers of any size; every standard family of objects in a fixed order, with the millionth one found without listing the rest; a random generator that gives the same stream from the same seed on every machine; and graphs with exact weights, where every "no" comes with its reason.
+
+### What is here
+
+Counting, enumeration and the generator (phase 1); graphs: structure, searching, paths, tours and trees (phase 2); generating functions and recurrences (phase 3); matchings, flows, colouring, planarity, isomorphism and spectra (phase 4); exact linear programming with matrix and bimatrix games (phase 5); combinatorial and cooperative games and voting (phase 6); relations, orders and Pólya counting (phase 7); and error-correcting codes and designs (phase 8). Graph drawing is still planned and listed at the bottom of this page.
+
+### A first program
+
+```js
+import { binomial, partitionCount, permutations, setPartitions, rng } from "@ratmath/discrete";
+
+binomial(100, 50); // 100891344545564193334812497256n: exact, however large
+partitionCount(200); // 3972999029388n
+
+const p = permutations(20); // all 2432902008176640000 of them, none listed yet
+p.unrank(999999); // [1, 2, …, 10, 13, 18, 19, 14, 20, 12, 16, 15, 17, 11]
+p.rank([20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]); // 2432902008176639999n
+
+const g = rng("my experiment");
+setPartitions(["ann", "bo", "cy", "di"]).random(g); // a uniformly random way to split four people into groups
+g.shuffle([1, 2, 3, 4, 5]); // the same shuffle every time this seed is used
+
+import { graph, shortestPath, bipartition, petersen, hamiltonCycle } from "@ratmath/discrete";
+const roads = graph("a-b:0.1 b-c:0.2 c-d:0.3 a-d:0.6");
+shortestPath(roads, "a", "d").distance; // exactly 3/5: both routes tie (in floating point they differ)
+bipartition(graph("1-2 2-3 3-1")); // { bipartite: false, oddCycle: [2, 1, 3, 2] }: the reason
+hamiltonCycle(petersen()).exists; // false, proved by exhaustive search
+
+import { linearProgram, matrixGame } from "@ratmath/discrete";
+linearProgram({ maximize: [30, 50], constraints: [[[2, 4], "Counts are exact. Every counting function returns a `BigInt`. (50100​) has 30 digits and all of them are right; nothing is rounded, so identities can be checked by `===`.
+
+A family is a numbered list you never have to write out. `permutations(20)` is an object that knows its size, the object at any place (`unrank`) and the place of any object (`rank`). That turns "a uniformly random permutation" into "a uniformly random number below 20!", and it is how a search or a simulation can be split up or resumed. See [Enumeration](https://ratmath.com/discrete/enumeration.html).
+
+A "no" comes with its reason. A graph that is not bipartite comes back with an odd cycle, a directed graph with no topological order with a directed cycle, a shortest-path question spoiled by a negative cycle with that cycle, a graph with no Euler tour with its odd vertices. See [Connectivity](https://ratmath.com/discrete/connectivity.html). The same goes for optimisation: an optimum comes with the dual prices that prove it, an impossible linear program with a Farkas combination of its constraints. See [Linear programming](https://ratmath.com/discrete/linear-programming.html).
+
+Random means reproducible. The generator is integer arithmetic from end to end. A seed fixes the stream on every platform, whole numbers of any size are exactly uniform, and probabilities are exact fractions. See [The seeded generator](https://ratmath.com/discrete/random.html).
+
+### What is planned
+
+From the [library roadmap](https://github.com/ratmath/ratmath/blob/main/docs/design/library-roadmap.md#7-a-discrete-mathematics-package-ratmathdiscrete). Sizes are rough estimates in lines of source.
+
+| Phase | Contents | Estimate |
+
+| 1 | Counting, enumeration with ranking, the seeded generator | built |
+
+| 2 | Graphs: structure, traversal, paths, trees, families | built |
+
+| 3 | Generating functions and recurrences | built |
+
+| 4 | Matchings, flows, colouring, planarity, isomorphism, spectra | built |
+
+| 5 | Exact linear programming; matrix and bimatrix games | built |
+
+| 6 | Combinatorial, extensive-form and cooperative games; voting | built |
+
+| 7 | Sets, relations, partial orders; Pólya counting | built |
+
+| 8 | Codes and designs | built |
+
+| 9 | Graph drawing | 900 in graphics |
+
+The package depends on Core, on `@ratmath/algebraic` for exact roots (closed forms of recurrences, spectra) and permutation groups (automorphisms, Pólya counting), and on `@ratmath/logic`, whose Boolean functions (truth tables, normal forms, minimisation) are re-exported here and as `logic`. Linear programming is its own exact simplex method, and characteristic polynomials are computed over the integers directly. The statistics library draws its random data from the generator here.
+
+### Try it
+
+```js
+// How many poker hands, and how many of each kind?
+const hands = binomial(52, 5);
+const flush = 4n * binomial(13, 5);
+const fullHouse = 13n * binomial(4, 3) * 12n * binomial(4, 2);
+PRINT("hands:", hands, " flushes (with straight flushes):", flush, " full houses:", fullHouse);
+PRINT("chance of a full house:", new Rational(fullHouse, hands).toString());
+
+// The hand at place one million in the list of all hands, and back again.
+const deck = [];
+for (const s of "♠♥♦♣") for (const r of ["A", 2, 3, 4, 5, 6, 7, 8, 9, 10, "J", "Q", "K"]) deck.push(r + s);
+const all = combinations(deck, 5);
+const hand = all.unrank(1000000);
+PRINT("hand number 1,000,000:", hand.join(" "), " → rank", all.rank(hand));
+
+// Deal five random hands; the seed makes the deal repeatable.
+const g = rng("deal 1");
+for (let i = 0; i < 5; i++) PRINT("  ", all.random(g).join(" "));
+
+// Twelve people into three unlabelled teams of any sizes: Stirling. Of four each: multinomial/3!.
+PRINT("three teams:", stirling2(12, 3), "  three teams of four:", multinomial(4, 4, 4) / factorial(3));
+plan.map((p) => `${p.phase}. ${p.contents}`)
+```
+
+---
+
+Page: https://ratmath.com/discrete/reference.html
+
+Reference
+
+## Everything in the library
+
+Every export of `@ratmath/discrete`. Whole-number arguments may be numbers, `BigInt`s or digit strings; counts and ranks come back as `BigInt`s. Edge weights and distances are exact Core `Rational`s; distances counted in edges are plain numbers.
+
+### Counting
+
+| Export | What it does |
+
+| factorial(n), doubleFactorial(n) | n! and n!!. |
+
+| fallingFactorial(n, k), risingFactorial(n, k) | n(n−1)⋯(n−k+1) and n(n+1)⋯(n+k−1); n may be negative. |
+
+| binomial(n, k) | (kn​); 0 outside the triangle; the series coefficient for negative n. |
+
+| multinomial(k1, k2, …) | (k1​+⋯+kr​)!/(k1​!⋯kr​!); also takes one array. |
+
+| multichoose(n, k) | Multisets of size k from n kinds. |
+
+| pascalRow(n) | Row n of Pascal's triangle. |
+
+| stirling2(n, k), bell(n), surjections(n, k) | Set partitions into k blocks, all set partitions, functions onto a k-set. |
+
+| stirling1(n, k, { signed }) | Permutations with k cycles; signed gives the coefficients of the falling factorial. |
+
+| catalan(n), fibonacci(n), lucas(n) | Fibonacci and Lucas accept negative and very large n. |
+
+| derangementCount(n), eulerian(n, k) | Permutations with no fixed point; with exactly k descents. |
+
+| partitionCount(n), partitionCount(n, k) | Partitions of the integer n; into exactly k parts. |
+
+| compositionCount(n), compositionCount(n, k) | Ordered sums of positive parts. |
+
+### Principles
+
+| Export | What it does |
+
+| inclusionExclusion(sets, { universe }) | { union, none, terms } for arrays or Sets; terms[j] has size, sign, sum, count. |
+
+| sieve(m, sizeOf) | The sieve formula for m symmetric properties: { all, none, union, terms }. |
+
+| pigeonhole(items, holes) | { atLeast, atMost, forced, statement }. |
+
+| collision(items, key) | The first two items with the same key: { key, items, indices } or null. |
+
+### Families
+
+| Export | What it does |
+
+| Family | count (BigInt), unrank(i) / at(i), rank(object), has(object), random(rng or seed), first(n), slice(from, to), toArray(), iteration with for…of, name, order. |
+
+| permutations(n or items, k) | Arrangements of all, or of k, in lexicographic order. |
+
+| derangements(n or items) | Permutations with no fixed point. |
+
+| combinations(n or items, k) | k-element subsets. |
+
+| multisets(n or items, k) | Selections with repetition. |
+
+| subsets(n or items, { order }) | All subsets; order "binary", "gray" or "size". |
+
+| words(n or letters, k) | k-letter words; rank also accepts a string. |
+
+| product(a, b, …) | The Cartesian product of arrays and families. |
+
+| compositions(n, k, { zero }) | Ordered sums; with k parts; with zero parts allowed. |
+
+| partitions(n, k) | Integer partitions, largest part first. |
+
+| setPartitions(n or items, k) | Partitions of a set into blocks; exactly k blocks. |
+
+| dyckWords(n, { open, close }) | Balanced bracket strings. |
+
+### Graphs
+
+| Export | What it does |
+
+| graph(spec, { multi, loops, vertices }) | An undirected graph from text "a-b b-c:3/2 d", a list of edges [[u, v, weight?]], an adjacency object, or { vertices, edges }. |
+
+| digraph(spec, options) | A directed graph; in text write a>b. |
+
+| Graph | order, size, directed, weighted, vertices(), edges() (each { id, from, to, weight }), hasVertex, hasEdge, edge, edgesBetween, weight, addVertex, addEdge, removeVertex, removeEdge, neighbors, inNeighbors, outEdges, inEdges, degree, inDegree, outDegree, degreeSequence, copy, subgraph, edgeSubgraph, complement, reverse, underlying, lineGraph, adjacencyMatrix, totalWeight, toString. |
+
+| cartesianProduct, tensorProduct, strongProduct, lexicographicProduct | Products; vertices named "a,b". |
+
+| disjointUnion, join, union | Side by side; side by side and fully joined; on shared vertex names. |
+
+| complete, emptyGraph, pathGraph, cycleGraph, star, wheel | The basic families on 1…n (star and wheel have centre 0). |
+
+| completeBipartite, completeMultipartite, turan | Complete multipartite graphs; Turán's extremal graph. |
+
+| hypercube(d), grid(m, n), circulant(n, jumps), kneser(n, k), petersen(), platonic(name) | Named families. |
+
+| completeDigraph, transitiveTournament, directedCycle | Directed families. |
+
+| randomGraph(n, p, rng, { directed }), randomGraphWithEdges(n, m, rng) | G(n, p) with exact p; G(n, m). |
+
+| toWeight(w) | A weight as a Rational; refuses non-whole JavaScript numbers. |
+
+### Searching and connectivity
+
+| Export | What it does |
+
+| bfs(g, start) | { order, depth, parent }. |
+
+| dfs(g, start?) | { order, post, parent, discovered, finished }; a forest when no start is given. |
+
+| reachable, components, isConnected | Components are weak for a directed graph, largest first. |
+
+| biconnected(g), bridges, cutVertices, blocks | One depth-first pass gives all three. |
+
+| stronglyConnectedComponents, isStronglyConnected, condensation | Tarjan's method; the condensation is numbered in topological order. |
+
+| topologicalOrder(g) | { acyclic: true, order } or { acyclic: false, cycle }. |
+
+| findCycle, isAcyclic | A closed list [v₁, …, v₁] or null. |
+
+| bipartition(g), isBipartite | { bipartite: true, parts } or { bipartite: false, oddCycle }. |
+
+| distances, distance, eccentricity, diameter, radius, center, periphery | Distances counted in edges; Infinity when unreachable. |
+
+| girth(g) | { girth, cycle }: a shortest cycle. |
+
+### Paths, tours and trees
+
+| Export | What it does |
+
+| shortestPath(g, s, t, { weighted }) | { distance, path, edges } or null; throws negative-cycle with .cycle. |
+
+| shortestPaths(g, s) | { distance: Map, parent, pathTo(t), method, negativeCycle }: breadth-first, Dijkstra or Bellman–Ford. |
+
+| allPairsShortestPaths(g) | Floyd–Warshall: { matrix, distance(u, v), path(u, v), negativeCycle }. |
+
+| eulerTour(g, { closed }) | { exists, closed, vertices, edges }, or the reason with the odd (or unbalanced) vertices. |
+
+| hamiltonCycle(g), hamiltonPath(g) | Exhaustive search (Held–Karp), up to 20 vertices; quick reasons first. |
+
+| isTree, isForest | |
+
+| minimumSpanningTree(g, { method, maximum }) | Kruskal or Prim: { weight, edges, tree, connected }. |
+
+| spanningTreeCount(g), determinant(rows) | The matrix-tree theorem, by exact Bareiss elimination. |
+
+| prufer(tree), fromPrufer(code, vertices) | Prüfer codes, both ways. |
+
+| labelledTrees(n or labels), randomTree(n, rng) | The nn−2 labelled trees as a Family; a uniform one. |
+
+### Linear programming and games
+
+| Export | What it does |
+
+| linearProgram({ maximize \| minimize, constraints, names, free }) | Exact two-phase simplex (Bland's rule). Coefficients as arrays or objects keyed by name; constraints [coefficients, "=" \| "=", rhs, name?]. Returns an LPResult. |
+
+| LPResult | status ("optimal", "infeasible", "unbounded"), value, x, solution, dual, prices, binding, farkas, ray, pivots, check(). |
+
+| checkLinearProgram(problem, result), isFeasible(problem, x) | Check a certificate by arithmetic on the constraints alone; throws certificate-fails with the reason. |
+
+| integerProgram(problem, { integer, maxNodes }) | Branch and bound: { status, value, x, solution, nodes, relaxation, check() }. |
+
+| parseProblem(spec), Problem, solveSquare(M, b) | The normalised problem (prints itself); an exact square solve. |
+
+| matrixGame(A, { rows, columns }) | Zero-sum game: value, row, column, fair, guarantee(p), cap(q), check(). |
+
+| saddlePoints(A) | Pure saddle points { row, column, value }. |
+
+| bimatrixGame(A, B?, { rows, columns }) | A BimatrixGame: payoffs(p, q), isEquilibrium(p, q), pureEquilibria(), dominance({ pureOnly }), equilibria() (with complete), lemkeHowson(label). Each equilibrium has row, column, payoffs, pure, check(). |
+
+### Generating functions and recurrences
+
+| Export | What it does |
+
+| series(input), egf(seq), PowerSeries | Lazy exact power series from a list, constant or rule: coefficient(n), terms(n, { egf }), add, subtract, negate, scale, multiply, shift, reciprocal, divide, derivative, integral, compose, pow, exp, log, sqrt, toString(n). |
+
+| knownSeries | geometric(r), exp(), logInverse(), binomial(a), catalan(), partitions(). |
+
+| rationalSeries(P, Q), RationalSeries | P(x)/Q(x): series, terms, add, multiply, recurrence(). seriesPoly holds the polynomial helpers. |
+
+| recurrence({ coefficients, initial, plus }), LinearRecurrence | terms(n), term(n) (companion-matrix power), characteristic(), generatingFunction(), closedForm() → { parts, validFrom, checked, at(n), toString() } with exact algebraic roots. |
+
+| guessRecurrence(terms) | Berlekamp–Massey over Q: the shortest recurrence, or null. |
+
+| closedSum(p, r) | Σk≤n p(k)·rk in closed form: { polynomial, at(n), toString() }. |
+
+| masterTheorem({ a, b, d, j }), divideAndConquer({ a, b, f, t1 }, count) | The case, bound and reason; exact values of T(bm). |
+
+### Graph theory
+
+| Export | What it does |
+
+| maximumMatching(g), checkMatching(g, edges, U) | Edmonds' blossoms: { size, edges, perfect, unmatched, certificate: { set, oddComponents, bound }, check() }, a Tutte–Berge set. |
+
+| bipartiteMatching(g, { left }) | { size, edges, perfect, cover, hall }: a König cover and a Hall violator. |
+
+| assignment(costs, { maximize }) | { assignment, cost, rowPrices, columnPrices, check() }. |
+
+| stableMatching(proposers, receivers), blockingPairs(…, matching) | Gale–Shapley: { matching, proposals, blockingPairs }. |
+
+| maxFlow(g, s, t), checkFlow(g, s, t, flow, cut) | Edmonds–Karp with exact capacities: { value, flow, cut: { source, sink, edges, capacity }, augmentations, check() }. |
+
+| chromaticNumber(g) | { number, colouring, lowerBound }; the lower bound is a clique, an odd cycle, or a complete search. |
+
+| chromaticPolynomial(g) | Deletion–contraction: { coefficients, at(k), toString() }. |
+
+| greedyColouring(g, order), isProperColouring(g, c) | A colouring as a Map; { ok, clash }. |
+
+| maximumClique, maximalCliques, maximumIndependentSet | Branch and bound; Bron–Kerbosch. |
+
+| planarity(g), isPlanar(g), checkKuratowski(g, w) | { planar: true, faces } (per block, Euler-checked) or { planar: false, kuratowski: { kind, branch, paths, edges } }. |
+
+| isomorphism(g, h), isIsomorphic(g, h) | { isomorphic: true, map } or { isomorphic: false, reason }. |
+
+| automorphisms(g) | { order, generators, orbits, group, vertices }; group is a PermGroup up to order 50,000. |
+
+| spectrum(g, { laplacian }), characteristicPolynomial(M) | Exact eigenvalues with multiplicities: { polynomial, polynomialText, eigenvalues, toString() }. |
+
+| adjacency(g), laplacian(g), walks(g, k), spanningTreesFromSpectrum(g) | BigInt matrices; Ak and its trace; τ(G) from the Laplacian polynomial. |
+
+### Combinatorial and cooperative games, voting
+
+| Export | What it does |
+
+| mex, impartialGame(moves), nim(heaps), subtractionGame(S, length) | Grundy values, losing positions, winning moves; the period of a subtraction game. |
+
+| cgame(L, R), Game, starGame(n), up(), down() | Conway games in canonical form: le, ge, equals, compare, outcome, add, negate, subtract, number, nimber, L, R. |
+
+| partizanGame(position, leftMoves, rightMoves) | The canonical value of any position. |
+
+| backwardInduction(tree) | { value, plan, path }, with ties reported. |
+
+| cooperativeGame(players, v), shapley(game) | Exact Shapley values. |
+
+| core(game), inCore(game, x) | A core allocation, or a balanced collection proving the core empty; a blocking coalition. |
+
+| weightedVoting({ quota, weights }) | Shapley–Shubik and Banzhaf indices, swings, dummies. |
+
+| plurality, borda, instantRunoff, condorcet, approval | Winners with tallies, rounds, the pairwise table, or a Condorcet cycle. |
+
+| apportion(populations, seats, { method }) | Hamilton, Jefferson, Webster, Adams, Huntington–Hill: { seats, quotas, method, tie }. |
+
+| adjustedWinner(a, b) | Brams–Taylor for two parties. |
+
+### Relations, orders, Pólya counting
+
+| Export | What it does |
+
+| relation(elements, pairs \| predicate), Relation, fromPartition(blocks) | properties() with witnesses, inverse, compose, reflexive, symmetric and transitive closures, classes(). |
+
+| poset(elements, pairs \| predicate), Poset | leq, hasse, minimal, maximal, least, greatest, levels, longestChain, width (Dilworth), linearExtensions, countLinearExtensions, mobius, meet, join, isLattice, isDistributive. |
+
+| divisorLattice(n), booleanLattice(n), partitionLattice(n) | The standard lattices. |
+
+| cycleIndex(G), countColourings(G, k), patternInventory(G, colours), symmetry | Burnside and Pólya; symmetry.cyclic, dihedral, symmetric, cubeFaces. |
+
+| truthTable, minterms, maxterms, countModels, fromMinterms, cnf, dnf, minimize, primeImplicants, logic | Boolean functions, re-exported from @ratmath/logic; logic is the whole package. |
+
+### Codes and designs
+
+| Export | What it does |
+
+| linearCode(G, { p }), LinearCode | n, k, parityCheck, encode, messageOf, syndrome, isCodeword, codewords, weightDistribution, minimumDistance, dual, cosetLeaders, decode (with steps). |
+
+| hammingCode(r, { p }), repetitionCode, parityCode | Standard codes over Zp. |
+
+| ballSize(n, t, q), codeBounds(n, d, q), isPerfect(code) | Hamming, Singleton and Gilbert–Varshamov bounds. |
+
+| reedSolomon({ p, n, k, points }) | encode, and decode by Berlekamp–Welch with steps and error positions. |
+
+| isLatinSquare, areOrthogonal, cyclicLatinSquare(n), orthogonalLatinSquares(p) | Latin squares and complete sets of MOLS of prime order. |
+
+| blockDesign(blocks), fromDifferenceSet(D, v), projectivePlane(p), affinePlane(p), steinerTripleSystem(v) | { v, b, k, r, lambda, balanced, symmetric, checks } and the standard constructions. |
+
+### Random
+
+| Export | What it does |
+
+| rng(seed) | A Random from a whole number of any size or text. |
+
+| Random | u32(), bits(k), int(n), between(lo, hi), bool(p), rational(denominator), float(), pick(items), shuffle(items), sample(items, k), weighted(items, weights), weightedIndex(weights), fork(label), clone(), state. new Random(state) resumes. |
+
+| DiscreteError | Thrown with a code: not-in-family, too-large, no-rank, bad-argument, bad-problem, certificate-fails, too-hard. |
+
+| plan | The phases still to come. |
+
+### Try it
+
+```js
+// One of each.
+PRINT("binomial      ", binomial(40, 20));
+PRINT("multinomial   ", multinomial(3, 3, 3));
+PRINT("stirling2     ", stirling2(10, 4), " bell", bell(10), " stirling1", stirling1(10, 4));
+PRINT("partitionCount", partitionCount(50), " into 5 parts:", partitionCount(50, 5));
+PRINT("catalan       ", catalan(10), " fibonacci", fibonacci(90), " derangements", derangementCount(10));
+PRINT("sieve         ", sieve(6, (k) => factorial(6 - k)).none, "derangements of 6, by the sieve");
+PRINT("pigeonhole    ", pigeonhole(367, 366).statement);
+for (const f of [permutations(6), permutations(6, 3), derangements(6), combinations(6, 3), multisets(6, 3), subsets(6), words(6, 3), compositions(6), compositions(6, 3), partitions(6), setPartitions(6), dyckWords(6)]) {
+  PRINT(f.name.padEnd(46), String(f.count).padStart(6), "  #5:", JSON.stringify(f.unrank(5)));
+}
+const g = rng("reference");
+PRINT("rng           ", g.int(100), g.between(1, 6), g.bool("2/3"), String(g.rational(12)), g.shuffle(["a", "b", "c"]).join(""));
+const G = graph("a-b b-c c-a c-d:5/2");
+PRINT("graph         ", String(G), " degrees", G.degreeSequence().join(","), " bridges", bridges(G).map((e) => e.from + e.to).join(" "));
+PRINT("shortestPath  ", String(shortestPath(G, "a", "d").distance), " spanning trees", spanningTreeCount(G), " prufer", prufer(randomTree(6, 1)).join(" "));
+Object.keys(pigeonhole(10, 3))
+```
+
+---
+
+Page: https://ratmath.com/discrete/explore.html
+
+Explore
+
+## Explore
+
+Pick n and k and see every count at once. Walk through a family of objects by rank, or draw from it with a seed. Then type a graph and see what can be said about it: paths and trees, matchings, colourings, planarity, symmetry and spectrum.
+
+### Counts
+
+nk
+
+### A family, by rank
+
+Family
+Items (optional)
+
+Rank
+
+Seed
+
+The family uses the n and k above. Rank may be any whole number below the count, however large: try `permutations` with n = 30 and a rank of thirty digits.
+
+### Seeded draws
+
+SeedDie sides
+
+### A graph
+
+Start from directed
+
+Edges
+
+Path fromto
+
+Write edges as `u-v` (`u>v` when directed), with an optional exact weight after a colon, and lone vertices by name. The picture places the vertices on a circle; proper graph drawing is planned for the graphics library.
+
+### A game
+
+Row player's payoffs
+
+Column player's payoffs
+
+Rows are separated by semicolons and entries by spaces; fractions such as `1/2` are welcome. Leave the second matrix empty for a zero-sum game, which is then solved by linear programming as well. See [Matrix games](https://ratmath.com/discrete/matrix-games.html) and [Bimatrix games](https://ratmath.com/discrete/bimatrix-games.html).
+
+### Try it
+
+```js
+// The page above, as code.
+const n = 10, k = 3;
+PRINT("binomial", binomial(n, k), " arrangements", fallingFactorial(n, k), " stirling2", stirling2(n, k), " partitions of n into k", partitionCount(n, k));
+const f = combinations(n, k);
+PRINT(f.name + ":", f.count, " at rank 57:", f.unrank(57).join(" "), " and back:", f.rank(f.unrank(57)));
+const g = rng("my experiment");
+PRINT("ten rolls:", Array.from({ length: 10 }, () => g.between(1, 6)).join(" "));
+PRINT(String(f.random(g)));
+const G = graph("a-b:2 b-c:1/2 c-a:3 c-d:1 d-e:5/2 e-c:1");
+PRINT("components", components(G).length, " bipartite", isBipartite(G), " Euler", eulerTour(G).exists, " Hamilton", hamiltonCycle(G).exists);
+const p = shortestPath(G, "a", "e");
+`a to e: ${p.distance} by ${p.path.join("-")}; lightest spanning tree ${minimumSpanningTree(G).weight}`
+```
+
+---
+
+Page: https://ratmath.com/discrete/counting.html
+
+Counting
+
+## Counting
+
+How many ways are there? Each classical answer is a function here, returning an exact integer of any size.
+
+### Arrangements and selections
+
+Choosing k things from n splits four ways, by whether order matters and whether repeats are allowed:
+
+| | Order matters | Order does not matter |
+
+| No repeats | n(n−1)⋯(n−k+1)fallingFactorial(n, k) | (kn​)=k!(n−k)!n!​binomial(n, k) |
+
+| Repeats allowed | nkBigInt(n) ** BigInt(k) | (kn+k−1​)multichoose(n, k) |
+
+```js
+import { factorial, fallingFactorial, binomial, multichoose, multinomial, pascalRow } from "@ratmath/discrete";
+
+factorial(20);              // 2432902008176640000n
+fallingFactorial(10, 3);    // 720n: gold, silver, bronze among ten runners
+binomial(52, 5);            // 2598960n: poker hands
+multichoose(3, 10);         // 66n: ten scoops from three flavours
+multinomial(4, 4, 2, 1);    // 34650n: arrangements of the letters of MISSISSIPPI
+pascalRow(6);               // [1n, 6n, 15n, 20n, 15n, 6n, 1n]
+binomial(-3, 2);            // 6n: the coefficient of x² in (1 + x)⁻³
+```
+
+Arguments are whole numbers as numbers, `BigInt`s, digit strings or Core Rationals with denominator 1. Results are always `BigInt`. `binomial(n, k)` is 0 when k is outside 0…n, which is what makes sums over all k come out right, and for negative n it is the coefficient in the binomial series, (−1)k(kk−n−1​).
+
+The multichoose formula is the "stars and bars" argument: a selection of k from n kinds is a row of k stars and n−1 bars, and there are (kn+k−1​) such rows.
+
+### Partitions of a set
+
+The Stirling number of the second kind S(n,k) counts the ways to split n distinct things into k non-empty unlabelled groups; the Bell number Bn​ allows any number of groups. Labelling the groups gives the surjections, k!S(n,k).
+
+```js
+import { stirling2, bell, surjections, stirling1 } from "@ratmath/discrete";
+
+stirling2(5, 2);     // 15n
+bell(5);             // 52n = 1 + 15 + 25 + 10 + 1
+surjections(4, 2);   // 14n: functions from 4 things onto 2
+stirling1(5, 2);     // 50n: permutations of 5 with exactly 2 cycles
+stirling1(5, 2, { signed: true });   // -50n: the coefficient of x² in x(x−1)(x−2)(x−3)(x−4)
+```
+
+Both kinds of Stirling numbers come from a triangle like Pascal's: S(n,k)=S(n−1,k−1)+kS(n−1,k) (the new element is alone, or joins one of k groups) and c(n,k)=c(n−1,k−1)+(n−1)c(n−1,k) (it is a cycle of its own, or is inserted after one of the n−1 others). They are the change of basis between powers and falling factorials: xn=∑k​S(n,k)x(x−1)⋯(x−k+1).
+
+### Partitions of a number
+
+A partition of n is a way to write it as a sum of positive whole numbers, order ignored; a composition counts the order.
+
+```js
+import { partitionCount, compositionCount } from "@ratmath/discrete";
+
+partitionCount(5);      // 7n: 5, 4+1, 3+2, 3+1+1, 2+2+1, 2+1+1+1, 1+1+1+1+1
+partitionCount(200);    // 3972999029388n
+partitionCount(8, 3);   // 5n: into exactly three parts
+compositionCount(5);    // 16n = 2⁴
+compositionCount(6, 3); // 10n = C(5, 2)
+```
+
+There is no simple formula for p(n). It is computed from Euler's pentagonal number theorem, p(n)=∑j≥1​(−1)j+1(p(n−2j(3j−1)​)+p(n−2j(3j+1)​)), which needs only about n​ earlier values for each new one.
+
+### Named sequences
+
+```js
+import { catalan, fibonacci, lucas, derangementCount, eulerian } from "@ratmath/discrete";
+
+catalan(4);            // 14n: balanced strings of 4 pairs of brackets, binary trees with 4 nodes, …
+fibonacci(100);        // 354224848179261915075n
+fibonacci(-7);         // 13n: F(−n) = (−1)^(n+1) F(n)
+lucas(10);             // 123n
+derangementCount(5);   // 44n: permutations with no fixed point
+eulerian(4, 1);        // 11n: permutations of 4 with exactly one descent
+```
+
+Fibonacci numbers use the doubling identities F2k​=Fk​(2Fk+1​−Fk​) and F2k+1​=Fk2​+Fk+12​, so Fn​ takes about log2​n steps: `fibonacci(1000000)` is a fraction of a second. The Catalan number n+11​(n2n​) counts more than two hundred known families; [Enumeration](https://ratmath.com/discrete/enumeration.html) lists one of them.
+
+### Try it
+
+```js
+// The four-way table for choosing 3 from 5.
+PRINT("ordered, no repeats:  ", fallingFactorial(5, 3));
+PRINT("ordered, repeats:     ", 5n ** 3n);
+PRINT("unordered, no repeats:", binomial(5, 3));
+PRINT("unordered, repeats:   ", multichoose(5, 3));
+
+// Stirling's triangle of the second kind, and the Bell numbers as its row sums.
+for (let n = 0; n <= 7; n++) {
+  const row = [];
+  for (let k = 0; k <= n; k++) row.push(String(stirling2(n, k)).padStart(4));
+  PRINT(row.join(""), "   Bell:", bell(n));
+}
+
+// Identities, checked exactly. Vandermonde: Σ C(m,j) C(n,k−j) = C(m+n,k).
+let sum = 0n;
+for (let j = 0; j <= 12; j++) sum += binomial(30, j) * binomial(45, 12 - j);
+PRINT("Vandermonde:", sum === binomial(75, 12));
+// x^n = Σ S(n,k) · x(x−1)…(x−k+1), at x = 10, n = 8
+let s = 0n;
+for (let k = 0; k <= 8; k++) s += stirling2(8, k) * fallingFactorial(10, k);
+PRINT("powers from falling factorials:", s === 10n ** 8n);
+// Cassini: F(n−1)F(n+1) − F(n)² = (−1)^n
+PRINT("Cassini at n = 500:", fibonacci(499) * fibonacci(501) - fibonacci(500) ** 2n);
+
+// The chance that nobody gets their own hat back tends to 1/e, fast.
+for (const n of [3, 5, 10, 20]) PRINT(`n = ${n}:`, (Number(derangementCount(n)) / Number(factorial(n))).toFixed(15), "  1/e =", Math.exp(-1).toFixed(15));
+[partitionCount(100), fibonacci(300).toString().length + " digits in F(300)"]
+```
+
+---
+
+Page: https://ratmath.com/discrete/inclusion-exclusion.html
+
+Inclusion and exclusion
+
+## Inclusion, exclusion and pigeonholes
+
+Two principles that carry a surprising share of combinatorics: counting a union by adding and subtracting overlaps, and the fact that too many things in too few boxes must collide. Both are here on actual data and as formulas.
+
+### On sets you can list
+
+For sets A1​,…,Am​,
+
+∣A1​∪⋯∪Am​∣=i∑​∣Ai​∣−i<j∑​∣Ai​∩Aj​∣+i<j<k∑​∣Ai​∩Aj​∩Ak​∣−⋯
+`inclusionExclusion(sets)` computes each level of that sum, so the answer comes with its working.
+
+```js
+import { inclusionExclusion } from "@ratmath/discrete";
+
+const r = inclusionExclusion([[1, 2, 3, 4], [3, 4, 5], [4, 5, 6, 7]], { universe: 10 });
+r.union;    // 7n
+r.none;     // 3n: of a universe of 10, how many are in none of the sets
+r.terms;    // [{ size: 1, sign: 1, sum: 11n, count: 3n },
+            //  { size: 2, sign: -1, sum: 5n, count: 3n },
+            //  { size: 3, sign: 1, sum: 1n, count: 1n }]     11 − 5 + 1 = 7
+```
+
+Sets are arrays or `Set`s. `universe` is a count, an array or a `Set`. Up to 20 sets are accepted, since the formula has 2m−1 terms; intersections that are already empty are not explored further.
+
+### By formula: the sieve
+
+Most uses never list anything. There are m "bad" properties, the number of objects with any particular k of them is a known Nk​ (the same for every choice, by symmetry), and the number with none is
+
+k=0∑m​(−1)k(km​)Nk​.
+
+```js
+import { sieve, factorial } from "@ratmath/discrete";
+
+// Derangements of 5: property i is "i stays in place"; fixing k of them leaves (5 − k)! permutations.
+const d = sieve(5, (k) => factorial(5 - k));
+d.none;     // 44n
+d.all;      // 120n
+d.union;    // 76n: permutations with at least one fixed point
+d.terms.map((t) => `${t.sign > 0 ? "+" : "-"}${t.choices}·${t.each}`);
+// ["+1·120", "-5·24", "+10·6", "-10·2", "+5·1", "-1·1"]
+
+// Functions from 6 things onto 3: property i is "value i is never taken".
+sieve(3, (k) => BigInt(3 - k) ** 6n).none;   // 540n = 3!·S(6, 3)
+```
+
+The derangement sum simplifies to n!∑k​(−1)k/k!, which is why the proportion of derangements tends to 1/e. The second example is the formula for surjections, and dividing by k! gives the Stirling numbers of the second kind.
+
+### Pigeonholes
+
+If n things go into h boxes, some box holds at least ⌈n/h⌉. `pigeonhole` states the bound; `collision` finds an actual pair in the same box, given a function that says which box a thing goes in.
+
+```js
+import { pigeonhole, collision } from "@ratmath/discrete";
+
+pigeonhole(13, 12);    // { atLeast: 2n, atMost: 1n, forced: true, statement: "13 items in 12 boxes: some box holds at least 2" }
+pigeonhole(100, 7).atLeast;    // 15n
+
+// Among any 12 whole numbers, two differ by a multiple of 11: the boxes are the remainders.
+collision([3, 14, 25, 7, 18, 40, 2, 9, 61, 33, 12, 5], (x) => x % 11);
+// { key: 3, items: [3, 14], indices: [0, 1] }
+collision([1, 2, 3]);   // null: all different
+```
+
+The principle only says a collision exists; it does not say where. That gap is real: it is easy to prove that two people in a large city have the same number of hairs and hard to find them. `collision` closes the gap for data you hold.
+
+### Try it
+
+```js
+// Numbers up to 1000 divisible by none of 2, 3, 5, 7: by listing, and by formula.
+const N = 1000, primes = [2, 3, 5, 7];
+const multiples = primes.map((p) => Array.from({ length: Math.floor(N / p) }, (_, i) => p * (i + 1)));
+const listed = inclusionExclusion(multiples, { universe: N });
+for (const t of listed.terms) PRINT(`${t.sign > 0 ? "+" : "−"} intersections of ${t.size}: ${t.sum}`);
+PRINT("divisible by at least one:", listed.union, "  by none:", listed.none);
+
+// Euler's φ(n) is the same sieve: n·Π(1 − 1/p). For 2·3·5·7 = 210:
+PRINT("φ(210) by the same idea:", inclusionExclusion(primes.map((p) => Array.from({ length: 210 / p }, (_, i) => p * (i + 1))), { universe: 210 }).none);
+
+// The sieve by formula: hands of 5 cards with no suit missing.
+// Property i: "suit i is missing". Missing k suits leaves C(13(4 − k), 5) hands.
+const allSuits = sieve(4, (k) => binomial(13 * (4 - k), 5));
+PRINT("hands using all four suits:", allSuits.none, "of", allSuits.all);
+
+// The birthday pigeonhole, found: 30 seeded "birthdays", and the first shared one.
+const g = rng("class of 30");
+const birthdays = Array.from({ length: 30 }, () => g.between(1, 365));
+const hit = collision(birthdays);
+PRINT(hit ? `students ${hit.indices[0] + 1} and ${hit.indices[1] + 1} share day ${hit.key}` : "no shared birthday this time");
+// How likely is that? All different: 365·364·…·336 / 365^30
+1 - Number(fallingFactorial(365, 30)) / Number(365n ** 30n)
+```
+
+---
+
+Page: https://ratmath.com/discrete/enumeration.html
+
+Enumeration
+
+## Enumeration with ranking
+
+Listing every object of a kind is the oldest method in combinatorics and the first to run out of time. A ranked list does better: it knows what stands at each place without writing the others down.
+
+### A family
+
+Each function below returns a `Family`: a finite list of objects in a fixed, documented order.
+
+```js
+import { permutations } from "@ratmath/discrete";
+
+const p = permutations(4);
+p.count;                  // 24n
+p.unrank(0);              // [1, 2, 3, 4]
+p.unrank(23);             // [4, 3, 2, 1]      (unrank(-1) is the last, too)
+p.rank([2, 1, 4, 3]);     // 7n
+p.has([1, 1, 2, 3]);      // false
+p.first(3);               // [[1,2,3,4], [1,2,4,3], [1,3,2,4]]
+[...p].length;            // 24: a family is iterable
+p.random(rng(7));         // a uniformly random one
+```
+
+Given a number n, the things arranged are 1,…,n. Given an array, they are its items: `permutations(["a", "b", "c"])`. Ranks are `BigInt`s counted from 0.
+
+### The families
+
+| Family | Objects | Count | Order |
+
+| permutations(n) | arrangements of all n | n! | lexicographic |
+
+| permutations(n, k) | arrangements of k out of n | n!/(n−k)! | lexicographic |
+
+| derangements(n) | permutations with no fixed point | Dn​ | lexicographic |
+
+| combinations(n, k) | k-subsets, each increasing | (kn​) | lexicographic |
+
+| multisets(n, k) | k from n with repeats, non-decreasing | (kn+k−1​) | lexicographic |
+
+| subsets(n) | all subsets | 2n | binary; or { order: "gray" }, "size" |
+
+| words(n, k) | k-letter words, repeats allowed | nk | dictionary |
+
+| product(a, b, …) | one from each array or family | product | last varies fastest |
+
+| compositions(n), (n, k) | ordered sums of positive parts | 2n−1, (k−1n−1​) | lexicographic |
+
+| compositions(n, k, { zero: true }) | n identical things in k boxes | (k−1n+k−1​) | lexicographic |
+
+| partitions(n), (n, k) | unordered sums, largest part first | p(n), p(n,k) | largest first part first |
+
+| setPartitions(n), (n, k) | splits of a set into blocks | Bn​, S(n,k) | restricted growth |
+
+| dyckWords(n) | balanced strings of n pairs of brackets | Catalan | ( before ) |
+
+### How ranking works
+
+One idea does all of them: count the completions of a prefix. To find the permutation of 4 at place 7, ask how many permutations start with 1: 3!=6. Place 7 is past those, so the first entry is 2 and we want place 7−6=1 among the permutations starting with 2. Each next entry accounts for 2!=2: place 1 is within the first block, so the next entry is the smallest unused, 1. Then 1! each: place 1 skips one, so 4, then 3. The answer is [2,1,4,3], found with a handful of divisions, and the same walk run backwards is `rank`.
+
+All that changes from family to family is the count of completions:
+
+- combinations: after choosing the element v, (left to choosen−v​);
+
+- integer partitions: the number of partitions of what is left with parts no larger than the last one;
+
+- set partitions: element i joins one of the m open blocks or opens a new one, and the number of ways to finish satisfies w(r,m)=mw(r−1,m)+w(r−1,m+1);
+
+- bracket strings: the ballot numbers, the number of ways to finish from a given height;
+
+- derangements: an inclusion and exclusion sum that depends only on how many of the remaining places could still be fixed points.
+
+```js
+import { partitions, setPartitions, dyckWords, derangements } from "@ratmath/discrete";
+
+partitions(4).toArray();        // [[4], [3,1], [2,2], [2,1,1], [1,1,1,1]]
+setPartitions(3).toArray();     // [[[1,2,3]], [[1,2],[3]], [[1,3],[2]], [[1],[2,3]], [[1],[2],[3]]]
+dyckWords(3).toArray();         // ["((()))", "(()())", "(())()", "()(())", "()()()"]
+derangements(3).toArray();      // [[2,3,1], [3,1,2]]
+
+const big = setPartitions(30);
+big.count;                      // 846749014511809332450147n
+big.unrank(10n ** 20n);         // found at once
+```
+
+### What it is good for
+
+Uniform random objects. `family.random(rng)` draws a uniform place and unranks it, so every object is exactly equally likely. For partitions and set partitions that is not easy to get any other way: "put each element in a random block" does not give uniform set partitions.
+
+Splitting a search. Ten workers can each take a tenth of the places, with nothing shared but two numbers. A search that was interrupted resumes from the rank where it stopped.
+
+Compact names. A rank is the shortest possible name for an object: a 5-card hand is a number below 2,598,960, which is 22 bits.
+
+Gray codes. `subsets(n, { order: "gray" })` lists subsets so that neighbours differ in exactly one element, which is the order to use when each step updates a running total.
+
+### Try it
+
+```js
+// The walk described above, shown: unranking place 7 among the permutations of 4.
+{
+  let r = 7n; const pool = [1, 2, 3, 4], out = [];
+  for (let left = 3; left >= 0; left--) {
+    const block = factorial(left), d = Number(r / block);
+    PRINT(`  each choice here covers ${block}; place ${r} is in block ${d} → take ${pool[d]}`);
+    out.push(pool.splice(d, 1)[0]); r %= block;
+  }
+  PRINT("  result:", out.join(" "), "  library:", permutations(4).unrank(7).join(" "));
+}
+
+// Every way to make change for 12 with parts at most 5, straight from the list of partitions.
+PRINT(partitions(12).toArray().filter((p) => p[0] <= 5).map((p) => p.join("+")).join("   "));
+
+// Catalan objects: brackets ↔ ranks ↔ back again
+const dw = dyckWords(6);
+PRINT("dyckWords(6):", dw.count, "strings; number 100 is", dw.unrank(100), "and its rank is", dw.rank(dw.unrank(100)));
+
+// A uniformly random way to split 8 people into 3 teams (seeded, so repeatable).
+const people = ["Ana", "Ben", "Cai", "Dee", "Eli", "Fay", "Gus", "Hal"];
+const teams = setPartitions(people, 3);
+PRINT(teams.count, "ways. One at random:", teams.random(rng("teams")).map((t) => t.join(" ")).join(" | "));
+
+// Subsets one change at a time: total weight updated by a single add or remove per step.
+const weights = { a: 3, b: 5, c: 8, d: 13 };
+let previous = [], total = 0, best = null;
+for (const s of subsets(Object.keys(weights), { order: "gray" })) {
+  const added = s.find((x) => !previous.includes(x)), removed = previous.find((x) => !s.includes(x));
+  total += added ? weights[added] : removed ? -weights[removed] : 0;
+  if (total === 16) best = s;
+  previous = s;
+}
+PRINT("a subset weighing exactly 16:", best.join(" + "));
+permutations(25).unrank(10n ** 24n)
+```
+
+---
+
+Page: https://ratmath.com/discrete/random.html
+
+The seeded generator
+
+## The seeded generator
+
+Random numbers you can have again. The same seed gives the same stream on every machine, whole numbers are exactly uniform at any size, and probabilities are exact fractions.
+
+### Making one
+
+```js
+import { rng } from "@ratmath/discrete";
+
+const g = rng(2026);            // a whole number of any size
+const h = rng("experiment 3");  // or text
+g.u32();                        // 3023761063: always, for this seed
+g.u32();                        // 2983606895
+```
+
+JavaScript's `Math.random()` cannot be seeded, so a simulation built on it can never be rerun. Here every result is a function of the seed alone. The first values for a given seed are fixed by the tests of this library, and will not change between versions.
+
+### Whole numbers, exactly uniform
+
+```js
+g.int(6);                 // 0…5, each with probability exactly 1/6
+g.between(1, 6);          // a die
+g.int(10n ** 40n);        // a BigInt below 10⁴⁰, exactly uniform
+g.bits(256);              // 256 random bits as a BigInt
+```
+
+The common shortcut, `Math.floor(Math.random() * n)` or `random % n`, is slightly biased whenever n does not divide the size of the generator's range: some values get one more chance than others. `int` removes the bias by rejection: it draws just enough bits to cover n, and if the draw is n or more it throws it away and draws again. Each accepted value is then equally likely, and fewer than two draws are needed on average.
+
+### Exact probabilities
+
+```js
+g.bool();                 // a fair coin
+g.bool("1/3");            // true with probability exactly 1/3
+g.weighted(["red", "green", "blue"], [5, 3, "1/2"]);   // weights are exact fractions
+g.rational(1000);         // a Core Rational k/1000, 0 ≤ k < 1000
+g.float();                // a double in [0, 1): the one inexact method
+```
+
+A probability of 1/3 cannot be written as a floating-point number, so comparing a random double with `1/3` is off by a hair. `bool("1/3")` draws a uniform whole number below 3 and asks whether it is below 1. Weighted choice works the same way, over the common denominator of the weights.
+
+### Shuffles and samples
+
+```js
+g.shuffle([1, 2, 3, 4, 5]);       // a new array; all 120 orders equally likely
+g.sample(["a", "b", "c", "d"], 2);  // two distinct items, in random order
+g.pick(["heads", "tails"]);
+
+import { permutations, partitions } from "@ratmath/discrete";
+permutations(52).random(g);       // or through any family
+partitions(100).random(g);        // a uniformly random partition of 100
+```
+
+`shuffle` is the Fisher–Yates method: for each position from the last, swap with a uniformly chosen position at or before it. It produces each of the n! orders in exactly one way, so uniform choices give a uniform shuffle. The tempting variant that swaps every position with any position has nn equally likely runs, which cannot be spread evenly over n! orders.
+
+### Independent streams
+
+```js
+const noise = g.fork("noise");
+const data = g.fork("data");      // a second stream, unrelated to the first
+g.clone();                        // a copy that will produce the same future
+new Random(g.state);              // resume from saved state: four 32-bit numbers
+```
+
+A simulation with one shared generator is fragile: add one extra draw in one place and every later number changes. `fork(label)` gives each part its own stream, determined by the parent's state and the label, without advancing the parent. Then changing how the noise is drawn leaves the data as it was.
+
+### What is inside
+
+The generator is xoshiro128**, a small, fast, well-tested generator with a period of 2128−1, seeded by hashing the seed and spreading it with SplitMix32. It uses only 32-bit integer operations, which every JavaScript engine performs identically; that is where the reproducibility comes from. It is a tool for simulation and sampling. It is not for passwords, keys or anything an adversary should not predict.
+
+### Try it
+
+```js
+// The same seed, the same numbers.
+PRINT("seed 2026 twice:", rng(2026).int(1000), rng(2026).int(1000), "  seed 2027:", rng(2027).int(1000));
+
+// A fair die, checked: 60,000 rolls.
+const g = rng("dice");
+const tally = Array(6).fill(0);
+for (let i = 0; i < 60000; i++) tally[g.int(6)]++;
+PRINT("rolls of each face:", tally.join("  "));
+
+// The biased shuffle against the fair one: where does item 1 of [1,2,3] end up? Counts per order.
+const count = (shuffle) => { const c = {}; for (let i = 0; i < 60000; i++) { const k = shuffle().join(""); c[k] = (c[k] ?? 0) + 1; } return Object.keys(c).sort().map((k) => `${k}:${c[k]}`).join("  "); };
+const naive = () => { const a = [1, 2, 3]; for (let i = 0; i < 3; i++) { const j = g.int(3); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+PRINT("fair: ", count(() => g.shuffle([1, 2, 3])));
+PRINT("naive:", count(naive), "  (27 equally likely runs cannot cover 6 orders evenly)");
+
+// Exact probability: how often is bool("1/3") true?
+let hits = 0;
+for (let i = 0; i < 90000; i++) if (g.bool("1/3")) hits++;
+PRINT("bool(1/3) true", hits, "times in 90000");
+
+// Streams that do not disturb each other.
+const base = rng("study");
+const before = base.fork("data").int(1000);
+base.fork("noise").int(1000); base.fork("noise").int(1000);   // draw noise, as often as you like
+PRINT("the data stream is unchanged:", before === rng("study").fork("data").int(1000));
+
+// Monte Carlo against the exact answer: the chance two cards from a deck share a rank.
+const deck = Array.from({ length: 52 }, (_, i) => i % 13);
+let same = 0;
+for (let i = 0; i < 40000; i++) { const [a, b] = g.sample(deck, 2); if (a === b) same++; }
+[`simulated ${(same / 40000).toFixed(4)}`, `exact ${new Rational(3, 51)} = ${(3 / 51).toFixed(4)}`]
+```
+
+---
+
+Page: https://ratmath.com/discrete/generating-functions.html
+
+Generating functions and recurrences
+
+## Generating functions
+
+A generating function packs a whole sequence into one object, A(x)=∑an​xn, and turns questions about sequences into algebra. Here a series is computed lazily: you ask for as many coefficients as you need, and each one is an exact fraction.
+
+### Series as objects
+
+```js
+import { series, knownSeries, egf } from "@ratmath/discrete";
+
+series([1, 1]).pow(5).toString(7);       // "1 + 5x + 10x^2 + 10x^3 + 5x^4 + x^5 + O(x^7)"
+series([1, -1]).reciprocal().toString(5); // "1 + x + x^2 + x^3 + x^4 + O(x^5)"
+series([1, 1]).log().toString(5);         // "x − (1/2)x^2 + (1/3)x^3 − (1/4)x^4 + O(x^5)"
+knownSeries.binomial("1/2").toString(5);  // "1 + (1/2)x − (1/8)x^2 + (1/16)x^3 − (5/128)x^4 + O(x^5)"
+```
+
+A series is given by a coefficient list, a constant, or a rule n↦an​. Every operation returns another lazy series: sums, products, 1/f when f(0)=0, f∘g when g(0)=0, derivative and integral, and ef, logf, f​ and fa for rational a. Coefficients are remembered once computed, so asking for 200 terms after 100 does only the new work.
+
+The rules behind the operations are the usual recurrences for coefficients. For the reciprocal g=1/f, comparing coefficients of fg=1 gives
+
+g0​=f0​1​,gn​=−f0​1​k=1∑n​fk​gn−k​,
+and for h=ef, differentiating gives h′=f′h, so nhn​=∑k=1n​kfk​hn−k​. Both are exact over the rationals.
+
+### Counting with products
+
+Multiplying ordinary generating functions convolves sequences, which is how choices combine. Euler's product for partitions, ∏k​1/(1−xk), counts the ways to write n as a sum of positive parts; `knownSeries.partitions()` computes it by his pentagonal-number recurrence. The Catalan series solves C=1+xC2.
+
+```js
+knownSeries.partitions().terms(15).join(" ");   // "1 1 2 3 5 7 11 15 22 30 42 56 77 101 135"
+knownSeries.catalan().toString(8);              // "1 + x + 2x^2 + 5x^3 + 14x^4 + 42x^5 + 132x^6 + 429x^7 + O(x^8)"
+```
+
+### Exponential generating functions
+
+For labelled objects the right tool is ∑an​xn/n!. Products then count ways to split a label set and build one structure on each part. A set partition is a set of non-empty blocks, so the Bell numbers have the EGF eex−1:
+
+```js
+series([0, 1]).exp().subtract(1).exp().terms(10, { egf: true }).join(" ");
+// "1 1 2 5 15 52 203 877 4140 21147": the Bell numbers
+egf(() => 1).multiply(egf(() => 1)).terms(6, { egf: true });   // 1, 2, 4, 8, 16, 32: e^x·e^x = e^{2x}
+```
+
+`terms(n, { egf: true })` multiplies the kth coefficient by k!, so it reads off the counts.
+
+### Rational generating functions
+
+A quotient of polynomials P(x)/Q(x) with Q(0)=0 is the generating function of a sequence satisfying a linear recurrence, read off from Q. `rationalSeries` keeps the two polynomials, so the recurrence comes back exactly:
+
+```js
+import { rationalSeries } from "@ratmath/discrete";
+const j = rationalSeries([1], [1, -1, -2]);   // 1/(1 − x − 2x²)
+j.terms(8).join(" ");                         // "1 1 3 5 11 21 43 85"
+String(j.recurrence());                       // "a(n) = a(n−1) + 2·a(n−2), from a(0) = 1, a(1) = 1"
+```
+
+Going the other way, every linear recurrence has `generatingFunction()`; see [Recurrences](https://ratmath.com/discrete/recurrences.html).
+
+### Try it
+
+```js
+// Derangements: the EGF is e^(−x)/(1 − x). Compare with the count.
+const d = series((n) => 1).multiply(egf((n) => (n % 2 ? -1 : 1)));
+PRINT("derangements by EGF ", d.terms(10, { egf: true }).join(" "));
+PRINT("derangementCount    ", Array.from({ length: 10 }, (_, n) => derangementCount(n)).join(" "));
+// Involutions: e^(x + x²/2)
+PRINT("involutions         ", series([0, 1, "1/2"]).exp().terms(10, { egf: true }).join(" "));
+// Partitions into distinct parts equal partitions into odd parts (Euler)
+let distinct = series(1), odd = series(1);
+for (let k = 1; k <= 20; k++) {
+  distinct = distinct.multiply(series([1, ...Array(k - 1).fill(0), 1]));
+  if (k % 2) odd = odd.multiply(series([1, ...Array(k - 1).fill(0), -1]).reciprocal());
+}
+PRINT("distinct parts      ", distinct.terms(20).join(" "));
+PRINT("odd parts           ", odd.terms(20).join(" "));
+distinct.terms(40).every((c, n) => c.equals(odd.coefficient(n)))
+```
+
+---
+
+Page: https://ratmath.com/discrete/recurrences.html
+
+Generating functions and recurrences
+
+## Recurrences
+
+A linear recurrence an​=c1​an−1​+⋯+ck​an−k​ is solved by the roots of its characteristic polynomial. Here the roots are exact algebraic numbers, so the closed form is exact too, and it is checked against the terms before it is returned.
+
+### Fibonacci, three ways
+
+```js
+import { recurrence } from "@ratmath/discrete";
+
+const fib = recurrence({ coefficients: [1, 1], initial: [0, 1] });
+fib.terms(10).join(" ");            // "0 1 1 2 3 5 8 13 21 34"
+fib.term(100);                      // 354224848179261915075, by a power of the companion matrix
+String(fib.generatingFunction());   // "x/(1 − x − x^2)"
+fib.closedForm().toString();
+// "a(n) = −(√5/5)·((1 − √5)/2)^n + (√5/5)·((1 + √5)/2)^n"
+```
+
+The characteristic polynomial of an​=c1​an−1​+⋯+ck​an−k​ is χ(x)=xk−c1​xk−1−⋯−ck​. If its distinct roots are r1​,…,rs​ with multiplicities mi​, every solution has the form
+
+an​=i=1∑s​(bi,0​+bi,1​n+⋯+bi,mi​−1​nmi​−1)rin​,
+and the k unknowns bi,j​ are fixed by the k initial values. `closedForm()` finds the roots with `@ratmath/algebraic`, solves that linear system over the algebraic numbers, and compares the formula with further terms; `checked` records that it did.
+
+### Repeated and complex roots
+
+```js
+recurrence({ coefficients: [4, -4], initial: [1, 4] }).closedForm().toString();
+// "a(n) = 2^n + n·2^n": χ = (x − 2)², a double root
+recurrence({ coefficients: [1, 1, 1], initial: [0, 0, 1] }).closedForm().toString();
+// tribonacci: one real root 1.839286755214… and a complex pair, as certified digits
+```
+
+A root of degree two is written with square roots; higher degrees are shown by certified digits, but the value underneath stays exact, so `at(n)` still gives the integer term.
+
+### Inhomogeneous recurrences
+
+A term p(n)bn added on the right is absorbed by multiplying χ by (x−b)degp+1: the result is a longer homogeneous recurrence with the same terms. The original is kept in `given`.
+
+```js
+const towers = recurrence({ coefficients: [2], initial: [0], plus: [1] });   // a(n) = 2a(n−1) + 1
+towers.terms(8).join(" ");             // "0 1 3 7 15 31 63 127"
+towers.closedForm().toString();        // "a(n) = −1 + 2^n"
+```
+
+### Guessing a recurrence
+
+Given terms, the Berlekamp–Massey algorithm finds the shortest linear recurrence that produces them, over the rationals. If none is shorter than half the data, the answer is `null`: Catalan numbers, for example, satisfy no linear recurrence with constant coefficients.
+
+```js
+import { guessRecurrence } from "@ratmath/discrete";
+String(guessRecurrence([0, 1, 1, 2, 3, 5, 8, 13]));   // "a(n) = a(n−1) + a(n−2), from a(0) = 0, a(1) = 1"
+guessRecurrence([1, 1, 2, 5, 14, 42, 132, 429, 1430]);   // null
+```
+
+### Sums and divide-and-conquer
+
+```js
+import { closedSum, masterTheorem, divideAndConquer } from "@ratmath/discrete";
+closedSum([0, 0, 1]).toString();       // "Σ_{k=0}^{n} k^2 = (1/3)·n^3 + (1/2)·n^2 + (1/6)·n"
+closedSum([0, 1], 2).toString();       // "Σ_{k=0}^{n} (k)·2^k = (n − 1)·2^(n+1) + 2"
+masterTheorem({ a: 2, b: 2, d: 1 }).bound;   // "Θ(n log n)": merge sort
+masterTheorem({ a: 7, b: 2, d: 2 }).bound;   // "Θ(n^(log_2 7))": Strassen
+```
+
+∑k≤n​p(k) is a polynomial of one degree more, found from Newton's forward differences; ∑k≤n​p(k)rk=Q(n)rn+1−Q(−1) for a polynomial Q of the same degree as p. The master theorem compares f(n)=ndlogjn with nlogb​a; the critical exponent is reported exactly when it is rational. `divideAndConquer` lists exact values of T(bm) so a bound can be looked at in numbers.
+
+### Try it
+
+```js
+// Closed forms checked against the recurrence, term by term.
+const recs = [
+  recurrence({ coefficients: [1, 1], initial: [2, 1] }),        // Lucas
+  recurrence({ coefficients: [2, 1], initial: [0, 1] }),        // Pell
+  recurrence({ coefficients: [0, -1], initial: [1, 0] }),       // 1, 0, −1, 0, …: roots ±i
+  recurrence({ coefficients: [3], initial: [1], plus: { poly: [0, 1], base: 2 } }),
+];
+for (const r of recs) {
+  const cf = r.closedForm();
+  PRINT(r.terms(8).join(" "), " ⇒ ", cf.toString(), cf.checked ? " ✓" : "");
+}
+PRINT(String(guessRecurrence(recs[1].terms(10))));
+PRINT(divideAndConquer({ a: 3, b: 2, f: (n) => n }, 6).map(({ n, value }) => `T(${n}) = ${value}`).join(", "));
+masterTheorem({ a: 3, b: 2, d: 1 }).bound
+```
+
+---
+
+Page: https://ratmath.com/discrete/graphs.html
+
+Graphs
+
+## Graphs
+
+A graph is a set of vertices and the edges that join them. Here a graph can be written as a line of text, its weights are exact fractions, and the standard families are one call away.
+
+### Writing one down
+
+```js
+import { graph, digraph } from "@ratmath/discrete";
+
+const g = graph("a-b b-c c-a c-d");      // a triangle with a tail
+g.order;                                  // 4 vertices
+g.size;                                   // 4 edges
+g.neighbors("c");                         // ["b", "a", "d"]
+g.degreeSequence();                       // [3, 2, 2, 1]
+
+const road = graph("home-shop:3/2 shop-work:2 home-work:4");   // weights are exact fractions
+road.weight("home", "shop").toString();                       // "3/2"
+
+const d = digraph("1>2 2>3 3>1 3>4");     // a directed graph: write a>b
+d.outNeighbors(3);                        // [1, 4]
+d.inDegree(1);                            // 1
+```
+
+The text form reads edges `u-v` (or `u>v` in a directed graph), chains `a-b-c`, lone vertices, and a weight after a colon. Names made of digits become numbers. A list of pairs `[[1, 2], [2, 3, "1/2"]]` or an adjacency object `{ a: ["b", "c"] }` work as well, and `String(g)` gives the text back.
+
+A graph is simple unless asked otherwise: a second edge between the same two vertices, or an edge from a vertex to itself, is refused with the reason. Pass `{ multi: true }` for parallel edges (the bridges of Königsberg need them) and `{ loops: true }` for loops.
+
+### Degrees and the handshake
+
+The degree of a vertex is the number of edge-ends at it, a loop counting twice. Each edge has two ends, so
+
+v∑​degv=2∣E∣,
+and the number of vertices of odd degree is always even. In a directed graph each edge leaves one vertex and enters one, so the out-degrees and the in-degrees each add up to ∣E∣.
+
+### The standard families
+
+```js
+complete(5);              // K₅: every pair joined, 10 edges
+cycleGraph(6);            // C₆
+pathGraph(4);             // P₄: 1-2-3-4
+completeBipartite(3, 3);  // K₃,₃
+hypercube(3);             // Q₃: vertices 000 … 111
+grid(3, 4);               // vertices "1,1" … "3,4"
+petersen();               // the Petersen graph, as the Kneser graph K(5, 2)
+platonic("dodecahedron"); // the skeleton of a Platonic solid
+turan(10, 3);             // the most edges on 10 vertices with no K₄
+randomGraph(12, "1/4", rng("seed"));   // G(n, p), p exact
+```
+
+Vertices are numbered from 1 unless a family has natural names: the cube's bit strings, the grid's row and column, the subsets of a Kneser graph. Random graphs come from the seeded generator, so the same seed gives the same graph on every machine; the probability is an exact fraction, so `"1/3"` means one third and not the double nearest to it.
+
+### New graphs from old
+
+```js
+const g = cycleGraph(5);
+g.complement();                        // the 5-cycle again: C₅ is self-complementary
+g.lineGraph();                         // a vertex for each edge
+g.subgraph([1, 2, 3]);                 // induced: those vertices and the edges among them
+cartesianProduct(pathGraph(3), pathGraph(4));   // the 3 × 4 grid
+tensorProduct(complete(3), complete(2));        // a 6-cycle
+join(emptyGraph(3), emptyGraph(3));             // K₃,₃
+```
+
+The Cartesian product G□H has a vertex for each pair (a,b), with (a,b) joined to (c,d) when a=c and b∼d, or b=d and a∼c: grids are products of paths, and the cube Qd​ is K2​ multiplied by itself d times. The tensor product joins pairs that move in both coordinates at once, the strong product allows either, and the line graph L(G) turns edges into vertices, joined when the edges share an end, so a vertex of degree d in G contributes (2d​) edges to L(G).
+
+The adjacency matrix, in the order of `vertices()`, is `g.adjacencyMatrix()`. Its spectrum is planned for a later phase, through linalg.
+
+### Try it
+
+```js
+// The Petersen graph: 10 vertices, every degree 3, and famous for being a counterexample.
+const P = petersen();
+PRINT("order", P.order, " size", P.size, " degrees", P.degreeSequence().join(","));
+PRINT("vertices:", P.vertices().join(" | "));
+
+// Handshake lemma on a random graph.
+const G = randomGraph(15, "1/3", rng("handshake"));
+const total = G.vertices().reduce((s, v) => s + G.degree(v), 0);
+PRINT("sum of degrees", total, "= 2 ×", G.size);
+
+// Each Platonic solid: vertices − edges + faces = 2 (Euler), with faces counted from the solid.
+const faces = { tetrahedron: 4, cube: 6, octahedron: 8, dodecahedron: 12, icosahedron: 20 };
+for (const [name, f] of Object.entries(faces)) { const s = platonic(name); PRINT(name.padEnd(13), s.order, "−", s.size, "+", f, "=", s.order - s.size + f); }
+
+// C5 is isomorphic to its complement; L(K4) is the octahedron (both 6 vertices, 4-regular).
+PRINT("C5 complement:", String(cycleGraph(5).complement()));
+const L = complete(4).lineGraph();
+PRINT("L(K4):", L.order, "vertices,", L.size, "edges, degrees", L.degreeSequence().join(","));
+
+// The 3-cube as K2 □ K2 □ K2.
+const k2 = complete(2);
+const q = cartesianProduct(cartesianProduct(k2, k2), k2);
+[q.order, q.size, String(hypercube(3))]
+```
+
+---
+
+Page: https://ratmath.com/discrete/connectivity.html
+
+Connectivity
+
+## Connectivity
+
+Searching a graph, and what the search reveals: the pieces it falls into, the edges and vertices it hangs on, an order for a directed graph without cycles, and whether two colours are enough. When the answer is no, the reason comes with it.
+
+### Two ways to search
+
+```js
+const g = graph("1-2 1-3 2-4 3-4 4-5 6-7");
+bfs(g, 1).order;            // [1, 2, 3, 4, 5]: nearest first
+bfs(g, 1).depth.get(5);     // 3 edges away
+dfs(g, 1).order;            // [1, 2, 4, 3, 5]: as deep as possible first
+components(g);              // [[1, 2, 3, 4, 5], [6, 7]]
+isConnected(g);             // false
+```
+
+Breadth-first search keeps a queue: it visits the start, then everything one edge away, then everything two edges away, and so on, which is why the depth it records is the distance. Depth-first search keeps a stack: it follows edges as far as it can and backs up only when stuck. Each visits every vertex it can reach once and looks at every edge at most twice, so both take time proportional to ∣V∣+∣E∣. Both are written without recursion, so a path of a million vertices does not overflow the stack.
+
+### Weak points: bridges and cut vertices
+
+```js
+const g = graph("a-b b-c c-a c-d d-e e-f f-d");   // two triangles joined by c-d
+bridges(g).map((e) => e.from + "-" + e.to);   // ["c-d"]
+cutVertices(g);             // ["c", "d"]
+blocks(g);                  // [["d", "e", "f"], ["c", "d"], ["a", "b", "c"]]
+```
+
+A bridge is an edge whose removal disconnects its component, and a cut vertex is a vertex whose removal does. An edge is a bridge exactly when it lies on no cycle. One depth-first search finds them all (Hopcroft and Tarjan): number the vertices in the order they are discovered, and let low(v) be the smallest number reachable from v's subtree using at most one edge that is not in the search tree. A tree edge u→v is a bridge when low(v)>num(u), and u is a cut vertex when low(v)≥num(u) for some child v (the root is a cut vertex when it has two or more children). The blocks are the pieces between cut vertices; every edge lies in exactly one.
+
+### Directed graphs: strong components and topological order
+
+```js
+const d = digraph("1>2 2>1 2>3 3>4 4>3 4>5");
+stronglyConnectedComponents(d);   // [[5], [3, 4], [1, 2]]
+condensation(d).graph.toString(); // "1>2 2>3": the components, in order
+
+const tasks = digraph("wake>shower wake>coffee coffee>leave shower>dress dress>leave");
+topologicalOrder(tasks);          // { acyclic: true, order: ["wake", "shower", "coffee", "dress", "leave"] }
+topologicalOrder(digraph("a>b b>c c>a"));   // { acyclic: false, cycle: ["a", "b", "c", "a"] }
+```
+
+Two vertices are strongly connected when each can reach the other. That is an equivalence relation, and its classes are the strong components; shrinking each to a point gives the condensation, which never has a cycle. A topological order lists the vertices so that every edge points forward. It exists exactly when there is no directed cycle, and Kahn's method finds it by repeatedly taking a vertex with nothing left pointing into it. When it gets stuck, every remaining vertex has an edge coming in, so following edges backwards must eventually repeat a vertex: that cycle is returned as the proof that no order exists.
+
+### Two colours: bipartite graphs
+
+```js
+bipartition(grid(2, 3));      // { bipartite: true, parts: [[…], […]] }
+bipartition(cycleGraph(5));   // { bipartite: false, oddCycle: [3, 2, 1, 5, 4, 3] }
+```
+
+A graph is bipartite when its vertices split into two sides with every edge crossing between them. König's theorem says this happens exactly when there is no cycle of odd length. One direction is easy: going round a cycle switches sides at every step, so a cycle must have even length. The search proves the other: colour by breadth-first search, alternating with depth; if an edge ever joins two vertices of the same colour, the two search paths back to where they meet, together with that edge, form an odd cycle, which is returned as the certificate.
+
+### Distances
+
+```js
+const P = petersen();
+distance(P, "1,2", "3,4");   // 1: disjoint pairs are joined
+diameter(P);                 // 2
+girth(P);                    // { girth: 5, cycle: [ … ] }: no triangles, no squares
+center(pathGraph(5));        // [3]
+```
+
+The distance between two vertices is the fewest edges on a path between them (weights are for [shortest paths](https://ratmath.com/discrete/shortest-paths.html)). The eccentricity of a vertex is its distance to the farthest vertex; the diameter and radius are the largest and smallest eccentricities, and the centre is where the radius is attained. The girth is the length of a shortest cycle, found by a breadth-first search from every vertex; a shortest cycle through the start appears as the first non-tree edge that closes two branches meeting only at the start.
+
+### Try it
+
+```js
+// A random graph and its pieces.
+const g = randomGraph(14, "1/6", rng("pieces"));
+PRINT("components:", components(g).map((c) => "{" + c.join(" ") + "}").join(" "));
+const b = biconnected(g);
+PRINT("bridges:", b.bridges.map((e) => e.from + "-" + e.to).join(" ") || "none", "  cut vertices:", b.cutVertices.join(" ") || "none");
+
+// Check against the definition: removing a bridge raises the number of components.
+for (const e of b.bridges) { const h = g.copy(); h.removeEdge(e); PRINT("  without", e.from + "-" + e.to, ":", components(h).length, "components, was", components(g).length); }
+
+// A course plan in a valid order, and what happens with a circular prerequisite.
+const courses = digraph("calc1>calc2 calc2>calc3 calc2>diffeq linalg>diffeq calc1>linalg proofs>algebra linalg>algebra");
+PRINT("order:", topologicalOrder(courses).order.join(" → "));
+courses.addEdge("algebra", "calc1");
+PRINT("with algebra before calc1:", JSON.stringify(topologicalOrder(courses)));
+
+// Odd cycles are exactly what stops two colours.
+for (const n of [4, 5, 6, 7]) PRINT("C" + n, isBipartite(cycleGraph(n)) ? "two colours" : "odd cycle " + bipartition(cycleGraph(n)).oddCycle.join("-"));
+
+// Girth and diameter of the cubes Q1…Q6.
+[1, 2, 3, 4, 5, 6].map((d) => `Q${d}: diameter ${diameter(hypercube(d))}, girth ${girth(hypercube(d)).girth}`)
+```
+
+---
+
+Page: https://ratmath.com/discrete/shortest-paths.html
+
+Shortest paths
+
+## Shortest paths
+
+The cheapest route from one vertex to another, with weights that are exact fractions. Ties are real ties, and when a negative cycle makes the question meaningless, the cycle is what you get back.
+
+### One route
+
+```js
+const g = graph("s-a:0.1 a-b:0.2 b-t:0.3 s-t:0.6");
+shortestPath(g, "s", "t");
+// { distance: 3/5, path: ["s", "t"], edges: [ … ] }: the other route is also 3/5
+shortestPath(g, "s", "b").distance.toString();    // "3/10"
+```
+
+In floating point, `0.1 + 0.2 + 0.3` is `0.6000000000000001`, so the route through `a` and `b` would look slightly longer than the direct edge of weight 0.6. Here weights and distances are Core `Rational`s, so the two routes are recognised as exactly equal: both are 3/5, and either is a correct answer. A weight may be written as a whole number, a fraction `"3/7"` or a decimal string `"0.1"`; a JavaScript non-integer such as `0.1` is refused, because the number it stands for is not one tenth.
+
+### From one vertex to all others
+
+```js
+const d = digraph("A>B:4 A>C:2 C>B:1 B>D:5 C>D:8 D>E:3");
+const sp = shortestPaths(d, "A");
+sp.method;                         // "dijkstra"
+[...sp.distance].map(([v, x]) => `${{v}}:${{x}}`);   // ["A:0", "B:3", "C:2", "D:8", "E:11"]
+sp.pathTo("E").path;               // ["A", "C", "B", "D", "E"]
+```
+
+Dijkstra's method settles vertices in order of distance. It keeps the best distance found so far for each vertex, repeatedly settles the unsettled vertex with the smallest one, and tries the edges out of it. When no weight is negative, a settled vertex can never be improved later: any other route to it passes through some unsettled vertex that is already at least as far. With a binary heap this takes time about (∣V∣+∣E∣)log∣V∣ comparisons of fractions.
+
+When every weight is 1 (an unweighted graph), breadth-first search does the same job, and `method` says so.
+
+### Negative weights, and negative cycles
+
+```js
+const d = digraph("s>a:4 s>b:2 b>a:-3 a>t:1");
+shortestPath(d, "s", "t").distance.toString();    // "0": via b, then back to a
+shortestPaths(d, "s").method;                     // "bellman-ford"
+
+const loop = digraph("s>a:1 a>b:-2 b>a:1 b>t:1");
+shortestPaths(loop, "s").negativeCycle;           // ["a", "b", "a"]
+shortestPath(loop, "s", "t");                     // throws: the cycle a → b → a has negative total weight
+```
+
+A negative weight breaks Dijkstra's argument, so the Bellman–Ford method is used instead: relax every edge, ∣V∣−1 times over. A shortest path, if one exists, has at most ∣V∣−1 edges, so after that many rounds every distance is right. If one more round still improves something, there is a cycle of negative total weight within reach, and going round it again and again makes the "distance" as small as you like. Then no shortest path exists, and instead of a number the answer is the cycle, found by walking back along the last improvements. In an undirected graph a single negative edge already is such a cycle (walk it back and forth), so it is reported at once.
+
+### All pairs
+
+```js
+const ap = allPairsShortestPaths(d);
+ap.distance("s", "t").toString();    // "0"
+ap.path("s", "t");                   // ["s", "b", "a", "t"]
+ap.matrix;                           // Rationals, null where there is no path
+```
+
+The Floyd–Warshall method allows the vertices as stopovers one at a time: after step k, entry (i,j) holds the shortest distance from i to j using only the first k vertices in between, by
+
+dk​(i,j)=min(dk−1​(i,j),dk−1​(i,k)+dk−1​(k,j)).
+That is ∣V∣3 steps, simple and exact; a negative number on the diagonal at the end reveals a negative cycle, which is then found and returned as above.
+
+The tests of this library compare all three methods with the minimum over every simple path, on several hundred random weighted graphs.
+
+### Try it
+
+```js
+// Exactness: in floating point 0.1 + 0.2 + 0.3 is not 0.6, so two equal routes look different.
+const g = graph("s-a:0.1 a-b:0.2 b-t:0.3 s-t:0.6");
+PRINT("in floating point:", 0.1 + 0.2 + 0.3, "vs", 0.6);
+const p = shortestPath(g, "s", "t");
+PRINT("exact distance", String(p.distance), "by", p.path.join("-"), " the direct edge:", String(g.weight("s", "t")), " equal:", p.distance.equals(g.weight("s", "t")));
+
+// A grid with random fractional weights: the cheapest way from corner to corner.
+const r = rng("grid weights");
+const G = grid(4, 4);
+const W = new Graph();
+for (const e of G.edges()) W.addEdge(e.from, e.to, `${r.between(1, 9)}/${r.between(1, 4)}`);
+const best = shortestPath(W, "1,1", "4,4");
+PRINT("corner to corner:", String(best.distance), "via", best.path.join(" "));
+
+// Costs with rebates: some legs pay you back. A cycle with negative total cost means no cheapest route exists.
+const fx = digraph("USD>EUR:5 EUR>GBP:-2 GBP>USD:-4 USD>JPY:1 JPY>GBP:2");
+const sp = shortestPaths(fx, "USD");
+PRINT("negative cycle:", sp.negativeCycle ? sp.negativeCycle.join(" → ") : "none");
+
+// All pairs on a small directed graph.
+const d = digraph("1>2:3 2>3:-1 1>3:4 3>4:1/2 4>1:2");
+const ap = allPairsShortestPaths(d);
+ap.matrix.map((row) => row.map((x) => (x === null ? "∞" : String(x)).padStart(5)).join(""))
+```
+
+---
+
+Page: https://ratmath.com/discrete/tours.html
+
+Euler and Hamilton
+
+## Euler and Hamilton
+
+Two questions that sound alike: can you walk every edge exactly once, or visit every vertex exactly once? The first has a simple test and a fast answer. The second has neither, and is answered here by exhaustive search on small graphs.
+
+### Every edge once: Euler
+
+```js
+const k = graph("A-B A-B A-C A-C A-D B-D C-D", { multi: true });   // the bridges of Königsberg
+eulerTour(k);
+// { exists: false, reason: "a tour needs 0 or 2 vertices of odd degree; this graph has 4", odd: ["A", "B", "C", "D"] }
+
+eulerTour(complete(5));     // every degree is 4: a closed tour
+// { exists: true, closed: true, vertices: [1, 2, 3, 1, 4, 2, 5, 3, 4, 5, 1], edges: [ … ] }
+eulerTour(graph("1-2 2-3 3-1 3-4"));   // two odd vertices: a tour from one to the other
+```
+
+Euler's theorem (1736): a connected graph has a closed walk using every edge exactly once if and only if every vertex has even degree, and an open one if and only if exactly two vertices have odd degree, where it must start and end. Necessity is the counting argument: every time the walk passes through a vertex it uses two edges there. In Königsberg all four land masses had odd degree, so no walk could cross each of the seven bridges once.
+
+Sufficiency is constructive, and the construction is Hierholzer's method: walk from the start along unused edges until you are stuck, which with even degrees can only happen back at the start. If unused edges remain, some vertex on the circuit has one; walk a second circuit from there and splice it in. Done with a stack, each edge is handled once, so the whole tour takes time proportional to ∣E∣. In a directed graph the condition is that every vertex has as many edges in as out (or one vertex has one extra out and another one extra in).
+
+### Every vertex once: Hamilton
+
+```js
+hamiltonCycle(platonic("dodecahedron"));   // Hamilton's "icosian game" (1857): { exists: true, cycle: [ … ] }
+hamiltonCycle(petersen());
+// { exists: false, reason: "no cycle through every vertex: an exhaustive search over all 1024 vertex sets found none" }
+hamiltonCycle(star(4));     // { exists: false, reason: "1 has fewer than two neighbours", vertex: 1 }
+hamiltonPath(grid(3, 3));   // a path exists, though no cycle does
+```
+
+No test as simple as Euler's is known for Hamilton cycles, and deciding whether one exists is NP-complete. So the answer is found by search, limited to 20 vertices. The search is the Held–Karp dynamic programme: for each set S of vertices containing a fixed start, record which vertices can end a path from the start that visits exactly S. Each set is extended by one vertex at a time, so the work is about 2n sets times n, not n! orders. When no Hamilton cycle exists, that is proved by the search having covered every set.
+
+Before searching, some quick reasons are tried, since they are easier to read than "the search found none": a disconnected graph, a vertex with fewer than two neighbours, or a cut vertex (a cycle through every vertex has no cut vertex). Some graphs need the full search: the Petersen graph has none of these defects and still has no Hamilton cycle.
+
+### Try it
+
+```js
+// Which small graphs have Euler circuits, Euler trails, Hamilton cycles?
+const named = { K4: complete(4), K5: complete(5), "K3,3": completeBipartite(3, 3), Petersen: petersen(), cube: platonic("cube"), octahedron: platonic("octahedron"), "grid 3x3": grid(3, 3), wheel6: wheel(6) };
+for (const [name, g] of Object.entries(named)) {
+  const e = eulerTour(g);
+  const h = hamiltonCycle(g);
+  PRINT(name.padEnd(11), "Euler:", (e.exists ? (e.closed ? "circuit" : "trail") : "none").padEnd(8), " Hamilton:", h.exists ? "cycle" : "none — " + h.reason);
+}
+
+// Königsberg, then with one bridge added between B and C: now exactly two odd vertices.
+const k = graph("A-B A-B A-C A-C A-D B-D C-D", { multi: true });
+PRINT("Königsberg:", eulerTour(k).reason);
+k.addEdge("B", "C");
+PRINT("with a bridge B-C:", eulerTour(k).vertices.join(" "));
+
+// A knight's tour on a 4×5 board is a Hamilton path in the knight's graph.
+const knight = new Graph();
+for (let r = 1; r <= 4; r++) for (let c = 1; c <= 5; c++) {
+  knight.addVertex(`${r},${c}`);
+  for (const [dr, dc] of [[1, 2], [2, 1], [2, -1], [1, -2]]) {
+    const rr = r + dr, cc = c + dc;
+    if (rr >= 1 && rr <= 4 && cc >= 1 && cc <= 5) knight.addEdge(`${r},${c}`, `${rr},${cc}`);
+  }
+}
+const tour = hamiltonPath(knight);
+tour.exists ? tour.path.join(" ") : tour.reason
+```
+
+---
+
+Page: https://ratmath.com/discrete/trees.html
+
+Trees
+
+## Trees
+
+Trees are the connected graphs with no cycles, the skeletons of every connected graph. Here: the lightest spanning tree, the exact number of spanning trees, and a numbered list of all labelled trees through their Prüfer codes.
+
+### What a tree is
+
+For a graph with n vertices the following say the same thing: it is connected and has no cycle; it is connected and has n−1 edges; it has no cycle and n−1 edges; between any two vertices there is exactly one path. `isTree` checks the second, `isForest` checks for a cycle.
+
+```js
+isTree(graph("1-2 2-3 2-4"));    // true
+isTree(cycleGraph(4));           // false
+isForest(graph("1-2 3-4"));      // true: two trees
+```
+
+### The lightest spanning tree
+
+```js
+const g = graph("a-b:4 a-c:1 b-c:2 b-d:5 c-d:8 d-e:3 c-e:9/2");
+const t = minimumSpanningTree(g);
+t.weight.toString();                 // "21/2": a-c, b-c, d-e, c-e
+t.edges.map((e) => e.from + "-" + e.to);
+minimumSpanningTree(g, { method: "prim" }).weight.toString();    // the same
+minimumSpanningTree(g, { maximum: true }).weight.toString();     // the heaviest: "43/2"
+```
+
+A spanning tree uses every vertex and some of the edges. Both methods rest on the cut property: for any split of the vertices into two sides, a lightest edge crossing the split belongs to some minimum spanning tree (if a tree avoided it, adding it makes a cycle that crosses the split a second time, and swapping out that other crossing edge cannot make the tree heavier). Kruskal's method takes the edges from lightest up and keeps each one that joins two different pieces, tracked with a union–find structure. Prim's method grows one tree from a vertex, always adding the lightest edge leaving it. With exact weights, ties are real ties, broken by the order the edges were added, so the answer never depends on rounding. A disconnected graph gets a spanning forest, with `connected: false`.
+
+### How many spanning trees
+
+```js
+spanningTreeCount(complete(10));          // 100000000n = 10⁸ (Cayley)
+spanningTreeCount(platonic("cube"));      // 384n
+spanningTreeCount(petersen());            // 2000n
+spanningTreeCount(completeBipartite(3, 4)); // 432n = 3³ · 4²
+```
+
+Kirchhoff's matrix-tree theorem: let L=D−A be the Laplacian, the diagonal matrix of degrees minus the adjacency matrix. Then the number of spanning trees equals any cofactor of L, for example the determinant of L with its first row and column removed. The determinant is computed exactly with integers by Bareiss elimination, in which every division is exact, so the count is right however large it is. Parallel edges count as different trees.
+
+### Prüfer codes, and Cayley's formula
+
+```js
+const t = graph("1-4 2-4 3-4 4-5 5-6");
+prufer(t);                       // [4, 4, 4, 5]
+fromPrufer([4, 4, 4, 5]);        // the same tree back
+const trees = labelledTrees(6);
+trees.count;                     // 1296n = 6⁴
+trees.unrank(1000);              // the tree with code number 1000
+trees.random(rng("forest"));     // a uniformly random labelled tree
+```
+
+To encode a tree on the labels 1…n, remove the smallest leaf and write down its neighbour; repeat until two vertices remain. The result is a sequence of n−2 labels, and the tree can be rebuilt from it: the first removed leaf is the smallest label that does not appear in the code, and so on. So the code is a bijection between labelled trees and sequences of length n−2 over n labels, which proves Cayley's formula
+
+#{labelled trees on n vertices}=nn−2.
+A vertex's degree is one more than the number of times it appears in the code, so leaves are exactly the labels that never appear. `labelledTrees(n)` is a [family](https://ratmath.com/discrete/enumeration.html) numbered by code, so ranking, unranking and uniform random trees come for free; the tests check that it lists all 64=1296 trees on six vertices, each once, and that nn−2 agrees with the matrix-tree count for Kn​.
+
+### Try it
+
+```js
+// Cayley two ways: the matrix-tree theorem on K_n, and n^(n-2).
+for (let n = 2; n <= 8; n++) PRINT("n =", n, " Kirchhoff:", spanningTreeCount(complete(n)), " Cayley:", BigInt(n) ** BigInt(n - 2));
+
+// A road network with exact costs: Kruskal and Prim agree.
+const roads = graph("A-B:7/2 A-C:2 B-C:3/2 B-D:5 C-D:4 C-E:6 D-E:1 D-F:9/4 E-F:3");
+const k = minimumSpanningTree(roads), p = minimumSpanningTree(roads, { method: "prim" });
+PRINT("Kruskal:", String(k.weight), k.edges.map((e) => e.from + e.to).join(" "));
+PRINT("Prim:   ", String(p.weight), p.edges.map((e) => e.from + e.to).join(" "));
+
+// Prüfer codes: a random tree, its code, and the degrees read off from the code.
+const t = randomTree(9, rng("prufer"));
+const code = prufer(t);
+PRINT("tree:", String(t));
+PRINT("code:", code.join(" "));
+PRINT("degree of each vertex = 1 + appearances in the code:", t.vertices().sort((a, b) => a - b).every((v) => t.degree(v) === 1 + code.filter((x) => x === v).length));
+
+// How many labelled trees on 7 vertices are paths? stars? Count by walking the family.
+let paths = 0, stars = 0;
+for (const tr of labelledTrees(7)) { const ds = tr.degreeSequence(); if (ds[0] === 2) paths++; if (ds[0] === 6) stars++; }
+[`paths: ${paths} (7!/2 = ${5040 / 2})`, `stars: ${stars}`]
+```
+
+---
+
+Page: https://ratmath.com/discrete/matchings-flows.html
+
+Graph theory
+
+## Matchings and flows
+
+A matching pairs vertices along edges; a flow sends material through a network. In both, the best answer comes with a short proof that nothing better exists: a Tutte–Berge set, a König cover, dual prices, or a cut.
+
+### Maximum matching in any graph
+
+```js
+import { graph, star, maximumMatching } from "@ratmath/discrete";
+
+const g = graph("a-b b-c c-a c-d d-e e-f f-d");   // two triangles joined by an edge
+const m = maximumMatching(g);
+m.edges;          // [["a","b"], ["c","d"], ["e","f"]]: perfect
+maximumMatching(star(5)).certificate;
+// { set: [0], oddComponents: [[1],[2],[3],[4],[5]], bound: 1 }
+```
+
+Edmonds' blossom algorithm grows alternating trees and shrinks odd cycles. The certificate is the Tutte–Berge formula: for any set U of vertices, with odd(G−U) the number of odd components left when U is removed,
+
+ν(G)=U⊆Vmin​21​(∣V∣+∣U∣−odd(G−U)).
+Each odd component must send a vertex to U to be matched completely, and U has only ∣U∣ vertices. The algorithm returns a U where the bound equals the matching size (from the Gallai–Edmonds decomposition), and `check()` recomputes both sides from the graph alone.
+
+### Bipartite graphs: König and Hall
+
+```js
+import { bipartiteMatching } from "@ratmath/discrete";
+bipartiteMatching(graph("a-x a-y b-x c-x"), { left: ["a", "b", "c"] });
+// size 2, cover ["a", "x"], hall { set: ["c", "b"], neighbours: ["x"] }
+```
+
+In a bipartite graph the largest matching equals the smallest vertex cover (König), and a side can be matched completely exactly when every set S of its vertices has at least ∣S∣ neighbours (Hall). When it cannot, the answer names a set S with ∣N(S)∣.
+
+### Assignment and stable matching
+
+```js
+import { assignment, stableMatching } from "@ratmath/discrete";
+const a = assignment([[4, 1, 3], [2, 0, 5], [3, 2, 2]]);
+a.assignment;   // [1, 0, 2]: row 0 takes column 1, …
+a.cost;         // 5, with rowPrices [2, 1, 2] and columnPrices [1, −1, 0]
+stableMatching({ a: ["x", "y", "z"], b: ["y", "x", "z"], c: ["x", "y", "z"] },
+               { x: ["b", "a", "c"], y: ["a", "b", "c"], z: ["a", "b", "c"] }).matching;
+// { a: "x", b: "y", c: "z" }, with no blocking pair
+```
+
+The assignment problem is a linear program whose optimum is always a permutation. Its dual prices ui​+vj​≤cij​, with equality on the chosen cells, prove the cost is least: any assignment costs at least ∑ui​+∑vj​. Gale–Shapley's proposal algorithm gives the stable matching best for the proposers.
+
+### Maximum flow and minimum cut
+
+```js
+import { digraph, maxFlow } from "@ratmath/discrete";
+const f = maxFlow(digraph("s>a:3 s>b:2 a>b:1 a>t:2 b>t:3"), "s", "t");
+f.value;        // 5
+f.cut.source;   // ["s"]: the cut {s→a, s→b} has capacity 5 too
+maxFlow(graph("s-a:1/2 a-t:1/3 s-t:1"), "s", "t").value;   // 4/3, exactly
+```
+
+Edmonds–Karp augments along shortest paths in the residual network. When no augmenting path is left, the vertices still reachable from the source form a cut whose capacity equals the flow, which is the max-flow min-cut theorem: no flow exceeds any cut, so both are optimal. Capacities are exact fractions, so the answer is too.
+
+### Try it
+
+```js
+// Matching size against brute force on random graphs, and the certificate.
+const r = rng("matchings");
+for (let t = 0; t < 5; t++) {
+  const g = randomGraph(10, "1/4", r);
+  const m = maximumMatching(g);
+  PRINT(`${g.edges().length} edges: ν = ${m.size}, Tutte set [${m.certificate.set.join(", ")}], ${m.certificate.oddComponents.length} odd components, check:`, m.check().ok);
+}
+// Menger: the number of edge-disjoint paths between two vertices of the cube
+const Q = hypercube(3);
+PRINT("edge-disjoint paths in Q3:", String(maxFlow(Q, Q.vertices()[0], Q.vertices()[7]).value));
+maximumMatching(petersen()).perfect
+```
+
+---
+
+Page: https://ratmath.com/discrete/colouring.html
+
+Graph theory
+
+## Colouring and cliques
+
+Colour the vertices so that neighbours differ. The fewest colours that work is the chromatic number χ(G); the number of ways to do it with k colours is a polynomial in k.
+
+### The chromatic number
+
+```js
+import { petersen, wheel, chromaticNumber, greedyColouring, isProperColouring } from "@ratmath/discrete";
+
+const c = chromaticNumber(petersen());
+c.number;       // 3
+c.lowerBound;   // { kind: "odd-cycle", cycle: [...], note: "an odd cycle cannot be coloured with two colours" }
+chromaticNumber(wheel(5)).lowerBound;   // { kind: "search", note: "no 3-colouring exists: …" }
+isProperColouring(petersen(), greedyColouring(petersen()));   // { ok: true, clash: null }
+```
+
+An upper bound is a colouring, which anyone can check. A lower bound needs an argument: a clique of size k needs k colours, an odd cycle needs three, and otherwise the record that an exhaustive DSATUR search with k−1 colours failed. The wheel with five spokes has no K4​, yet needs four colours: the rim is an odd cycle and the hub sees all of it.
+
+### The chromatic polynomial
+
+```js
+import { chromaticPolynomial, cycleGraph } from "@ratmath/discrete";
+chromaticPolynomial(cycleGraph(5)).toString();   // "k^5 − 5k^4 + 10k^3 − 10k^2 + 4k"
+const P = chromaticPolynomial(petersen());
+P.at(3);    // 120n
+P.at(4);    // 12960n
+```
+
+For an edge e, colourings of G−e either give the ends different colours (colourings of G) or the same (colourings of G/e, with e contracted). So
+
+P(G,k)=P(G−e,k)−P(G/e,k),
+down to edgeless graphs with P=kn. For a cycle this gives P(Cn​,k)=(k−1)n+(−1)n(k−1). The recursion is memoised on graph shape, which keeps graphs like Petersen quick.
+
+### Cliques and independent sets
+
+```js
+import { maximumClique, maximalCliques, maximumIndependentSet, graph } from "@ratmath/discrete";
+maximumClique(petersen());                    // ["1,2", "3,4"]: Petersen has no triangle
+maximumIndependentSet(petersen());            // 4 vertices
+maximalCliques(graph("a-b b-c c-a c-d"));     // [["a","b","c"], ["d","c"]] (Bron–Kerbosch)
+```
+
+ω(G)≤χ(G), and χ(G)≥n/α(G) since each colour class is independent. The Petersen graph has α=4, so it needs at least ⌈10/4⌉=3 colours.
+
+### Try it
+
+```js
+// The chromatic polynomial against counting colourings one by one.
+const g = graph("a-b b-c c-d d-a a-c d-e");
+const P = chromaticPolynomial(g);
+PRINT("P(k) =", P.toString());
+const vs = g.vertices();
+for (const k of [1, 2, 3, 4]) {
+  let n = 0;
+  for (const col of words(k, vs.length)) {
+    const c = new Map(vs.map((v, i) => [v, col[i]]));
+    if (isProperColouring(g, c).ok) n++;
+  }
+  PRINT(`k = ${k}: polynomial ${P.at(k)}, counted ${n}`);
+}
+PRINT("χ =", chromaticNumber(g).number, " clique", maximumClique(g).join(""));
+chromaticPolynomial(cycleGraph(6)).toString()
+```
+
+---
+
+Page: https://ratmath.com/discrete/planarity.html
+
+Graph theory
+
+## Planarity
+
+A graph is planar when it can be drawn in the plane without crossings. Kuratowski's theorem says the only obstructions are subdivisions of K5​ and K3,3​, so every answer here comes with evidence: faces for yes, one of those two subgraphs for no.
+
+### Yes, with faces
+
+```js
+import { complete, planarity, isPlanar, hypercube, platonic } from "@ratmath/discrete";
+
+planarity(complete(4));
+// { planar: true, faces: [[[3,1,4], [4,3,2], [1,4,2], [2,3,1]]], edges: 6, vertices: 4 }
+isPlanar(platonic("icosahedron"));   // true
+isPlanar(hypercube(4));              // false
+```
+
+Each 2-connected block is embedded by the Demoucron–Malgrange–Pertuiset algorithm: start from a cycle, and repeatedly route a piece of the remaining graph through a face that holds all its attachment points, choosing a piece that fits in the fewest faces first. Faces are listed per block. Euler's formula is the check on every block:
+
+V−E+F=2.
+For K4​: 4−6+4=2.
+
+### No, with a Kuratowski subgraph
+
+```js
+import { petersen, checkKuratowski } from "@ratmath/discrete";
+const r = planarity(petersen());
+r.kuratowski.kind;     // "K3,3"
+r.kuratowski.branch;   // the six branch vertices
+r.kuratowski.paths;    // nine paths joining them, internally disjoint
+checkKuratowski(petersen(), r.kuratowski).ok;   // true
+```
+
+When the embedding fails, edges are deleted one at a time while the graph stays non-planar. What is left is edge-minimal non-planar, and by Kuratowski's theorem it is a subdivision of K5​ or K3,3​: the vertices of degree three or four are the branch vertices and the rest lie on paths between them. `checkKuratowski` confirms the paths use real edges, are disjoint apart from their ends, and join the right pairs.
+
+### Quick counting arguments
+
+A simple planar graph with V≥3 has E≤3V−6, since every face has at least three edges and each edge borders two faces. Without triangles it is E≤2V−4. So K5​ (10 > 9) and K3,3​ (9 > 8) are out at once; Petersen has 15 edges, within both bounds, and needs the search.
+
+### Try it
+
+```js
+// Planar or not, with the evidence, for some well-known graphs.
+for (const [name, g] of [["K5", complete(5)], ["K3,3", completeBipartite(3, 3)], ["Q3", hypercube(3)], ["Q4", hypercube(4)], ["dodecahedron", platonic("dodecahedron")], ["K2,7", completeBipartite(2, 7)], ["Petersen", petersen()]]) {
+  const r = planarity(g);
+  if (r.planar) {
+    const F = r.faces.reduce((s, b) => s + b.length, 0);
+    PRINT(name.padEnd(13), "planar:", r.faces.length, "block(s),", F, "faces; V − E + F per block =", r.faces.map((f) => g.vertices().length - g.edges().length + f.length).join(","));
+  } else PRINT(name.padEnd(13), "not planar:", r.kuratowski.kind, "subdivision with", r.kuratowski.edges.length, "edges, check", checkKuratowski(g, r.kuratowski).ok);
+}
+```
+
+---
+
+Page: https://ratmath.com/discrete/isomorphism-spectra.html
+
+Graph theory
+
+## Isomorphism and spectra
+
+When are two graphs the same up to renaming, and what symmetries does one graph have? Colour refinement and backtracking answer both for small graphs. The eigenvalues of the adjacency matrix, computed exactly, give invariants that count walks and spanning trees.
+
+### Isomorphism
+
+```js
+import { isomorphism, petersen, kneser, cycleGraph, graph, pathGraph, star } from "@ratmath/discrete";
+
+isomorphism(petersen(), kneser(5, 2)).isomorphic;   // true, with the map
+isomorphism(cycleGraph(6), graph("a-b b-c c-a d-e e-f f-d")).reason;
+// "colour refinement … splits the vertices differently": C6 against two triangles
+isomorphism(pathGraph(4), star(3)).reason;   // "degree sequences differ: (2, 2, 1, 1) against (3, 1, 1, 1)"
+```
+
+Cheap invariants go first: vertex and edge counts, degree sequences. Then colour refinement (1-dimensional Weisfeiler–Leman): colour each vertex by its degree, then by its colour together with the multiset of its neighbours' colours, until nothing splits. An isomorphism must keep colours, so different class sizes prove there is none, and equal ones cut the backtracking search down. A "yes" is checked edge by edge.
+
+### Automorphisms
+
+```js
+import { automorphisms, hypercube } from "@ratmath/discrete";
+const a = automorphisms(petersen());
+a.order;           // 120n: the symmetric group S5 acting on 2-subsets
+a.orbits.length;   // 1: vertex-transitive
+automorphisms(hypercube(3)).order;   // 48n
+```
+
+The group is built as a chain of stabilisers: fix a vertex, find one automorphism to each vertex of its orbit, then fix the next vertex. By the orbit–stabiliser theorem
+
+∣Aut(G)∣=i∏​∣orbit of vi​ in Gv1​…vi−1​​∣,
+so few generators give the order exactly. Up to order 50,000 the group also comes as a `PermGroup` from `@ratmath/algebraic`, whose own order is compared with the product. The Frucht graph is 3-regular yet has only the identity.
+
+### Spectra
+
+```js
+import { spectrum, walks, spanningTreesFromSpectrum, spanningTreeCount } from "@ratmath/discrete";
+spectrum(petersen()).toString();                     // "−2 (×4), 1 (×5), 3"
+spectrum(hypercube(3)).toString();                   // "−3, −1 (×3), 1 (×3), 3"
+spectrum(cycleGraph(5)).toString();                  // the values 2 cos(2πk/5), with √5
+spanningTreesFromSpectrum(petersen());               // 2000n, as spanningTreeCount gives
+walks(cycleGraph(5), 5).closed;                      // 10n closed walks of length 5
+```
+
+The characteristic polynomial det(xI−A) is computed over the integers by the Faddeev–LeVerrier recursion, and its roots are found exactly with `@ratmath/algebraic`. A symmetric matrix has only real eigenvalues, which is checked. The number of closed walks of length k is trAk=∑λik​. For the Laplacian L=D−A with eigenvalues 0=μ1​≤μ2​≤⋯≤μn​, the matrix-tree theorem gives the number of spanning trees:
+
+τ(G)=n1​μ2​μ3​⋯μn​,
+which is read off the coefficient of x in the Laplacian's characteristic polynomial, with no root-finding needed.
+
+### Try it
+
+```js
+// Cospectral but not isomorphic: K1,4 and C4 + K1 share the spectrum {−2, 0, 0, 0, 2}.
+const s1 = star(4), s2 = graph("a-b b-c c-d d-a e");
+PRINT(spectrum(s1).toString(), " | ", spectrum(s2).toString());
+PRINT("isomorphic?", isIsomorphic(s1, s2), "—", isomorphism(s1, s2).reason);
+// Symmetry of the Platonic solids' skeletons
+for (const n of ["tetrahedron", "cube", "octahedron", "dodecahedron", "icosahedron"]) {
+  const g = platonic(n);
+  PRINT(n.padEnd(13), "|Aut| =", String(automorphisms(g).order).padStart(4), " spectrum", spectrum(g).toString());
+}
+```
+
+---
+
+Page: https://ratmath.com/discrete/linear-programming.html
+
+Optimisation and games
+
+## Linear programming
+
+Maximise or minimise a linear function subject to linear inequalities. The simplex method here works in exact fractions, and every answer arrives with the evidence that proves it: an optimum with its dual prices, an impossibility with a Farkas combination, an unbounded problem with a ray.
+
+### A first problem
+
+```js
+// A workshop makes chairs (£30 profit) and tables (£50) from wood and labour.
+import { linearProgram } from "@ratmath/discrete";
+
+const plan = linearProgram({
+  maximize: { chairs: 30, tables: 50 },
+  constraints: [
+    [{ chairs: 2, tables: 4 }, "<=", 100, "wood"],
+    [{ chairs: 3, tables: 2 }, "<=", 90, "labour"],
+  ],
+});
+
+String(plan);     // "optimal: 1350 at chairs = 20, tables = 15"
+plan.prices;      // { wood: 45/4, labour: 5/2 }: what one more unit of each is worth
+plan.binding;     // ["wood", "labour"]: both are used up
+plan.check();     // true: the prices prove that 1350 is the best possible
+```
+
+A linear program asks for x maximising c⋅x subject to constraints ai​⋅x≤bi​ (or ≥, or =) and, unless a variable is declared `free`, x≥0. The feasible set is a convex polyhedron, and if the optimum exists it is reached at a vertex. The simplex method walks from vertex to vertex along edges, improving the objective at each step. Here each step is an exact pivot on a tableau of fractions, and Bland's rule (always the lowest-numbered improving column) guarantees the walk never cycles.
+
+### Why the prices are a proof
+
+Multiply each constraint by a non-negative price yi​ and add. If the combined left side is at least the objective, coefficient by coefficient, then for every feasible x
+
+c⋅x≤i∑​yi​(ai​⋅x)≤i∑​yi​bi​=b⋅y.
+That is weak duality: any such y gives an upper bound. For the workshop, y=(45/4,5/2) gives 2⋅445​+3⋅25​=30 and 4⋅445​+2⋅25​=50, exactly the profits, and a bound of 100⋅445​+90⋅25​=1350. The plan reaches 1350, so nothing does better. Strong duality says such a matching pair always exists when there is an optimum, and the simplex method finds both at once.
+
+`check()` uses none of the simplex code. It confirms that x satisfies every constraint, that the prices have the right signs, that they cover the objective, and that c⋅x=b⋅y. The prices are also sensitivities: one more unit of wood raises the profit by exactly 45/4, as long as the same constraints stay binding.
+
+### Minimising, with fractions
+
+```js
+const diet = linearProgram({
+  minimize: { bread: "1/2", milk: "3/4", beans: "6/5" },     // cost per portion
+  constraints: [
+    [{ bread: 4, milk: 8, beans: 7 }, ">=", 30, "protein"],
+    [{ bread: 10, milk: 3, beans: 20 }, ">=", 60, "iron"],
+    [{ bread: 300, milk: 150, beans: 200 }, ">=", 2000, "energy"],
+    [{ milk: 1 }, "<=", 4, "milk limit"],
+  ],
+});
+String(diet);   // "optimal: 65/18 at bread = 115/18, milk = 5/9, beans = 0"
+diet.prices;    // { protein: 1/12, iron: 0, energy: 1/1800, "milk limit": 0 }
+String(diet.problem);   // the problem written out, as the solver read it
+```
+
+Coefficients can be fractions (`"6/5"`), decimals (`"0.25"` or `0.25`) or whole numbers. Variables can be named through objects, as here, or listed by position: `maximize: [3, 2]` with rows such as `[[1, 1], "<=", 4]`.
+
+### When there is no answer
+
+```js
+const none = linearProgram({ maximize: { x: 1, y: 1 }, constraints: [
+  [{ x: 1, y: 2 }, "<=", 4, "a"], [{ x: 3, y: 1 }, "<=", 6, "b"], [{ x: 1, y: 1 }, ">=", 3, "c"] ] });
+none.status;    // "infeasible"
+none.farkas;    // [2/5, 1/5, −1]: (2/5)·a + (1/5)·b says x + y ≤ 14/5, but c says x + y ≥ 3
+
+const open = linearProgram({ maximize: { x: 1, y: 1 }, constraints: [
+  [{ x: 1, y: -1 }, "<=", 2], [{ x: -1, y: 1 }, "<=", 4] ] });
+open.status;    // "unbounded"
+open.x;         // [2, 0]: a feasible point
+open.ray;       // [1, 1]: from it, move in this direction for ever
+```
+
+An infeasible problem comes with a Farkas certificate: multipliers (non-negative on ≤ rows, non-positive on ≥ rows) whose combination of the constraints has left side ≥0 on every x≥0 but a negative right side. No point can satisfy that, so none can satisfy the constraints. Farkas' lemma says such multipliers exist whenever a system has no solution; phase one of the simplex method finds them. An unbounded problem comes with a feasible point and a ray d with ai​⋅d of the right sign for every constraint and c⋅d>0. Both are checked by `check()` in the same way as an optimum.
+
+### Try it
+
+```js
+// A workshop makes chairs (£30 profit) and tables (£50) from wood and labour.
+const plan = linearProgram({
+  maximize: { chairs: 30, tables: 50 },
+  constraints: [
+    [{ chairs: 2, tables: 4 }, "<=", 100, "wood"],
+    [{ chairs: 3, tables: 2 }, "<=", 90, "labour"],
+  ],
+});
+PRINT(String(plan));
+PRINT("prices:", Object.entries(plan.prices).map(([k, v]) => `${k} ${v}`).join(", "));
+// the proof by hand: the priced constraints cover the profits and bound the total
+const [w, l] = plan.dual;
+PRINT("chairs:", String(w.multiply(new Rational(2n)).add(l.multiply(new Rational(3n)))), " tables:", String(w.multiply(new Rational(4n)).add(l.multiply(new Rational(2n)))));
+PRINT("bound b·y =", String(w.multiply(new Rational(100n)).add(l.multiply(new Rational(90n)))));
+// one more unit of wood is worth exactly the price of wood
+const more = linearProgram({ maximize: { chairs: 30, tables: 50 },
+  constraints: [[{ chairs: 2, tables: 4 }, "<=", 101, "wood"], [{ chairs: 3, tables: 2 }, "<=", 90, "labour"]] });
+PRINT("with 101 wood:", String(more.value), " gain", String(more.value.subtract(plan.value)));
+plan.check()
+```
+
+---
+
+Page: https://ratmath.com/discrete/integer-programs.html
+
+Optimisation and games
+
+## Integer programs
+
+When the answer must be whole numbers (items packed, machines bought, people assigned), rounding the linear optimum is not enough. Branch and bound splits the problem until every piece is either whole, impossible, or provably no better than what has been found.
+
+### A knapsack
+
+```js
+import { integerProgram } from "@ratmath/discrete";
+
+const pack = integerProgram({
+  maximize: { a: 8, b: 11, c: 6, d: 4 },                    // values
+  constraints: [
+    [{ a: 5, b: 7, c: 4, d: 3 }, "<=", 14],                   // weights, capacity 14
+    [{ a: 1 }, "<=", 1], [{ b: 1 }, "<=", 1], [{ c: 1 }, "<=", 1], [{ d: 1 }, "<=", 1],
+  ],
+});
+String(pack);   // "optimal: 21 at a = 0, b = 1, c = 1, d = 1 (13 subproblems; relaxation 22)"
+```
+
+The linear relaxation drops the requirement that the variables be whole and is solved exactly. Its optimum bounds the integer optimum: here no packing is worth more than 22. If its solution is already whole, it is the answer. Otherwise some variable has a fractional value v, and every integer solution has either x≤⌊v⌋ or x≥⌊v⌋+1. Each case is a new linear program. A branch is closed when its relaxation is infeasible, whole, or no better than the best whole solution found so far.
+
+### Rounding is not enough
+
+```js
+const r = integerProgram({ maximize: [5, 4], constraints: [[[6, 4], "<=", 24], [[1, 2], "<=", 6]] });
+r.relaxation.solution;   // { x1: 3, x2: 3/2 }: the linear optimum, worth 21
+String(r);               // "optimal: 20 at x1 = 4, x2 = 0 (5 subproblems; relaxation 21)"
+```
+
+Rounding the relaxation's (3,3/2) gives (3,1), worth 19, or the infeasible (3,2). The best integer point, (4,0), is not near it. Integer programming is NP-hard in general, so the search can grow exponentially. This solver is for small problems and for teaching; it refuses with `"too-hard"` beyond `maxNodes` subproblems (20,000 by default). Pass `integer: ["x"]` to require only some variables to be whole.
+
+The `check()` of an integer result confirms feasibility and wholeness. Unlike a linear optimum it carries no short proof of optimality: that rests on the search, and the test suite compares the search with every integer point of hundreds of small random problems.
+
+### Try it
+
+```js
+// Branch and bound against brute force on a small problem.
+const P = { maximize: [3, 5], constraints: [[[2, 3], "<=", 12], [[-1, 1], "<=", "3/2"], [[1, 0], "<=", 5]] };
+const ip = integerProgram(P);
+PRINT(String(ip));
+PRINT("relaxation:", String(ip.relaxation));
+let best = null, at = null;
+for (let x = 0; x <= 6; x++) for (let y = 0; y <= 6; y++) {
+  if (!isFeasible(P, [x, y])) continue;
+  const v = 3 * x + 5 * y;
+  if (best === null || v > best) { best = v; at = [x, y]; }
+}
+PRINT("brute force:", best, "at", at.join(", "));
+ip.check()
+```
+
+---
+
+Page: https://ratmath.com/discrete/matrix-games.html
+
+Optimisation and games
+
+## Matrix games
+
+In a zero-sum game one player's gain is the other's loss. Von Neumann's theorem says each player has a mixed strategy that guarantees the same number, the value of the game. Linear programming finds both strategies and the value, here as exact fractions.
+
+### Rock, paper, scissors
+
+```js
+import { matrixGame, saddlePoints } from "@ratmath/discrete";
+
+const names = ["rock", "paper", "scissors"];
+const rps = matrixGame([[0, -1, 1], [1, 0, -1], [-1, 1, 0]], { rows: names, columns: names });
+String(rps);   // "value 0; row plays rock 1/3, paper 1/3, scissors 1/3; column plays rock 1/3, …"
+rps.fair;      // true
+rps.check();   // true
+```
+
+The matrix A lists what the column player pays the row player: Aij​ when row i meets column j. If the row player mixes with probabilities p and the column player with q, the expected payment is p⊤Aq. The row player wants it large and the column player small.
+
+### The minimax theorem
+
+A mixture p guarantees minj​(p⊤A)j​, the worst it earns against any column. A mixture q caps the row player at maxi​(Aq)i​. Every guarantee is at most every cap, and von Neumann's theorem says the best guarantee equals the best cap:
+
+pmax​qmin​p⊤Aq=qmin​pmax​p⊤Aq=v.
+The row player's problem is a linear program: maximise v subject to (p⊤A)j​≥v for every column, ∑pi​=1, p≥0. Its dual is exactly the column player's problem, so one exact solve gives both strategies, and LP duality is the theorem. `check()` confirms the guarantee of p and the cap of q are both v: neither player can do better, so no further proof is needed.
+
+```js
+const g = matrixGame([[3, -1], [-2, 1]]);
+String(g);                          // "value 1/7; row plays r1 3/7, r2 4/7; column plays c1 2/7, c2 5/7"
+g.guarantee(["1/2", "1/2"]);        // 0: a fifty-fifty row player can be held to 0
+g.cap(["1/2", "1/2"]);              // 1
+g.guarantee();                      // 1/7, and g.cap() is 1/7 too
+```
+
+For a 2×2 game without a saddle point the optimal p makes the column player indifferent: 3p−2(1−p)=−p+(1−p) gives p=3/7.
+
+### Saddle points
+
+```js
+saddlePoints([[4, 2, 3], [1, 0, 5], [3, 1, 2]]);   // [{ row: 0, column: 1, value: 2 }]
+matrixGame([[4, 2, 3], [1, 0, 5], [3, 1, 2]]).value;   // 2: pure strategies suffice
+```
+
+An entry that is the smallest in its row and the largest in its column is a saddle point. There, pure strategies are optimal and the value is that entry. Many games have none, like rock, paper, scissors, and then mixing is essential.
+
+### Morra
+
+In two-finger Morra each player shows one or two fingers and calls a guess of the total. A player who guesses right and whose opponent guesses wrong wins the total. Keeping the four sensible strategies (show 1 and call 2 or 3; show 2 and call 3 or 4) gives a fair game with a curious answer:
+
+```js
+const s = ["1,2", "1,3", "2,3", "2,4"];   // fingers shown, total called
+const morra = matrixGame([[0, 2, -3, 0], [-2, 0, 0, 3], [3, 0, 0, -4], [0, -3, 4, 0]], { rows: s, columns: s });
+String(morra);   // "value 0; row plays 1,3 4/7, 2,3 3/7; column plays 1,3 3/5, 2,3 2/5"
+```
+
+Optimal strategies need not be unique. Here any mixture of "1,3" and "2,3" between 4/7:3/7 and 3/5:2/5 is optimal; the simplex method returns one vertex of that set.
+
+### Try it
+
+```js
+// Random games: the guarantee and the cap always meet.
+const r = rng("matrix games");
+for (let t = 0; t < 5; t++) {
+  const A = Array.from({ length: 3 }, () => Array.from({ length: 4 }, () => r.between(-5, 5)));
+  const g = matrixGame(A);
+  PRINT(A.map((row) => row.join(" ")).join(" | "), "→ value", String(g.value), " guarantee", String(g.guarantee()), " cap", String(g.cap()));
+}
+// shifting every payoff by 10 shifts the value by 10 and leaves the strategies alone
+const g = matrixGame([[3, -1], [-2, 1]]);
+const h = matrixGame([[13, 9], [8, 11]]);
+PRINT(String(g.value), "→", String(h.value), " same row strategy:", g.row.every((v, i) => v.equals(h.row[i])));
+g.check()
+```
+
+---
+
+Page: https://ratmath.com/discrete/bimatrix-games.html
+
+Optimisation and games
+
+## Bimatrix games
+
+When the players' interests are not exactly opposed, each has their own payoff matrix, and the solution is a Nash equilibrium: a pair of strategies where neither player gains by changing alone. A game can have several. Here they are found exactly and each one is checked.
+
+### The prisoner's dilemma
+
+```js
+import { bimatrixGame } from "@ratmath/discrete";
+
+const c = ["cooperate", "defect"];
+const pd = bimatrixGame([[3, 0], [5, 1]], [[3, 5], [0, 1]], { rows: c, columns: c });
+pd.dominance();
+// { rows: ["defect"], columns: ["defect"], steps: [
+//     { player: "row", removed: "cooperate", by: { defect: 1 } }, { player: "column", … } ] }
+pd.equilibria().map(String);   // ["(defect; defect) paying 1 and 1"]
+```
+
+A holds the row player's payoffs and B the column player's. A strategy is strictly dominated if another does better against everything the opponent might do; no rational player uses it, so it can be removed, and the removal may expose more. In the prisoner's dilemma defecting dominates for both, so both defect and get 1 each, though cooperating would give each 3.
+
+### Dominated by a mixture
+
+```js
+const g = bimatrixGame([[3, 0], [0, 3], [1, 1]], [[1, 0], [0, 1], [0, 0]],
+                       { rows: ["top", "middle", "bottom"], columns: ["left", "right"] });
+g.dominance({ pureOnly: true }).rows;   // ["top", "middle", "bottom"]: no pure strategy beats bottom
+g.dominance().steps[0];                 // { player: "row", removed: "bottom", by: { top: 1/2, middle: 1/2 } }
+```
+
+Bottom pays 1 against either column. Neither top nor middle beats it everywhere, but the fifty-fifty mixture pays 3/2 against both. Whether some mixture strictly dominates a strategy is a small linear program (maximise the margin ε by which the mixture wins), solved exactly.
+
+### Every equilibrium
+
+```js
+const chicken = bimatrixGame([[0, -1], [1, -10]], [[0, 1], [-1, -10]],
+                             { rows: ["swerve", "straight"], columns: ["swerve", "straight"] });
+const eq = chicken.equilibria();
+eq.map(String);
+// ["(swerve; straight) paying -1 and 1",
+//  "(straight; swerve) paying 1 and -1",
+//  "(9/10 swerve + 1/10 straight; 9/10 swerve + 1/10 straight) paying -1/10 and -1/10"]
+eq.complete;    // true: the game is nondegenerate, so this is all of them
+```
+
+At an equilibrium each player mixes only over strategies that are best responses, so every strategy in the support pays the same. Support enumeration tries each pair of supports I,J of equal size, solves the indifference equations
+
+j∈J∑​Aij​qj​=u (i∈I),i∈I∑​pi​Bij​=w (j∈J),∑pi​=∑qj​=1
+exactly, and keeps the solutions that are positive on the supports and best responses overall. In a nondegenerate game (no mixture over k strategies has more than k best responses) equilibria have supports of equal size and this finds them all, and their number is odd. When an indifference system has a whole line of solutions the game is degenerate, it may have infinitely many equilibria, and the list is marked `complete: false`. The work grows like (mm+n​); beyond a million pairs of supports it refuses.
+
+### Lemke–Howson
+
+```js
+chicken.lemkeHowson(0).toString();   // "(swerve; straight) paying -1 and 1"
+chicken.lemkeHowson(1).toString();   // "(straight; swerve) paying 1 and -1"
+```
+
+The Lemke–Howson method finds one equilibrium by a path. Label each pure strategy; an equilibrium is a pair of points in two polytopes that together carry every label. Dropping one label k at the artificial starting point and pivoting, alternately in each polytope, to pick up the label just lost, follows a path that must end at an equilibrium. Different starting labels can reach different equilibria. The argument also proves that every game has an equilibrium, and that a nondegenerate game has an odd number of them; the test suite checks both on 200 random games.
+
+### Try it
+
+```js
+// Random 3×3 games: count equilibria, check each, and see Lemke–Howson land on one.
+const r = rng("bimatrix");
+const M = () => Array.from({ length: 3 }, () => Array.from({ length: 3 }, () => r.between(-9, 9)));
+for (let t = 0; t < 6; t++) {
+  const g = bimatrixGame(M(), M());
+  const eq = g.equilibria();
+  const lh = g.lemkeHowson(0);
+  PRINT(`${eq.length} equilibri${eq.length === 1 ? "um" : "a"}${eq.complete ? "" : " (degenerate game)"};`, "all check:", eq.every((e) => e.check()),
+        "; Lemke–Howson found:", String(lh));
+}
+bimatrixGame([[2, 0], [0, 1]], [[1, 0], [0, 2]]).equilibria().length
+```
+
+---
+
+Page: https://ratmath.com/discrete/combinatorial-games.html
+
+Optimisation and games
+
+## Combinatorial games
+
+Two players move in turn, everything is known, and whoever cannot move loses. Every impartial position is worth a nim heap, and every partizan position has a canonical value in Conway's sense: numbers, nimbers, up, and more.
+
+### Nim and the Sprague–Grundy theorem
+
+```js
+import { nim, impartialGame, subtractionGame, mex } from "@ratmath/discrete";
+
+nim([3, 4, 5]);   // nimSum 2n, losing false, winningMoves [{ heap: 0, from: 3n, to: 1n }]
+const g = impartialGame((n) => [1, 2].filter((m) => m <= n).map((m) => n - m));
+[0, 1, 2, 3, 4, 5, 6].map(g.grundy).join("");   // "0120120"
+subtractionGame([1, 3, 4], 30).period;           // { start: 0, length: 7 }
+```
+
+The Grundy value of a position is the smallest non-negative integer not among its options' values,
+
+G(P)=mex{G(Q):P→Q},
+and a position is lost for the player to move exactly when G(P)=0. The Sprague–Grundy theorem says a sum of games has value the nim-sum (bitwise XOR) of the parts, which is why nim is solved by XOR. Subtraction games with a finite set are eventually periodic; the period is found by looking for a repeat as long as the largest move.
+
+### Partizan games
+
+```js
+import { cgame, starGame, up, down } from "@ratmath/discrete";
+String(cgame([0], []));         // "1"
+String(cgame([0], [1]));        // "1/2"
+String(cgame([0], [0]));        // "*"
+String(starGame(2).add(starGame(3)));   // "*": nimbers add by XOR
+String(up().add(up()));         // "⇑"
+up().compare(0);                // ">": up is positive …
+up().compare(starGame(1));      // "‖": … yet confused with *
+cgame([2], [-1]).outcome;       // "first player"
+```
+
+A game is G={GL∣GR}, its options for Left and for Right. G≥0 means Left wins moving second, and the order, sum and negation follow Conway's recursive definitions. Each game is reduced to canonical form by removing dominated options and bypassing reversible ones, so equal games print the same: {0∣1}=1/2, {0∣0}=∗, {0∣∗}=↑.
+
+### Hackenbush
+
+`partizanGame` computes the value of any position from the two players' move functions. In blue-red Hackenbush on a single stalk, the value is a binary fraction you can read off the colours:
+
+```js
+import { partizanGame } from "@ratmath/discrete";
+const stalk = (s) => partizanGame(s,
+  (p) => [...p].map((c, i) => (c === "B" ? p.slice(0, i) : null)).filter((x) => x !== null),
+  (p) => [...p].map((c, i) => (c === "R" ? p.slice(0, i) : null)).filter((x) => x !== null));
+String(stalk("BR"));     // "1/2"
+String(stalk("BBRB"));   // "7/4"
+```
+
+### Backward induction
+
+```js
+import { backwardInduction } from "@ratmath/discrete";
+const entry = { player: "A", moves: {
+  in:  { player: "B", moves: { fight: { payoff: { A: -1, B: -1 } }, share: { payoff: { A: 1, B: 1 } } } },
+  out: { payoff: { A: 0, B: 2 } } } };
+backwardInduction(entry).path;   // ["in", "share"]: the threat to fight is not credible
+```
+
+In a finite game tree with perfect information, solving from the leaves up gives a subgame-perfect equilibrium. Ties are reported rather than broken silently.
+
+### Try it
+
+```js
+// Sprague–Grundy at work: a sum of three different games.
+const take12 = impartialGame((n) => [1, 2].filter((m) => m <= n).map((m) => n - m));
+const sub = subtractionGame([1, 3, 4], 40).values;
+const position = { take12: 7, subtract: 9, heap: 5 };
+const values = [take12.grundy(7), sub[9], 5];
+PRINT("Grundy values", values.join(", "), " nim-sum", values.reduce((a, b) => a ^ b));
+// Numbers, nimbers and infinitesimals side by side
+for (const G of [cgame([0], [1]), cgame(["1/2"], ["3/4"]), starGame(1).add(starGame(1)), up().add(starGame(1)), up().add(up()).add(down())]) {
+  PRINT(String(G).padEnd(6), "compared with 0:", G.compare(0), " outcome:", G.outcome);
+}
+```
+
+---
+
+Page: https://ratmath.com/discrete/cooperative-voting.html
+
+Optimisation and games
+
+## Cooperative games and voting
+
+When players can make binding agreements, the question is how to share what a coalition earns. When voters rank candidates, the question is how to choose. Both have several reasonable answers that can disagree, and here every answer is an exact fraction.
+
+### The Shapley value
+
+```js
+import { cooperativeGame, shapley, core, inCore } from "@ratmath/discrete";
+
+const glove = cooperativeGame(["L1", "L2", "R"],
+  (S) => (S.includes("R") && (S.includes("L1") || S.includes("L2")) ? 1 : 0));
+shapley(glove);   // { L1: 1/6, L2: 1/6, R: 2/3 }
+```
+
+A coalitional game assigns a worth v(S) to each coalition S. Player i's Shapley value is their average marginal contribution over all orders in which the players could arrive:
+
+ϕi​=S∋i∑​n!∣S∣!(n−∣S∣−1)!​(v(S∪{i})−v(S)).
+It is the only sharing rule that is efficient, symmetric, additive and gives nothing to a dummy.
+
+### The core
+
+```js
+core(glove);   // { empty: false, allocation: { L1: 0, L2: 0, R: 1 } }
+const majority = cooperativeGame(["a", "b", "c"], (S) => (S.length >= 2 ? 1 : 0));
+core(majority);
+// { empty: true, balanced: [{ab, 1/2}, {ac, 1/2}, {bc, 1/2}],
+//   reason: "these coalitions, with these weights, cover every player exactly once and are worth 3/2 together, more than v(N) = 1" }
+```
+
+The core is the set of allocations no coalition can improve on by leaving: ∑i∈S​xi​≥v(S) for all S, with ∑xi​=v(N). It is found by exact linear programming. When it is empty, the dual gives a balanced collection (Bondareva–Shapley): coalitions with weights covering each player exactly once whose weighted worth exceeds v(N), a short proof that no allocation can satisfy them all.
+
+### Voting power
+
+```js
+import { weightedVoting } from "@ratmath/discrete";
+weightedVoting({ quota: 51, weights: { A: 49, B: 48, C: 3 } }).shapleyShubik;   // 1/3 each
+```
+
+With 49%, 48% and 3% of the votes and a simple majority, any two parties win, so all three have equal power. Banzhaf counts swings instead of orders; both are given.
+
+### Choosing a winner
+
+```js
+import { plurality, borda, instantRunoff, condorcet } from "@ratmath/discrete";
+const ballots = [{ ranking: ["A", "B", "C"], count: 8 }, { ranking: ["B", "C", "A"], count: 5 }, { ranking: ["C", "B", "A"], count: 4 }];
+plurality(ballots).winners;      // ["A"]
+borda(ballots).winners;          // ["B"]
+instantRunoff(ballots).winners;  // ["B"]
+condorcet(ballots).winner;       // "B": beats each other candidate head to head
+condorcet([["a", "b", "c"], ["b", "c", "a"], ["c", "a", "b"]]).cycle;   // ["a", "b", "c", "a"]
+```
+
+Arrow's theorem says no ranked method with three or more candidates has every fairness property one would like, and small profiles like this one show methods disagreeing. A Condorcet cycle is reported as the cycle.
+
+### Apportionment and fair division
+
+```js
+import { apportion, adjustedWinner } from "@ratmath/discrete";
+apportion({ A: 6, B: 6, C: 2 }, 10).seats;   // { A: 4, B: 4, C: 2 }
+apportion({ A: 6, B: 6, C: 2 }, 11).seats;   // { A: 5, B: 5, C: 1 }: the Alabama paradox
+adjustedWinner({ house: 50, car: 20, boat: 30 }, { house: 40, car: 40, boat: 20 }).points;   // 520/9 each
+```
+
+Hamilton's method rounds quotas down and hands out the remaining seats by largest remainder; adding a seat can cost a state one. The divisor methods (Jefferson, Webster, Adams, Huntington–Hill) avoid that paradox but can violate quota. Adjusted winner splits at most one item and leaves both parties with equal points and no envy.
+
+### Try it
+
+```js
+// One profile, every method.
+const r = rng("election");
+const cands = ["A", "B", "C", "D"];
+const ballots = Array.from({ length: 6 }, () => ({ ranking: r.shuffle(cands), count: r.between(1, 9) }));
+for (const b of ballots) PRINT(String(b.count).padStart(2), "×", b.ranking.join(" > "));
+PRINT("plurality      ", plurality(ballots).winners.join(", "));
+PRINT("Borda          ", borda(ballots).winners.join(", "));
+PRINT("instant runoff ", instantRunoff(ballots).winners.join(", "));
+const c = condorcet(ballots);
+PRINT("Condorcet      ", c.winner ?? `none, cycle ${c.cycle?.join(" → ")}`);
+// The five apportionment methods on one census
+const census = { North: 4729, South: 2611, East: 1802, West: 858 };
+for (const m of ["hamilton", "jefferson", "webster", "adams", "huntington-hill"]) PRINT(m.padEnd(16), JSON.stringify(apportion(census, 20, { method: m }).seats, (k, v) => (typeof v === "bigint" ? Number(v) : v)));
+```
+
+---
+
+Page: https://ratmath.com/discrete/relations-orders.html
+
+Orders and structures
+
+## Relations and orders
+
+A relation is a set of ordered pairs. Whether it is reflexive, symmetric or transitive is a finite check, and when a property fails the answer names the pairs that break it. Partial orders get their own tools: Hasse diagrams, chains and antichains, linear extensions, and the Möbius function.
+
+### Relations
+
+```js
+import { relation, fromPartition } from "@ratmath/discrete";
+
+const R = relation([1, 2, 3, 4], [[1, 2], [2, 3]]);
+R.properties().transitive;        // { holds: false, witness: [1, 2, 3] }: 1R2, 2R3, but not 1R3
+String(R.transitiveClosure());    // "{(1, 2), (1, 3), (2, 3)}"
+relation([1, 2, 3], (a, b) => (a - b) % 2 === 0).classes();   // [[1, 3], [2]]
+```
+
+Each property comes with a witness when it fails: an element not related to itself, a pair whose reverse is missing, or the three elements that break transitivity. The transitive closure is computed by Warshall's algorithm. An equivalence relation and a partition are the same thing, and `classes()` and `fromPartition` go between them.
+
+### Partial orders
+
+```js
+import { poset, divisorLattice } from "@ratmath/discrete";
+const D = divisorLattice(60);
+D.hasse().length;                   // 20 covering pairs
+D.levels().map((l) => l.length);    // [1, 3, 4, 3, 1]
+D.width();   // { width: 4, antichain: [4, 6, 10, 15], chains: [[1,2,4,12,60], [3,6,30], [5,10,20], [15]] }
+```
+
+A partial order is reflexive, antisymmetric and transitive; `poset` takes generating pairs, closes them, and refuses a cycle with the two elements that would be equal. Dilworth's theorem says the largest antichain has the same size as the fewest chains covering the order. Both are found together from a maximum bipartite matching between "lower" and "upper" copies of the elements, so each is a certificate for the other.
+
+### Linear extensions and the Möbius function
+
+```js
+import { booleanLattice, partitionLattice } from "@ratmath/discrete";
+booleanLattice(3).countLinearExtensions();   // 48n
+D.mobius(1, 30);                             // −1: the number-theoretic μ(30)
+partitionLattice(4).mobius("1|2|3|4", "1234");   // −6 = (−1)^3·3!
+```
+
+A linear extension is a total order compatible with the partial one; they are counted by dynamic programming over down-sets. The Möbius function is defined by μ(x,x)=1 and ∑x≤z≤y​μ(x,z)=0 for x. It inverts sums over the order:
+
+g(y)=x≤y∑​f(x)⟺f(y)=x≤y∑​μ(x,y)g(x),
+which on divisors is Möbius inversion of number theory and on subsets is inclusion–exclusion.
+
+### Lattices
+
+```js
+const N5 = poset(["0", "a", "b", "c", "1"], [["0", "a"], ["a", "b"], ["0", "c"], ["b", "1"], ["c", "1"]]);
+N5.isLattice();         // { lattice: true }
+N5.isDistributive();    // { distributive: false, witness: ["b", "a", "c"] }
+```
+
+A lattice has a meet and a join for every pair. It is distributive exactly when it contains neither the pentagon N5​ nor the diamond M3​; when the law x∧(y∨z)=(x∧y)∨(x∧z) fails, the three elements are given.
+
+### Try it
+
+```js
+// Divisor lattices: width, chains, and Möbius against the number-theoretic μ.
+const mu = (n) => { let m = 1; for (let p = 2; p * p <= n; p++) if (n % p === 0) { n /= p; if (n % p === 0) return 0; m = -m; } return n > 1 ? -m : m; };
+for (const n of [12, 30, 36, 60, 210]) {
+  const D = divisorLattice(n);
+  const w = D.width();
+  PRINT(`D(${n}): ${D.elements.length} divisors, width ${w.width} (antichain ${w.antichain.join(",")}), extensions ${D.countLinearExtensions()}, μ(1,${n}) = ${D.mobius(1, n)} vs ${mu(n)}`);
+}
+// Closures of a random relation
+const r = rng("relation");
+const R = relation([1, 2, 3, 4, 5], (a, b) => r.bool("1/4"));
+PRINT(String(R));
+PRINT(Object.entries(R.properties()).map(([k, v]) => `${k}: ${v.holds}`).join(", "));
+PRINT("transitive closure", String(R.transitiveClosure()));
+divisorLattice(30).isDistributive()
+```
+
+---
+
+Page: https://ratmath.com/discrete/polya.html
+
+Orders and structures
+
+## Pólya counting
+
+How many different necklaces of six beads in two colours are there, when turning or flipping a necklace gives the same one? Burnside's lemma counts orbits by averaging fixed points, and Pólya's cycle index makes that a polynomial you can substitute into.
+
+### Burnside's lemma
+
+A group G acting on a finite set has
+
+#orbits=∣G∣1​g∈G∑​∣Fix(g)∣
+orbits. For colourings of n positions with k colours, a permutation with c(g) cycles fixes kc(g) colourings, since each cycle must be one colour.
+
+```js
+import { symmetry, countColourings, cycleIndex, patternInventory } from "@ratmath/discrete";
+
+countColourings(symmetry.cyclic(6), 2);      // 14n necklaces
+countColourings(symmetry.dihedral(6), 2);    // 13n bracelets
+countColourings(symmetry.cubeFaces(), 3);    // 57n ways to colour a cube's faces
+```
+
+### The cycle index
+
+```js
+cycleIndex(symmetry.dihedral(4)).toString();
+// "(1/4) s4 + (1/4) s1^2 s2 + (3/8) s2^2 + (1/8) s1^4"
+patternInventory(symmetry.dihedral(4), ["r", "b"]).toString();
+// "r^4 + r^3b + 2r^2b^2 + rb^3 + b^4"
+```
+
+The cycle index records the cycle type of every group element: Z(G)=∣G∣1​∑g​∏i​sici​(g)​, where ci​(g) is the number of i-cycles. Substituting si​=k gives the count above. Substituting si​=ri+bi gives the pattern inventory, which counts orbits by how many of each colour they use: the square has two different colourings with two red and two blue corners, adjacent or opposite.
+
+### Groups
+
+`symmetry` provides the cyclic, dihedral and symmetric groups and the 24 rotations of a cube acting on its faces. Any group works when given as `{ degree, generators }` with 0-based permutations, or as a `PermGroup` from `@ratmath/algebraic`, such as the automorphism group of a graph from [Isomorphism and spectra](https://ratmath.com/discrete/isomorphism-spectra.html).
+
+### Try it
+
+```js
+// Burnside's count against listing orbits directly.
+const orbits = (G, k) => {
+  const seen = new Set();
+  let count = 0;
+  for (const col of words(k, G.degree)) {
+    const key = col.join();
+    if (seen.has(key)) continue;
+    count++;
+    for (const g of G.elements) { const img = []; g.forEach((gi, i) => (img[gi] = col[i])); seen.add(img.join()); }
+  }
+  return count;
+};
+for (const [name, G, k] of [["necklaces C6, 2", symmetry.cyclic(6), 2], ["bracelets D6, 3", symmetry.dihedral(6), 3], ["cube faces, 3", symmetry.cubeFaces(), 3]]) {
+  PRINT(name.padEnd(16), "Pólya", String(countColourings(G, k)).padStart(4), "  listed", String(orbits(G, k)).padStart(4));
+}
+// Colourings of the Petersen graph's vertices in 2 colours, up to its 120 symmetries
+const A = automorphisms(petersen());
+PRINT("Petersen, 2 colours:", String(countColourings(A.group, 2)));
+cycleIndex(symmetry.cubeFaces()).toString()
+```
+
+---
+
+Page: https://ratmath.com/discrete/codes.html
+
+Codes and designs
+
+## Error-correcting codes
+
+Add redundancy to a message so that a few corrupted symbols can be found and fixed. A linear code is a subspace of Zpn​; its minimum distance says how many errors it can correct, and its parity-check matrix says where they are.
+
+### The Hamming code
+
+```js
+import { hammingCode, isPerfect } from "@ratmath/discrete";
+
+const h = hammingCode(3);         // [7, 4] over Z_2
+h.minimumDistance().distance;     // 3: corrects one error
+isPerfect(h);                     // true
+const cw = h.encode([1, 0, 1, 1]);   // [1, 0, 1, 1, 0, 1, 0]
+h.decode([1, 0, 0, 1, 0, 1, 0]).steps;
+// ["received 1001010", "syndrome H·rᵀ = 110",
+//  "the lightest error with that syndrome is 0010000 (weight 1)", "corrected codeword 1011010, message 1011"]
+```
+
+A code with generator matrix G (k×n) encodes m as mG. Put G in systematic form [Ik​∣A]; then H=[−A⊤∣In−k​] satisfies GH⊤=0, and a word r is a codeword exactly when its syndrome Hr⊤ is zero. If r=c+e, the syndrome is He⊤, so decoding is finding the lightest error with that syndrome, the coset leader. In the Hamming code the columns of H are all non-zero vectors, so the syndrome of a single error is its position written in binary.
+
+### Distance and bounds
+
+A code with minimum distance d corrects t=⌊(d−1)/2⌋ errors, because balls of radius t round the codewords do not overlap. Counting the words in those balls gives the Hamming (sphere-packing) bound, and a code that meets it is perfect:
+
+∣C∣⋅i=0∑t​(in​)(q−1)i≤qn.
+
+```js
+import { codeBounds, ballSize } from "@ratmath/discrete";
+codeBounds(7, 3, 2);   // { hamming: 16n, singleton: 32n, gilbertVarshamov: 5n }
+ballSize(7, 1);        // 8n, and 16 · 8 = 2^7: the Hamming code is perfect
+h.weightDistribution();             // [1, 0, 0, 7, 7, 0, 0, 1]
+h.dual().minimumDistance().distance;   // 4: the [7, 3] simplex code
+```
+
+### Reed–Solomon
+
+```js
+import { reedSolomon } from "@ratmath/discrete";
+const rs = reedSolomon({ p: 11, n: 10, k: 4 });   // corrects 3 errors
+const w = rs.encode([3, 1, 4, 1]);                // the values of 3 + x + 4x² + x³ at 1, …, 10
+const y = w.slice(); y[0] += 1; y[5] += 3; y[9] += 7;   // three errors (mod 11)
+rs.decode(y.map((v) => v % 11)).errors;           // [0, 5, 9]
+```
+
+A message is a polynomial f of degree below k, sent as its values at n distinct points. Two such polynomials agree in at most k−1 places, so the distance is n−k+1, meeting the Singleton bound. Berlekamp–Welch decoding looks for an error locator E of degree e (monic) and Q of degree below e+k with Q(αi​)=yi​E(αi​) for every i: a linear system over Zp​. Then f=Q/E, and E vanishes at the error positions. The steps show the system, E, Q and the division.
+
+### Try it
+
+```js
+// Every single-bit error in every Hamming(3) codeword is corrected.
+const h = hammingCode(3);
+let fixed = 0, total = 0;
+for (const m of words(2, 4)) {
+  const cw = h.encode(m);
+  for (let i = 0; i < 7; i++) {
+    const r = cw.slice(); r[i] ^= 1; total++;
+    if (h.decode(r).codeword.join() === cw.join()) fixed++;
+  }
+}
+PRINT(`${fixed} of ${total} single errors corrected`);
+// Ternary Hamming code and Reed–Solomon with random errors
+const h3 = hammingCode(2, { p: 3 });
+PRINT(String(h3), " d =", h3.minimumDistance().distance, " perfect:", isPerfect(h3));
+const rs = reedSolomon({ p: 13, n: 12, k: 6 });
+const r = rng("reed-solomon");
+const msg = Array.from({ length: 6 }, () => r.int(13));
+const y = rs.encode(msg);
+for (const i of r.sample([...Array(12).keys()], 3)) y[i] = (y[i] + 1 + r.int(12)) % 13;
+const d = rs.decode(y);
+PRINT("sent", msg.join(" "), " decoded", d.message.join(" "), " errors at", d.errors.join(", "));
+codeBounds(23, 7, 2)
+```
+
+---
+
+Page: https://ratmath.com/discrete/designs.html
+
+Codes and designs
+
+## Latin squares and designs
+
+A design arranges points into blocks so that every pair of points meets equally often. Latin squares, finite geometries and Steiner triple systems are all designs, and their existence is a question about arithmetic in finite fields.
+
+### Latin squares
+
+```js
+import { cyclicLatinSquare, isLatinSquare, orthogonalLatinSquares, areOrthogonal } from "@ratmath/discrete";
+
+isLatinSquare(cyclicLatinSquare(6));   // { latin: true, problem: null }
+const L = orthogonalLatinSquares(5);    // 4 squares: L_a[i][j] = a·i + j mod 5
+areOrthogonal(L[0], L[1]);              // { orthogonal: true, repeated: null }
+```
+
+Each symbol appears once in every row and column. Two squares are orthogonal when superimposing them gives every ordered pair of symbols exactly once. For a prime p, the squares La​(i,j)=ai+j with a=1,…,p−1 are mutually orthogonal, since ai+j=ai′+j′ and bi+j=bi′+j′ force i=i′ when a=b. At most n−1 squares of order n can be mutually orthogonal, so this is a complete set. Euler's 36 officers (n=6) have no orthogonal pair at all.
+
+### Block designs
+
+```js
+import { blockDesign, projectivePlane, affinePlane, fromDifferenceSet, steinerTripleSystem } from "@ratmath/discrete";
+const fano = blockDesign(projectivePlane(2));
+[fano.v, fano.b, fano.k, fano.r, fano.lambda];   // [7, 7, 3, 3, 1]: the Fano plane
+blockDesign(fromDifferenceSet([1, 3, 4, 5, 9], 11)).lambda;   // 2: the squares mod 11
+blockDesign(steinerTripleSystem(15)).b;          // 35 triples
+```
+
+A (v,k,λ) design has v points and blocks of size k, with every pair of points in exactly λ blocks. Counting pairs gives the necessary conditions
+
+bk=vr,r(k−1)=λ(v−1),
+and Fisher's inequality b≥v. `blockDesign` computes v,b,k,r,λ from the blocks and checks these relations, returning `lambda: null` when pairs are not balanced.
+
+### Finite geometry
+
+The projective plane of order p has the one-dimensional subspaces of Zp3​ as points and the two-dimensional ones as lines: p2+p+1 of each, p+1 points on a line, and any two points on exactly one line. Removing one line and its points leaves the affine plane, p2 points in p2+p lines. A difference set D⊂Zv​, where every non-zero residue is a difference of elements of D exactly λ times, gives a design with blocks D+i. Steiner triple systems (k=3, λ=1) exist exactly when v≡1 or 3(mod6); Bose's construction covers v≡3.
+
+### Try it
+
+```js
+// Parameters of some designs, and the counting identities they satisfy.
+const designs = [["Fano plane", projectivePlane(2)], ["PG(2,3)", projectivePlane(3)], ["AG(2,3)", affinePlane(3)], ["AG(2,5)", affinePlane(5)], ["STS(9)", steinerTripleSystem(9)], ["STS(15)", steinerTripleSystem(15)], ["QR(11)", fromDifferenceSet([1, 3, 4, 5, 9], 11)], ["(13,4,1)", fromDifferenceSet([0, 1, 3, 9], 13)]];
+for (const [name, B] of designs) {
+  const d = blockDesign(B);
+  PRINT(name.padEnd(10), `v=${d.v} b=${d.b} k=${d.k} r=${d.r} λ=${d.lambda}`, " bk=vr:", d.b * d.k === d.v * d.r, " r(k−1)=λ(v−1):", d.r * (d.k - 1) === d.lambda * (d.v - 1));
+}
+// The Fano plane's lines, and a complete set of orthogonal Latin squares of order 7
+PRINT(projectivePlane(2).map((l) => l.join("")).join(" "));
+const L = orthogonalLatinSquares(7);
+PRINT(L.length, "squares, pairwise orthogonal:", L.every((A, i) => L.every((B, j) => i === j || areOrthogonal(A, B).orthogonal)));
+blockDesign(affinePlane(7))
+```
