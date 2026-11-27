@@ -1,0 +1,279 @@
+# @ratmath/discrete
+
+> Discrete mathematics for RatMath: counting and enumeration, graphs and graph theory, generating functions and recurrences, games and voting, orders, codes and designs, and exact linear programming. Part of the RatMath Shelf; numbers come from @ratmath/core (a peer dependency). ESM: `import * as discrete from "@ratmath/discrete"`.
+
+Built from 0.3.0, commit c153b3c. `file:line` is relative to the package root (also node_modules/@ratmath/discrete/); on GitHub: https://github.com/ratmath/discrete/blob/c153b3c/<file>#L<line>. Docs pages are under https://ratmath.com/discrete/. Full types: index.d.ts.
+
+Types: `type Whole = number | bigint | string`; `type FractionLike = number | bigint | string | Rational`; `type Items<T> = number | readonly T[]`; `type Vertex = number | bigint | string`; `type WeightLike = number | bigint | string | Rational`; `type ConstraintSense = "<=" | ">=" | "=" | "≤" | "≥" | "=="`; `type Coefficients = FractionLike[] | Record<string, FractionLike>`; `type SeriesLike = PowerSeries | FractionLike | FractionLike[] | ((n: number) => FractionLike)`; `type GameLike = Game | FractionLike`; `type GameTree = { payoff: Record<string, FractionLike> } | { player: string; moves: Record<string, GameTree> }`; `type Ballot = string[] | { ranking: string[]; count: Whole }`; `type ApportionMethod = "hamilton" | "jefferson" | "webster" | "adams" | "huntington-hill"`
+
+## Docs
+
+- https://ratmath.com/discrete/llms-full.txt: every page below as Markdown, each with a runnable example
+- Pages: index (Overview), reference (Reference), explore (Explore), counting (Counting), inclusion-exclusion (Inclusion and exclusion), enumeration (Enumeration), random (The seeded generator), generating-functions (Generating functions), recurrences (Recurrences), graphs (Graphs), connectivity (Connectivity), shortest-paths (Shortest paths), tours (Euler and Hamilton), trees (Trees), matchings-flows (Matchings and flows), colouring (Colouring and cliques), planarity (Planarity), isomorphism-spectra (Isomorphism and spectra), linear-programming (Linear programming), integer-programs (Integer programs), matrix-games (Matrix games), bimatrix-games (Bimatrix games), combinatorial-games (Combinatorial games), cooperative-voting (Cooperative games and voting), relations-orders (Relations and orders), polya (Pólya counting), codes (Error-correcting codes), designs (Latin squares and designs)
+
+## API
+
+name(params) → result — meaning · file:line · docs page
+
+- `factorial(n: Whole) → bigint` — n! · src/counting.js:39 · counting
+- `doubleFactorial(n: Whole) → bigint` — n!! = n(n − 2)(n − 4)… · src/counting.js:45 · reference
+- `fallingFactorial(n: Whole, k: Whole) → bigint` — The falling factorial n(n − 1)…(n − k + 1): arrangements of k out of n. n may be negative. · src/counting.js:52 · counting
+- `risingFactorial(n: Whole, k: Whole) → bigint` — The rising factorial n(n + 1)…(n + k − 1). · src/counting.js:60 · reference
+- `binomial(n: Whole, k: Whole) → bigint` — The binomial coefficient: the number of k-element subsets of an n-element set. 0 when k < 0 or k > n ≥ 0. · src/counting.js:73 · counting
+- `multinomial(...parts: Whole[]) → bigint` — The multinomial coefficient (k₁ + … + k_r)!/(k₁!…k_r!): arrangements of a word with those letter counts. · src/counting.js:85 · counting
+- `multichoose(n: Whole, k: Whole) → bigint` — Multisets of size k from n kinds ("n multichoose k"): C(n + k − 1, k). · src/counting.js:96 · counting
+- `pascalRow(n: Whole) → bigint[]` — Row n of Pascal's triangle. · src/counting.js:237 · counting
+- `stirling1(n: Whole, k: Whole, options?: { signed?: boolean }) → bigint` — Unsigned Stirling numbers of the first kind: permutations of n with exactly k cycles. { signed: true } gives the coefficient of x^k in x(x − 1)…(x − n + 1). · src/counting.js:121 · counting
+- `stirling2(n: Whole, k: Whole) → bigint` — Stirling numbers of the second kind: partitions of an n-set into k non-empty blocks. · src/counting.js:115 · counting
+- `bell(n: Whole) → bigint` — Bell numbers: all partitions of an n-set. · src/counting.js:129 · counting
+- `surjections(n: Whole, k: Whole) → bigint` — Surjections from an n-set onto a k-set: k!·S(n, k). · src/counting.js:134 · counting
+- `catalan(n: Whole) → bigint` — Catalan numbers: C(2n, n)/(n + 1). · src/counting.js:139 · counting
+- `fibonacci(n: Whole) → bigint` — Fibonacci numbers with F(0) = 0, F(1) = 1, by fast doubling; negative indices too. · src/counting.js:144 · counting
+- `lucas(n: Whole) → bigint` — Lucas numbers: L(0) = 2, L(1) = 1. · src/counting.js:158 · counting
+- `eulerian(n: Whole, k: Whole) → bigint` — Eulerian numbers: permutations of n with exactly k descents. · src/counting.js:172 · counting
+- `derangementCount(n: Whole) → bigint` — Derangements: permutations of n with no fixed point. · src/counting.js:163 · counting
+- `partitionCount(n: Whole, k?: Whole) → bigint` — Partitions of the integer n: ways to write it as a sum of positive whole numbers, order ignored. · src/counting.js:206 · counting
+- `compositionCount(n: Whole, k?: Whole) → bigint` — Compositions of n: ordered sums of positive parts, 2^(n−1) of them; with k, into exactly k parts: C(n − 1, k − 1). · src/counting.js:228 · counting
+- `inclusionExclusion( sets: readonly (readonly T[] | ReadonlySet<T>)[], options?: { universe?: readonly T[] | ReadonlySet<T> | number | bigint }, ) → { union: bigint; terms: InclusionExclusionTerm[]; none?: bigint }` — Inclusion and exclusion on actual sets (arrays or Sets of values compared with ===): the size of the union as the alternating sum, level by level. { union,… · src/counting.js:256 · inclusion-exclusion
+- `sieve( m: number, sizeOf: (k: number) => Whole, ) → { all: bigint; none: bigint; union: bigint; terms: SieveTerm[] }` — The sieve formula when the intersections are known by a rule instead of listed: m properties, and `sizeOf(k)` the number of objects having any particular k… · src/counting.js:296 · inclusion-exclusion
+- `pigeonhole( items: Whole, holes: Whole, ) → { atLeast: bigint; atMost: bigint; forced: boolean; statement: string }` — The pigeonhole principle in numbers: with `items` things in `holes` boxes, some box holds at least ⌈items/holes⌉ and some box at most ⌊items/holes⌋. · src/counting.js:316 · inclusion-exclusion
+- `collision( items: Iterable<T>, key?: (item: T) => unknown, ) → { key: unknown; items: [T, T]; indices: [number, number] } | null` — The principle on an example: the first two items that land in the same box, where `key(item)` names the box. · src/counting.js:328 · inclusion-exclusion
+- `DiscreteError class: code` · src/counting.js:5 · reference
+- `Family class: name, count, order, unrank, exp, logInverse, binomial, catalan, partitions, add, sub, mul, scale, at, format, numerator, denominator, series, coefficient, terms, multiply, recurrence, toString, multiplicity, coefficients, validFrom, checked, initial, given, term, characteristic, generatingFunction, closedForm, critical, bound, reason, t1, neighbours, errors, sink, edges, capacity, text` — A finite family of objects in a fixed order. count how many there are (a BigInt) unrank(i) the object at place i, counting from 0 rank(object) the place of… · src/enumerate.js:44 · enumeration
+- `permutations(spec: number, k?: number) → Family<number[]> (+1 overload)` — Arrangements of all n things, or with k, of k out of n, in lexicographic order. permutations(3) lists [1,2,3], [1,3,2], [2,1,3], …;… · src/enumerate.js:127 · counting
+- `derangements(spec: number) → Family<number[]> (+1 overload)` — Permutations with no fixed point, in lexicographic order. · src/enumerate.js:185 · enumeration
+- `combinations(spec: number, k: number) → Family<number[]> (+1 overload)` — k-element subsets of n things, each listed in increasing order, the list in lexicographic order: combinations(4, 2) is [1,2], [1,3], [1,4], [2,3], [2,4], [3,4]. · src/enumerate.js:241 · enumeration
+- `multisets(spec: number, k: number) → Family<number[]> (+1 overload)` — Selections of k from n kinds with repetition allowed, each listed in non-decreasing order: multisets(3, 2) is [1,1], [1,2], [1,3], [2,2], [2,3], [3,3]. · src/enumerate.js:293 · enumeration
+- `subsets(spec: number, options?: { order?: "binary" | "gray" | "size" }) → Family<number[]> (+1 overload)` — All subsets of n things. · src/enumerate.js:316 · enumeration
+- `words(spec: number, k: number) → Family<number[]> (+1 overload)` — Words of length k over n letters (k-tuples with repetition), in dictionary order: n^k of them. · src/enumerate.js:370 · enumeration
+- `product(...factors: (readonly unknown[] | Family<unknown>)[]) → Family<unknown[]>` — The Cartesian product of arrays or families: every way to take one object from each, the last varying fastest. · src/enumerate.js:392 · enumeration
+- `compositions(n: number, k?: number, options?: { zero?: boolean }) → Family<number[]>` — Compositions of n: ordered lists of positive whole numbers adding to n, in lexicographic order. · src/enumerate.js:417 · enumeration
+- `partitions(n: number, k?: number) → Family<number[]>` — Partitions of the integer n: non-increasing lists of positive whole numbers adding to n, largest first part first ([n] comes first, [1,1,…,1] last). · src/enumerate.js:498 · enumeration
+- `setPartitions(spec: number, k?: number) → Family<number[][]> (+1 overload)` — Partitions of a set into non-empty blocks; with k, into exactly k blocks. · src/enumerate.js:561 · enumeration
+- `dyckWords(n: number, options?: { open?: string; close?: string }) → Family<string>` — Balanced strings of n pairs of brackets (Dyck words), "(" before ")": dyckWords(3) is "((()))", "(()())", "(())()", "()(())", "()()()". · src/enumerate.js:627 · enumeration
+- `Random class: u32, bits, int, between, bool, rational, plus, b, d, j, f` · src/random.js:57 · random
+- `rng(seed?: number | bigint | string) → Random` — A seeded generator: rng(2026), rng("experiment 3"), rng(12345678901234567890n). · src/random.js:203 · enumeration
+- `Graph class: directed, multi, loops, weighted, order, size, vertices, edges, edgeById, hasVertex, hasEdge, edgesBetween, edge, weight, addVertex, addEdge, removeVertex, removeEdge, outEdges, inEdges, neighbors, outNeighbors, inNeighbors, degree, outDegree, inDegree, degreeSequence, copy, subgraph, edgeSubgraph, complement, reverse, underlying, lineGraph, adjacencyMatrix, totalWeight, toString, toJSON` · src/graph.js:42 · reference
+- `graph(spec?: GraphSpec, options?: GraphOptions) → Graph` — An undirected graph from a description: graph("a-b b-c c-a d") text: edges, chains a-b-c, lone vertices, weights a-b:3/2, separated by spaces or semicolons… · src/graph.js:404 · graphs
+- `digraph(spec?: GraphSpec, options?: GraphOptions) → Graph` — A directed graph, read as `graph` reads; in text write a>b (or a->b). · src/graph.js:408 · graphs
+- `toWeight(w: WeightLike | null | undefined) → Rational` — An edge weight as an exact Rational: numbers (whole), BigInts, text such as "3/2" or "0.25", or a Rational. · src/graph.js:27 · reference
+- `cartesianProduct(g: Graph, h: Graph) → Graph` — The Cartesian (box) product: (a, b) ~ (c, d) when a = c and b ~ d, or b = d and a ~ c. · src/graph.js:438 · graphs
+- `tensorProduct(g: Graph, h: Graph) → Graph` — The tensor (categorical) product: (a, b) ~ (c, d) when a ~ c and b ~ d. · src/graph.js:442 · graphs
+- `strongProduct(g: Graph, h: Graph) → Graph` — The strong product: the union of the Cartesian and tensor products. · src/graph.js:446 · reference
+- `lexicographicProduct(g: Graph, h: Graph) → Graph` — The lexicographic product g[h]: (a, b) ~ (c, d) when a ~ c, or a = c and b ~ d. · src/graph.js:450 · reference
+- `disjointUnion(g: Graph, h: Graph, options?: { rename?: boolean }) → Graph` — Side by side, no edges between: vertices renamed "1.v" and "2.v" (or kept, with `{ rename: false }`, when they are distinct). · src/graph.js:454 · reference
+- `join(g: Graph, h: Graph) → Graph` — The join: the disjoint union with every vertex of one joined to every vertex of the other. · src/graph.js:468 · graphs
+- `union(g: Graph, h: Graph) → Graph` — The union on shared vertex names: every vertex and edge of either (an edge in both is kept once unless multi). · src/graph.js:474 · reference
+- `complete(n: Whole) → Graph` — Kₙ: every pair joined. · src/families.js:19 · graphs
+- `emptyGraph(n: Whole) → Graph` — n vertices, no edges. · src/families.js:26 · graphs
+- `pathGraph(n: Whole) → Graph` — Pₙ: the path on n vertices 1–2–…–n. · src/families.js:30 · graphs
+- `cycleGraph(n: Whole) → Graph` — Cₙ: the cycle on n ≥ 3 vertices. · src/families.js:35 · graphs
+- `star(n: Whole) → Graph` — K₁,ₙ: a centre 0 joined to leaves 1…n. · src/families.js:41 · tours
+- `wheel(n: Whole) → Graph` — Wₙ: the cycle 1…n with a hub 0 joined to all of it. · src/families.js:49 · colouring
+- `completeBipartite(m: Whole, n: Whole) → Graph` — K_{m,n}: parts 1…m and m+1…m+n. · src/families.js:69 · graphs
+- `completeMultipartite(...sizes: Whole[]) → Graph` — K_{a,b,…}: parts of the given sizes, every two vertices in different parts joined. · src/families.js:58 · reference
+- `turan(n: Whole, r: Whole) → Graph` — The Turán graph T(n, r): n vertices in r parts as equal as possible; the most edges with no K_{r+1}. · src/families.js:73 · graphs
+- `hypercube(d: Whole) → Graph` — Qd: the d-dimensional cube, vertices the bit strings of length d, joined when they differ in one bit. · src/families.js:80 · graphs
+- `grid(m: Whole, n: Whole) → Graph` — The m × n grid; vertices "r,c" with 1 ≤ r ≤ m, 1 ≤ c ≤ n. · src/families.js:89 · graphs
+- `circulant(n: Whole, jumps: readonly Whole[]) → Graph` — The circulant graph: vertices 0…n−1, i joined to i ± j (mod n) for each jump j. · src/families.js:104 · reference
+- `kneser(n: Whole, k: Whole) → Graph` — The Kneser graph K(n, k): the k-subsets of {1…n}, joined when disjoint. · src/families.js:119 · isomorphism-spectra
+- `petersen() → Graph` — The Petersen graph, as the Kneser graph K(5, 2). · src/families.js:133 · graphs
+- `platonic(name: "tetrahedron" | "cube" | "octahedron" | "dodecahedron" | "icosahedron") → Graph` — The skeleton of a Platonic solid: "tetrahedron", "cube", "octahedron", "dodecahedron" or "icosahedron". · src/families.js:146 · graphs
+- `completeDigraph(n: Whole) → Graph` — The complete directed graph: every ordered pair. · src/families.js:152 · reference
+- `transitiveTournament(n: Whole) → Graph` — The transitive tournament: i → j whenever i < j. · src/families.js:159 · reference
+- `directedCycle(n: Whole) → Graph` — The directed cycle 1 → 2 → … → n → 1. · src/families.js:166 · reference
+- `randomGraph(n: Whole, p: FractionLike, generator?: Random | number | bigint | string, options?: { directed?: boolean }) → Graph` — G(n, p): each of the possible edges present independently with exact probability p (a fraction such as "1/3"). · src/families.js:180 · graphs
+- `randomGraphWithEdges(n: Whole, m: Whole, generator?: Random | number | bigint | string, options?: { directed?: boolean }) → Graph` — G(n, m): a graph chosen uniformly among those with n vertices and exactly m edges. · src/families.js:193 · reference
+- `bfs(g: Graph, start: Vertex | readonly Vertex[]) → { order: Vertex[]; depth: Map<Vertex, number>; parent: Map<Vertex, Vertex | null> }` — Breadth-first search from a vertex (or several). · src/traverse.js:44 · connectivity
+- `dfs(g: Graph, start?: Vertex | readonly Vertex[]) → { order: Vertex[]; post: Vertex[]; parent: Map<Vertex, Vertex | null>; discovered: Map<Vertex, number>; finished: Map<Vertex, number>; }` — Depth-first search. · src/traverse.js:78 · connectivity
+- `reachable(g: Graph, v: Vertex) → Vertex[]` — The vertices reachable from v (following directions), v included. · src/traverse.js:119 · reference
+- `components(g: Graph) → Vertex[][]` — Connected components (weak components for a directed graph), each an array of vertices; the largest first. · src/traverse.js:124 · connectivity
+- `isConnected(g: Graph) → boolean` — True when there is one component (weakly connected, for a directed graph). · src/traverse.js:146 · connectivity
+- `biconnected(g: Graph) → { bridges: Edge[]; cutVertices: Vertex[]; blocks: Vertex[][] }` — Bridges, cut vertices and blocks in one depth-first pass (Hopcroft and Tarjan). · src/traverse.js:154 · reference
+- `bridges(g: Graph) → Edge[]` · src/traverse.js:159 · connectivity
+- `cutVertices(g: Graph) → Vertex[]` — The vertices whose removal disconnects their component (articulation points). · src/traverse.js:219 · connectivity
+- `blocks(g: Graph) → Vertex[][]` · src/traverse.js:161 · connectivity
+- `stronglyConnectedComponents(g: Graph) → Vertex[][]` — Strongly connected components of a directed graph (Tarjan), in reverse topological order of the condensation. · src/traverse.js:228 · connectivity
+- `isStronglyConnected(g: Graph) → boolean` — True when every vertex reaches every other (for an undirected graph, the same as connected). · src/traverse.js:277 · reference
+- `condensation(g: Graph) → { graph: Graph; components: Vertex[][] }` — The condensation: one vertex per strong component (numbered 1, 2, … in topological order), an arc where some arc joins the components. · src/traverse.js:286 · connectivity
+- `topologicalOrder(g: Graph) → { acyclic: true; order: Vertex[] } | { acyclic: false; cycle: Vertex[] }` — A topological order of a directed graph (Kahn's method, smallest position first among ties), or the reason there is none: { acyclic: true, order } or {… · src/traverse.js:306 · connectivity
+- `isAcyclic(g: Graph) → boolean` — True for a directed graph with no directed cycle (or an undirected forest). · src/traverse.js:330 · reference
+- `findCycle(g: Graph) → Vertex[] | null` — A cycle, as a closed list of vertices [v₁, …, v₁], or null. · src/traverse.js:339 · reference
+- `bipartition(g: Graph) → { bipartite: true; parts: [Vertex[], Vertex[]] } | { bipartite: false; oddCycle: Vertex[] }` — Two-colouring. { bipartite: true, parts: [A, B] }, or { bipartite: false, oddCycle: [v₁, …, v₁] } as the certificate. · src/traverse.js:385 · connectivity
+- `isBipartite(g: Graph) → boolean` · src/traverse.js:420 · reference
+- `distances(g: Graph, v: Vertex) → Map<Vertex, number>` — Distances in edges from v to every vertex it reaches: a Map. · src/traverse.js:427 · reference
+- `distance(g: Graph, u: Vertex, v: Vertex) → number` — The number of edges on a shortest path from u to v, or Infinity. · src/traverse.js:431 · connectivity
+- `eccentricity(g: Graph, v: Vertex) → number` — The largest distance from v; Infinity when some vertex cannot be reached. · src/traverse.js:435 · reference
+- `diameter(g: Graph) → number` — The largest eccentricity. · src/traverse.js:442 · connectivity
+- `radius(g: Graph) → number` — The smallest eccentricity. · src/traverse.js:447 · reference
+- `center(g: Graph) → Vertex[]` — The vertices of smallest eccentricity. · src/traverse.js:452 · connectivity
+- `periphery(g: Graph) → Vertex[]` — The vertices of largest eccentricity. · src/traverse.js:458 · reference
+- `girth(g: Graph) → { girth: number; cycle: Vertex[] | null }` — The girth: the length of a shortest cycle, with one such cycle, or { girth: Infinity, cycle: null } for a forest. · src/traverse.js:468 · connectivity
+- `shortestPaths(g: Graph, source: Vertex, options?: { weighted?: boolean }) → ShortestPaths` — Shortest paths from one vertex to all others. · src/paths.js:79 · shortest-paths
+- `shortestPath(g: Graph, s: Vertex, t: Vertex, options?: { weighted?: boolean }) → Path | null` — A shortest path from s to t: { distance, path, edges }, or null when t cannot be reached. · src/paths.js:169 · shortest-paths
+- `allPairsShortestPaths(g: Graph, options?: { weighted?: boolean }) → { vertices: Vertex[]; matrix?: (Rational | null)[][]; distance?(u: Vertex, v: Vertex): Rational | null; path?(u: Vertex, v: Vertex): Vertex[] | null; negativeCycle: …` — Shortest distances between all pairs (Floyd–Warshall). · src/paths.js:184 · shortest-paths
+- `eulerTour(g: Graph, options?: { closed?: boolean }) → EulerTour` — An Euler tour: a walk using every edge exactly once. · src/paths.js:259 · tours
+- `hamiltonCycle(g: Graph) → { exists: true; cycle: Vertex[] } | { exists: false; reason: string; vertex?: Vertex; components?: Vertex[][] }` — A Hamilton cycle (through every vertex once), by exhaustive search for up to 20 vertices: { exists, cycle } or { exists: false, reason }. · src/paths.js:381 · tours
+- `hamiltonPath(g: Graph) → { exists: true; path: Vertex[] } | { exists: false; reason: string; components?: Vertex[][] }` — A Hamilton path, by exhaustive search for up to 20 vertices: { exists, path } or { exists: false, reason }. · src/paths.js:385 · tours
+- `isTree(g: Graph) → boolean` — Connected with no cycle; equivalently n − 1 edges and connected. · src/trees.js:17 · trees
+- `isForest(g: Graph) → boolean` — No cycle (directions ignored, parallel edges and loops count as cycles). · src/trees.js:13 · trees
+- `minimumSpanningTree(g: Graph, options?: { method?: "kruskal" | "prim"; maximum?: boolean }) → { weight: Rational; edges: Edge[]; tree: Graph; /** False when the result is a spanning forest. */ connected: boolean; method: string; }` — A spanning tree of least total weight (a spanning forest when the graph is not connected). · src/trees.js:45 · trees
+- `spanningTreeCount(g: Graph) → bigint` — The number of spanning trees, exactly, by Kirchhoff's matrix-tree theorem: any cofactor of the Laplacian. · src/trees.js:112 · trees
+- `determinant(rows: readonly (readonly (number | bigint)[])[]) → bigint` — Exact determinant of a square BigInt matrix (Bareiss elimination: every division is exact). · src/trees.js:86 · reference
+- `prufer(tree: Graph, options?: { vertices?: readonly Vertex[] }) → Vertex[]` — The Prüfer code of a labelled tree: repeatedly remove the smallest leaf and write down its neighbour, until two vertices remain. · src/trees.js:140 · trees
+- `fromPrufer(code: readonly Vertex[], vertices?: readonly Vertex[]) → Graph` — The tree with a given Prüfer code, on the vertices 1…n (n = code length + 2) or on the labels given, smallest first. · src/trees.js:168 · trees
+- `labelledTrees(spec: Whole | readonly Vertex[]) → Family<Graph>` — All labelled trees on n vertices (or on the given labels) as a Family: there are n^(n−2) of them (Cayley), numbered through their Prüfer codes. · src/trees.js:204 · trees
+- `randomTree(spec: Whole | readonly Vertex[], generator?: Random | number | bigint | string) → Graph` — A labelled tree chosen uniformly among all n^(n−2), on 1…n or the given labels. · src/trees.js:232 · reference
+- `linearProgram(problem: ProblemSpec | Problem, options?: { maxPivots?: number }) → LPResult` — Solve a linear program exactly. linearProgram({ maximize: [3, 2], constraints: [[[1, 1], "<=", 4], [[1, 3], "<=", 6]] }) The result has `status` ("optimal",… · src/lp.js:251 · linear-programming
+- `integerProgram(problem: ProblemSpec | Problem, options?: { integer?: (string | number)[] | true; maxNodes?: number }) → IPResult` — Branch and bound for small integer (or mixed) programs. integerProgram(problem, { integer: ["x", "y"] }) default: every variable Returns { status, x, value,… · src/lp.js:434 · integer-programs
+- `checkLinearProgram( problem: ProblemSpec | Problem, result: { status: string; x?: readonly FractionLike[] | null; dual?: readonly Rational[] | null; farkas?: readonly Rational[] | null; ray?: readonly Rational[] | null }, ) → true` — Check a result of `linearProgram` (or any { status, x, dual, farkas, ray }) using arithmetic on the problem alone. · src/lp.js:366 · reference
+- `isFeasible(problem: ProblemSpec | Problem, x: readonly FractionLike[]) → boolean` — Check that x satisfies every constraint and sign condition. · src/lp.js:353 · reference
+- `parseProblem(problem: ProblemSpec | Problem) → Problem` — Normalise a problem. · src/lp.js:50 · reference
+- `solveSquare(M: Rational[][], rhs: Rational[]) → Rational[] | null` — Solve a square system exactly; null when it is singular. · src/lp.js:129 · reference
+- `Problem class: sense, names, c, rows, free, withRows, toString` · src/lp.js:97 · reference
+- `LPResult class: problem, status, x, dual, farkas, ray, value, pivots, solution, prices, binding, toString` · src/lp.js:308 · reference
+- `IPResult class: problem, integer, status, x, value, nodes, relaxation, solution, check, toString` · src/lp.js:467
+- `matrixGame(A: FractionLike[][], options?: { rows?: string[]; columns?: string[] }) → MatrixGameSolution` — Solve a two-player zero-sum game. · src/games.js:50 · matrix-games
+- `saddlePoints(A: FractionLike[][]) → { row: number; column: number; value: Rational }[]` — Pure saddle points: entries that are the least in their row and the greatest in their column. · src/games.js:101 · matrix-games
+- `bimatrixGame(A: FractionLike[][], B?: FractionLike[][], options?: { rows?: string[]; columns?: string[] }) → BimatrixGame` — A two-player game in normal form. · src/games.js:118 · bimatrix-games
+- `MatrixGameSolution class: payoffs, value, row, column, rowNames, columnNames, fair, guarantee, cap, check, toString` · src/games.js:65
+- `BimatrixGame class: A, B, rowNames, columnNames, m, n, payoffs, isEquilibrium, pureEquilibria, dominance, lemkeHowson, toString` · src/games.js:125 · reference
+- `seriesPoly: { trim(p: Rational[]): Rational[]; add(p: Rational[], q: Rational[]): Rational[]; sub(p: Rational[], q: Rational[]): Rational[]; mul(p: Rational[], q: Rational[]): Rational[]; scale(p: Rational[], c: Rational): …` · src/series.js:27 · reference
+- `PowerSeries class: name, coefficient, add, subtract, negate, scale, multiply, shift, divide, derivative, integral, pow, toString` — A formal power series a₀ + a₁x + a₂x² + … with exact rational coefficients. · src/series.js:83 · reference
+- `series(input: SeriesLike) → PowerSeries` — A power series from an array of coefficients (a polynomial), a function n ↦ aₙ (an ordinary generating function of that sequence), or a PowerSeries… · src/series.js:247 · generating-functions
+- `egf(sequence: FractionLike[] | ((n: number) => FractionLike)) → PowerSeries` — The exponential generating function Σ aₙxⁿ/n! of a sequence given as a function or an array. · src/series.js:257 · generating-functions
+- `knownSeries: { geometric(r?: FractionLike): PowerSeries; exp(): PowerSeries; logInverse(): PowerSeries; binomial(a: FractionLike): PowerSeries; catalan(): PowerSeries; partitions(): PowerSeries; }` — Series that come up again and again. · src/series.js:263 · generating-functions
+- `RationalSeries class: numerator, denominator, series, coefficient, terms, add, multiply, recurrence, toString` — A rational generating function P(x)/Q(x) with Q(0) ≠ 0, kept as its two polynomials. · src/series.js:306 · reference
+- `rationalSeries(numerator: FractionLike[], denominator: FractionLike[]) → RationalSeries` · src/series.js:347 · generating-functions
+- `LinearRecurrence class: coefficients, initial, order, given, terms, term, characteristic, generatingFunction, closedForm, toString` — aₙ = c₁aₙ₋₁ + c₂aₙ₋₂ + … + cₖaₙ₋ₖ (+ g(n)), from the initial values. recurrence({ coefficients: [1, 1], initial: [0, 1] }) Fibonacci recurrence({… · src/recurrence.js:51 · reference
+- `recurrence(spec: ConstructorParameters<typeof LinearRecurrence>[0]) → LinearRecurrence` · src/recurrence.js:180 · recurrences
+- `guessRecurrence(terms: FractionLike[]) → LinearRecurrence` — The shortest linear recurrence with constant rational coefficients that the given terms satisfy (Berlekamp–Massey over Q). · src/recurrence.js:279 · recurrences
+- `closedSum(p: FractionLike[], r?: FractionLike) → { polynomial: Rational[]; at(n: Whole): Rational; toString(): string }` — Σ_{k=0}^{n} p(k) r^k in closed form, for a polynomial p (coefficients, constant first) and a rational r (1 unless given). r = 1: a polynomial S(n) of degree… · src/recurrence.js:332 · recurrences
+- `masterTheorem(spec: { a: FractionLike; b: FractionLike; d: FractionLike; j?: number }) → { case: 1 | 2 | 3; critical: string; bound: string; reason: string; }` — The master theorem for T(n) = a·T(n/b) + f(n) with f(n) = Θ(n^d · log^j n). · src/recurrence.js:398 · recurrences
+- `divideAndConquer(spec: { a: FractionLike; b: Whole; f: (n: bigint) => FractionLike; t1?: FractionLike }, count?: number) → { n: bigint; value: Rational }[]` — Exact values of T(n) = a·T(n/b) + f(n) at n = b^m, m = 0 … count − 1, from T(1) = t1, with f a function n ↦ number or Rational. · src/recurrence.js:433 · recurrences
+- `maximumMatching(g: Graph | GraphSpec) → { size: number; edges: [Vertex, Vertex][]; perfect: boolean; unmatched: Vertex[]; certificate: TutteBergeCertificate; check(): MatchingCheck; }` — A maximum matching of an undirected graph (directions and weights ignored). { size, edges: [[u, v], …], perfect, unmatched, certificate: { set: U,… · src/matching.js:148 · matchings-flows
+- `checkMatching(g: Graph, edges: [Vertex, Vertex][], tutteSet: Vertex[]) → MatchingCheck` — Check a matching and a Tutte–Berge set by direct counting: the edges are edges of g and share no ends, and (n + |U| − odd(G − U))/2 equals the matching's… · src/matching.js:190 · reference
+- `bipartiteMatching(g: Graph | GraphSpec, options?: { left?: Vertex[] }) → { size: number; edges: [Vertex, Vertex][]; perfect: boolean; cover: Vertex[]; hall: { set: Vertex[]; neighbours: Vertex[] } | null; }` — A maximum matching of a bipartite graph, from the left side (found by two-colouring when not given). { size, edges, perfect (every left vertex matched),… · src/matching.js:219 · matchings-flows
+- `assignment(costs: FractionLike[][], options?: { maximize?: boolean }) → { assignment: number[]; cost: Rational; rowPrices: Rational[]; columnPrices: Rational[]; check(): { ok: boolean; errors: string[] }; }` — The best assignment of rows to columns in a square cost matrix: a perfect matching of least total cost (or greatest, with { maximize: true }). · src/matching.js:301 · matchings-flows
+- `stableMatching(proposers: Record<string, string[]>, receivers: Record<string, string[]>) → { matching: Record<string, string>; proposals: number; blockingPairs: [string, string][]; }` — Stable matching by Gale and Shapley: the proposers propose in order of preference, and each receiver holds the best offer so far. · src/matching.js:349 · matchings-flows
+- `blockingPairs(proposers: Record<string, string[]>, receivers: Record<string, string[]>, matching: Record<string, string>) → [string, string][]` — Pairs (p, r) who both prefer each other to what the matching gives them. · src/matching.js:377 · reference
+- `maxFlow(g: Graph | GraphSpec, source: Vertex, sink: Vertex) → { value: Rational; flow: FlowEdge[]; cut: { source: Vertex[]; sink: Vertex[]; edges: [Vertex, Vertex][]; capacity: Rational }; augmentations: unknown[]; check(): { …` — The maximum flow from s to t, capacities being the edge weights (exact rationals; an undirected edge carries flow either way). · src/matching.js:401 · matchings-flows
+- `checkFlow(g: Graph, source: Vertex, sink: Vertex, flow: FlowEdge[], cut?: unknown) → { ok: boolean; errors: string[] }` — Check a flow and a cut with arithmetic only: capacities respected, flow conserved at every vertex but s and t, the cut separates s from t, and the flow's… · src/matching.js:487 · reference
+- `isProperColouring(g: Graph, colouring: Map<Vertex, number> | Record<string, number>) → { ok: boolean; clash: [Vertex, Vertex] | null }` — Is `colours` (vertex → colour, as a Map or object) a proper colouring of g? { ok, clash } · src/colouring.js:27 · colouring
+- `greedyColouring(g: Graph, order?: Vertex[]) → Map<Vertex, number>` — Greedy colouring in the given order (or largest degree first): colours 0, 1, 2, … as a Map. · src/colouring.js:37 · colouring
+- `maximumClique(g: Graph) → Vertex[]` — A largest clique (Bron–Kerbosch with pivoting). · src/colouring.js:52 · colouring
+- `maximalCliques(g: Graph) → Vertex[][]` — Every maximal clique (Bron–Kerbosch). · src/colouring.js:72 · colouring
+- `maximumIndependentSet(g: Graph) → Vertex[]` — A largest independent set: a largest clique of the complement. · src/colouring.js:91 · colouring
+- `chromaticNumber(g: Graph) → { number: number; colouring: Map<Vertex, number>; lowerBound: unknown }` — The chromatic number, exactly, by backtracking (DSATUR order) for small graphs. { number, colouring: Map, lowerBound: { kind: "clique", clique, note } | {… · src/colouring.js:102 · colouring
+- `chromaticPolynomial(g: Graph) → { coefficients: bigint[]; at(k: Whole): bigint; toString(): string }` — The chromatic polynomial P(k): the number of proper colourings with k colours. · src/colouring.js:188 · colouring
+- `planarity(g: Graph) → ` — Is the graph planar? · src/planar.js:197 · planarity
+- `isPlanar(g: Graph) → boolean` · src/planar.js:233 · planarity
+- `checkKuratowski(g: Graph, witness: KuratowskiWitness) → { ok: boolean; errors: string[] }` — Check a Kuratowski witness against the graph with nothing but counting: its edges are edges of g, its paths are internally disjoint and use those edges, and… · src/planar.js:273 · planarity
+- `isomorphism(g: Graph, h: Graph) → { isomorphic: true; map: Map<Vertex, Vertex> } | { isomorphic: false; reason: string }` — An isomorphism from g to h, or the reason there is none. { isomorphic: true, map: Map(g vertex → h vertex) } (checked edge by edge) { isomorphic: false,… · src/iso.js:117 · isomorphism-spectra
+- `isIsomorphic(g: Graph, h: Graph) → boolean` · src/iso.js:145 · reference
+- `automorphisms(g: Graph) → { order: bigint; generators: number[][]; orbits: Vertex[][]; group: unknown | null; vertices: Vertex[] }` — The automorphism group of g, as permutations of its vertices in the order g.vertices() lists them (0-based). { order: BigInt, generators: [[…], …], orbits:… · src/iso.js:154 · isomorphism-spectra
+- `adjacency(g: Graph) → { vertices: Vertex[]; matrix: bigint[][] }` — The adjacency matrix (BigInt entries, loops counted twice when undirected) and vertex order. · src/spectra.js:16 · reference
+- `laplacian(g: Graph) → { vertices: Vertex[]; matrix: bigint[][] }` — The Laplacian D − A of an undirected graph (loops ignored). · src/spectra.js:21 · reference
+- `characteristicPolynomial(matrix: Whole[][]) → bigint[]` — det(xI − M) for an integer matrix, by the Faddeev–LeVerrier recursion done with exact division (the divisions are exact over the integers): N₀ = I, cₙ = 1;… · src/spectra.js:35 · reference
+- `spectrum(g: Graph, options?: { laplacian?: boolean }) → { polynomial: bigint[]; polynomialText: string; eigenvalues: { value: unknown; multiplicity: number; text: string }[]; toString(): string; }` — The spectrum: eigenvalues with multiplicities, exact. spectrum(g) of the adjacency matrix spectrum(g, { laplacian: true }) { polynomial (BigInts, constant… · src/spectra.js:60 · isomorphism-spectra
+- `walks(g: Graph, k: number) → { vertices: Vertex[]; matrix: bigint[][]; closed: bigint }` — The number of walks of length k between every pair of vertices: the matrix A^k (BigInts). · src/spectra.js:77 · isomorphism-spectra
+- `spanningTreesFromSpectrum(g: Graph) → bigint` — The number of spanning trees from the Laplacian's characteristic polynomial: (−1)^(n−1)·(coefficient of x)/n, which is the product of the non-zero… · src/spectra.js:98 · isomorphism-spectra
+- `mex(values: Iterable<number>) → number` — The least whole number not in the list. · src/play.js:24 · combinatorial-games
+- `impartialGame(moves: (position: P) => P[], options?: { key?: (position: P) => string }) → { grundy(position: P): number; isLoss(position: P): boolean; winningMoves(position: P): P[]; }` — An impartial game from its rule: moves(position) → the positions reachable in one move. · src/play.js:37 · combinatorial-games
+- `nim(heaps: Whole[]) → { nimSum: bigint; losing: boolean; winningMoves: { heap: number; from: bigint; to: bigint }[] }` — Nim: the value of heaps is their nim-sum; the winning moves take a heap h down to h ⊕ s where s is the nim-sum. { nimSum, losing, winningMoves: [{ heap,… · src/play.js:65 · combinatorial-games
+- `subtractionGame(subtract: number[], length?: number) → { values: number[]; period: { start: number; length: number } | null }` — A subtraction game: from a heap of n, remove any amount in S. · src/play.js:87 · combinatorial-games
+- `Game class: L, R, le, ge, equals, compare, outcome, add, negate, subtract, number, nimber, toString` — A partizan game {L | R}, canonical. · src/play.js:118 · reference
+- `cgame(left: GameLike[], right: GameLike[]) → Game` — {left | right}, in canonical form. · src/play.js:254 · combinatorial-games
+- `starGame(n?: number) → Game` — *n: the nimber, {0, *, …, *(n−1) | 0, *, …, *(n−1)}. · src/play.js:258 · combinatorial-games
+- `up() → Game` · src/play.js:263 · linear-programming
+- `down() → Game` · src/play.js:264 · combinatorial-games
+- `partizanGame(position: P, leftMoves: (p: P) => P[], rightMoves: (p: P) => P[], options?: { key?: (p: P) => string }) → Game` — Build a partizan game from a position and two move rules, recursively: partizanGame(p, leftMoves, rightMoves) with leftMoves(p) → positions. · src/play.js:328 · combinatorial-games
+- `backwardInduction(tree: GameTree) → { value: Record<string, Rational>; plan: { path: string[]; player: string; choice: string; ties: string[] }[]; path: string[]; }` — Backward induction on a game tree with perfect information. · src/play.js:359 · combinatorial-games
+- `cooperativeGame(players: string[], value: ((coalition: string[]) => FractionLike) | Record<string, FractionLike>) → CooperativeGame` — A cooperative game on named players: value(coalition) with the coalition an array of player names (in any order). · src/cooperative.js:26 · cooperative-voting
+- `shapley(game: CooperativeGame) → Record<string, Rational>` — The Shapley value: φᵢ = Σ over coalitions S without i of |S|!(n − |S| − 1)!/n! · (v(S ∪ {i}) − v(S)). · src/cooperative.js:48 · cooperative-voting
+- `core(game: CooperativeGame) → ` — The core: an allocation x with x(N) = v(N) and x(S) ≥ v(S) for every coalition S, or the proof there is none. { empty: false, allocation: { player: Rational… · src/cooperative.js:73 · cooperative-voting
+- `inCore(game: CooperativeGame, allocation: Record<string, FractionLike>) → { inCore: boolean; blocking: string[] | null; reason?: string }` — Is the allocation in the core? { inCore, blocking: coalition that gets less than its value, or null } · src/cooperative.js:87 · cooperative-voting
+- `weightedVoting(spec: { quota: FractionLike; weights: Record<string, FractionLike> }) → { game: CooperativeGame; shapleyShubik: Record<string, Rational>; banzhaf: Record<string, Rational>; swings: Record<string, bigint>; dummies: …` — A weighted voting game [quota; w₁, …, wₙ]: a coalition wins when its weight reaches the quota. · src/cooperative.js:106 · cooperative-voting
+- `plurality(ballots: Ballot[]) → { winners: string[]; tally: Record<string, bigint> }` — Plurality: most first places. { winners, tally } · src/cooperative.js:139 · cooperative-voting
+- `borda(ballots: Ballot[]) → { winners: string[]; tally: Record<string, bigint> }` — The Borda count: with n candidates, a ballot gives n − 1 points to its first, n − 2 to its second, … · src/cooperative.js:146 · cooperative-voting
+- `instantRunoff(ballots: Ballot[]) → { winners: string[]; rounds: { tally: Record<string, bigint>; eliminated: string[] }[] }` — Instant runoff: drop the candidate with fewest first places, move those ballots to their next choice, repeat until someone has a majority of the ballots… · src/cooperative.js:159 · cooperative-voting
+- `condorcet(ballots: Ballot[]) → { pairwise: Record<string, Record<string, bigint>>; winner: string | null; copeland: Record<string, number>; cycle: string[] | null; }` — Head-to-head counts: pairwise[a][b] = ballots ranking a above b. · src/cooperative.js:193 · cooperative-voting
+- `approval(ballots: string[][]) → { winners: string[]; tally: Record<string, bigint> }` — Approval voting: ballots are sets of approved candidates. · src/cooperative.js:225 · reference
+- `apportion(populations: Record<string, Whole>, seats: Whole, options?: { method?: ApportionMethod }) → { seats: Record<string, bigint>; quotas: Record<string, Rational>; method: ApportionMethod; tie: unknown | null; }` — Share `seats` among states in proportion to `populations`, exactly. method: "hamilton" (largest remainders), "jefferson" (D'Hondt), "webster"… · src/cooperative.js:242 · cooperative-voting
+- `adjustedWinner(a: Record<string, FractionLike>, b: Record<string, FractionLike>) → { A: Record<string, Rational>; B: Record<string, Rational>; points: { A: Rational; B: Rational }; }` — Adjusted winner (Brams and Taylor) for two parties who each spread 100 points (or any equal totals) over the items. · src/cooperative.js:297 · cooperative-voting
+- `Relation class: elements, pairs, has, properties, inverse, compose, reflexiveClosure, symmetricClosure, transitiveClosure, toString` — A relation on a finite set: relation([1, 2, 3], [[1, 2], [2, 3]]) relation([1, …, 12], (a, b) => b % a === 0) · src/orders.js:29 · reference
+- `relation(elements: T[], pairs: [T, T][] | ((a: T, b: T) => boolean)) → Relation<T>` · src/orders.js:140 · relations-orders
+- `fromPartition(blocks: T[][]) → Relation<T>` — The equivalence relation whose classes are the given blocks. · src/orders.js:142 · relations-orders
+- `Poset class: elements, leq, lt, comparable, hasse, minimal, maximal, least, greatest, levels, longestChain, width, linearExtensions, countLinearExtensions, mobius, meet, join, isLattice, isDistributive` — A partial order: poset(elements, leq) with leq(a, b) meaning a ≤ b, or a list of pairs (made reflexive and transitive). · src/orders.js:153 · reference
+- `poset(elements: T[], pairs: [T, T][] | ((a: T, b: T) => boolean)) → Poset<T>` · src/orders.js:324 · relations-orders
+- `divisorLattice(n: Whole) → Poset<number>` — The divisors of n ordered by divisibility. · src/orders.js:326 · relations-orders
+- `booleanLattice(n: number) → Poset<string>` — The subsets of {1, …, n} ordered by inclusion, each written as a string such as "13" or "∅". · src/orders.js:333 · relations-orders
+- `partitionLattice(n: number) → Poset<string>` — The set partitions of {1, …, n} ordered by refinement (finer below). · src/orders.js:345 · relations-orders
+- `cycleIndex(group: PermutationGroupLike) → { terms: { coefficient: Rational; cycles: unknown }[]; order: number; degree: number; toString(): string }` — The cycle index of a permutation group: the average over its elements of the monomial Π s_k^(number of k-cycles). · src/orders.js:375 · polya
+- `countColourings(group: PermutationGroupLike, k: Whole) → bigint` — The number of colourings of the points with k colours, counting two the same when a group element carries one to the other: the cycle index with every s_i =… · src/orders.js:408 · polya
+- `patternInventory(group: PermutationGroupLike, colours: string[]) → { rows: unknown[]; toString(): string }` — The pattern inventory: for colours c₁ … c_m, how many orbits of colourings use each colour a given number of times. · src/orders.js:422 · polya
+- `symmetry: { cyclic(n: number): PermutationGroupLike; dihedral(n: number): PermutationGroupLike; symmetric(n: number): PermutationGroupLike; cubeFaces(): PermutationGroupLike; }` — Symmetry groups that come up in counting: rotations of an n-gon (cyclic), rotations and reflections (dihedral). · src/orders.js:459 · polya
+- `LinearCode class: p, n, k, generator, parityCheck, pivots, name, redundancy, encode, messageOf, syndrome, isCodeword, codewords, weightDistribution, minimumDistance, dual, cosetLeaders, decode, toString` — A linear [n, k] code over Z_p from a generator matrix (rows span the code; dependent rows are dropped). linearCode([[1,0,0,0,0,1,1], …], { p: 2 }) · src/codes.js:87 · reference
+- `linearCode(generator: number[][], options?: { p?: number }) → LinearCode` · src/codes.js:225 · reference
+- `hammingCode(r: number, options?: { p?: number }) → LinearCode` — The Hamming code with r check symbols over Z_p: length (p^r − 1)/(p − 1), distance 3, perfect. · src/codes.js:228 · codes
+- `repetitionCode(n: number, options?: { p?: number }) → LinearCode` — The repetition code of length n. · src/codes.js:248 · reference
+- `parityCode(n: number, options?: { p?: number }) → LinearCode` — The parity-check code of length n (all words whose symbols add to 0). · src/codes.js:250 · reference
+- `ballSize(n: number, t: number, q?: number) → bigint` — The volume of a Hamming ball of radius t in Z_qⁿ. · src/codes.js:258 · codes
+- `codeBounds(n: number, d: number, q?: number) → { hamming: bigint; singleton: bigint; gilbertVarshamov: bigint }` — Bounds on the largest code of length n and minimum distance d over an alphabet of q symbols: hamming (sphere packing): at most qⁿ / V(n, ⌊(d−1)/2⌋)… · src/codes.js:271 · codes
+- `isPerfect(code: LinearCode) → boolean` — A code meets the Hamming bound exactly. · src/codes.js:279 · codes
+- `reedSolomon(spec: { p: number; n: number; k: number; points?: number[] }) → { p: number; n: number; k: number; points: number[]; /** n − k + 1. */ distance: number; /** ⌊(n − k)/2⌋ errors. */ corrects: number; encode(message: …` — A Reed–Solomon code over Z_p: a message (f₀, …, f_{k−1}) is the polynomial f(x) = f₀ + f₁x + …, and its codeword is (f(α₁), …, f(αₙ)) at n distinct points… · src/codes.js:293 · codes
+- `isLatinSquare(square: unknown[][]) → { latin: boolean; problem: string | null }` — Each row and each column of the n × n square holds every symbol once. { latin, problem } · src/codes.js:365 · designs
+- `areOrthogonal(a: unknown[][], b: unknown[][]) → { orthogonal: boolean; repeated: unknown | null }` — Superimposing A and B gives every ordered pair of symbols exactly once. { orthogonal, repeated } · src/codes.js:377 · designs
+- `cyclicLatinSquare(n: number) → number[][]` — The cyclic Latin square L[i][j] = (i + j) mod n. · src/codes.js:388 · designs
+- `orthogonalLatinSquares(p: number) → number[][][]` — p − 1 mutually orthogonal Latin squares of prime order p: Lₖ[i][j] = k·i + j mod p. · src/codes.js:390 · designs
+- `blockDesign(blocks: T[][], points?: T[]) → { v: number; b: number; k: number | null; r: number | null; lambda: number | null; balanced: boolean; symmetric: boolean; checks: unknown; }` — Check a block design: the points, the number of blocks b, the block size k (if constant), the replication r (if constant), and λ (if every pair of points… · src/codes.js:404 · designs
+- `fromDifferenceSet(D: number[], v: number) → number[][]` — Develop a difference set D modulo v: the blocks D + i, i = 0 … v − 1. · src/codes.js:431 · designs
+- `projectivePlane(p: number) → number[][]` — The projective plane over Z_p: p² + p + 1 points and as many lines, each line with p + 1 points; points labelled 0 … · src/codes.js:443 · designs
+- `affinePlane(p: number) → number[][]` — The affine plane over Z_p: p² points (x, y) numbered xp + y, and p² + p lines. · src/codes.js:466 · designs
+- `steinerTripleSystem(v: number) → number[][]` — A Steiner triple system on v = 6m + 3 points by Bose's construction (from the idempotent commutative quasigroup x∘y = (x + y)/2 on Z_(2m+1)), or the Fano… · src/codes.js:479 · designs
+- `truthTable` — from @ratmath/logic
+- `minterms` — from @ratmath/logic
+- `maxterms` — from @ratmath/logic
+- `countModels` — from @ratmath/logic
+- `fromMinterms` — from @ratmath/logic
+- `cnf` — from @ratmath/logic
+- `dnf` — from @ratmath/logic
+- `minimize` — from @ratmath/logic
+- `primeImplicants` — from @ratmath/logic
+- `plan: readonly PlannedPhase[]` · src/plan.js:5 · linear-programming
+
+## Namespaces
+
+- `logic`: all of @ratmath/logic
+
+## Example
+
+```js
+import { factorial, binomial, multinomial, stirling2, combinations, rng, plan } from "@ratmath/discrete";
+// How many poker hands, and how many of each kind?
+const hands = binomial(52, 5);
+const flush = 4n * binomial(13, 5);
+const fullHouse = 13n * binomial(4, 3) * 12n * binomial(4, 2);
+console.log("hands:", hands, " flushes (with straight flushes):", flush, " full houses:", fullHouse);
+console.log("chance of a full house:", new Rational(fullHouse, hands).toString());
+
+// The hand at place one million in the list of all hands, and back again.
+const deck = [];
+for (const s of "♠♥♦♣") for (const r of ["A", 2, 3, 4, 5, 6, 7, 8, 9, 10, "J", "Q", "K"]) deck.push(r + s);
+const all = combinations(deck, 5);
+const hand = all.unrank(1000000);
+console.log("hand number 1,000,000:", hand.join(" "), " → rank", all.rank(hand));
+
+// Deal five random hands; the seed makes the deal repeatable.
+const g = rng("deal 1");
+for (let i = 0; i < 5; i++) console.log("  ", all.random(g).join(" "));
+
+// Twelve people into three unlabelled teams of any sizes: Stirling. Of four each: multinomial/3!.
+console.log("three teams:", stirling2(12, 3), "  three teams of four:", multinomial(4, 4, 4) / factorial(3));
+plan.map((p) => `${p.phase}. ${p.contents}`)
+```
+
+## More
+
+- tests/: worked examples for every function
+- https://ratmath.com/core/ (numbers), https://ratmath.com/shelf/ (all the libraries)
