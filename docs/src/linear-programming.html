@@ -70,6 +70,13 @@ open.status;    // "unbounded"
 open.x;         // [2, 0]: a feasible point
 open.ray;       // [1, 1]: from it, move in this direction for ever</code></pre>
 <p>An infeasible problem comes with a <strong>Farkas certificate</strong>: multipliers (non-negative on \(\le\) rows, non-positive on \(\ge\) rows) whose combination of the constraints has left side \(\ge 0\) on every \(x \ge 0\) but a negative right side. No point can satisfy that, so none can satisfy the constraints. Farkas' lemma says such multipliers exist whenever a system has no solution; phase one of the simplex method finds them. An unbounded problem comes with a feasible point and a <strong>ray</strong> \(d\) with \(a_i\cdot d\) of the right sign for every constraint and \(c\cdot d &gt; 0\). Both are checked by <code>check()</code> in the same way as an optimum.</p>
+<h2>The transportation problem</h2>
+<pre><code>const t = transportation([20, 30], [10, 25, 15], [[8, 6, 10], [9, 12, 13]]);
+t.cost;   // 465
+t.plan;   // [[0, 20, 0], [10, 5, 15]]: warehouse 1 sends 20 to store 2, …
+t.lp.check();   // true: the prices prove no plan is cheaper</code></pre>
+<p>Sources with supplies \(s_i\) ship to sinks with demands \(d_j\) at cost \(c_{ij}\) per unit. With \(x_{ij}\) the amount from \(i\) to \(j\), minimise \(\sum c_{ij}x_{ij}\) subject to \(\sum_j x_{ij} = s_i\) and \(\sum_i x_{ij} = d_j\). <code>transportation(supply, demand, cost)</code> builds that program, solves it exactly and returns the shipping table. If total supply exceeds total demand, a dummy sink with cost 0 takes the rest (<code>leftover</code> says how much stays at each source); if demand exceeds supply, a dummy source records the <code>unmet</code> demand. The duals of the source and sink rows are the potentials \(u_i\), \(v_j\) of the stepping-stone method: every route has \(c_{ij} - u_i - v_j \ge 0\), which is the optimality certificate.</p>
+
 <template data-runbox>
 // A workshop makes chairs (£30 profit) and tables (£50) from wood and labour.
 const plan = linearProgram({
@@ -89,6 +96,9 @@ PRINT("bound b·y =", String(w.multiply(new Rational(100n)).add(l.multiply(new R
 const more = linearProgram({ maximize: { chairs: 30, tables: 50 },
   constraints: [[{ chairs: 2, tables: 4 }, "&lt;=", 101, "wood"], [{ chairs: 3, tables: 2 }, "&lt;=", 90, "labour"]] });
 PRINT("with 101 wood:", String(more.value), " gain", String(more.value.subtract(plan.value)));
+// A transportation problem with more supply than demand: a dummy sink absorbs the rest.
+const t = transportation([20, 40], [10, 25, 15], [[8, 6, 10], [9, 12, 13]]);
+PRINT("cost", String(t.cost), " plan", JSON.stringify(t.plan.map((r) =&gt; r.map(String))), " left at each source", t.leftover.map(String).join(", "));
 plan.check()
 </template>
 </article>

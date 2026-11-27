@@ -108,7 +108,8 @@
 <tr><td><code>linearProgram({ maximize | minimize, constraints, names, free })</code></td><td>Exact two-phase simplex (Bland's rule). Coefficients as arrays or objects keyed by name; constraints <code>[coefficients, "&lt;=" | "&gt;=" | "=", rhs, name?]</code>. Returns an <code>LPResult</code>.</td></tr>
 <tr><td><code>LPResult</code></td><td><code>status</code> (<code>"optimal"</code>, <code>"infeasible"</code>, <code>"unbounded"</code>), <code>value</code>, <code>x</code>, <code>solution</code>, <code>dual</code>, <code>prices</code>, <code>binding</code>, <code>farkas</code>, <code>ray</code>, <code>pivots</code>, <code>check()</code>.</td></tr>
 <tr><td><code>checkLinearProgram(problem, result)</code>, <code>isFeasible(problem, x)</code></td><td>Check a certificate by arithmetic on the constraints alone; throws <code>certificate-fails</code> with the reason.</td></tr>
-<tr><td><code>integerProgram(problem, { integer, maxNodes })</code></td><td>Branch and bound: <code>{ status, value, x, solution, nodes, relaxation, check() }</code>.</td></tr>
+<tr><td><code>integerProgram(problem, { integer, binary, maxNodes })</code></td><td>Branch and bound: <code>{ status, value, x, solution, nodes, relaxation, check() }</code>. <code>binary: true</code> or a list makes variables 0 or 1.</td></tr>
+<tr><td><code>transportation(supply, demand, cost)</code></td><td>The transportation problem as an exact LP: <code>{ status, plan, cost, dummy, leftover, unmet, lp }</code>; unbalanced totals get a dummy sink or source with cost 0.</td></tr>
 <tr><td><code>parseProblem(spec)</code>, <code>Problem</code>, <code>solveSquare(M, b)</code></td><td>The normalised problem (prints itself); an exact square solve.</td></tr>
 <tr><td><code>matrixGame(A, { rows, columns })</code></td><td>Zero-sum game: <code>value</code>, <code>row</code>, <code>column</code>, <code>fair</code>, <code>guarantee(p)</code>, <code>cap(q)</code>, <code>check()</code>.</td></tr>
 <tr><td><code>saddlePoints(A)</code></td><td>Pure saddle points <code>{ row, column, value }</code>.</td></tr>
@@ -152,6 +153,7 @@
 <tr><td><code>backwardInduction(tree)</code></td><td><code>{ value, plan, path }</code>, with ties reported.</td></tr>
 <tr><td><code>cooperativeGame(players, v)</code>, <code>shapley(game)</code></td><td>Exact Shapley values.</td></tr>
 <tr><td><code>core(game)</code>, <code>inCore(game, x)</code></td><td>A core allocation, or a balanced collection proving the core empty; a blocking coalition.</td></tr>
+<tr><td><code>coreVertices(game)</code></td><td>Every vertex of the core: <code>{ kind: "empty" | "point" | "polytope", vertices, dimension }</code>, up to 6 players.</td></tr>
 <tr><td><code>weightedVoting({ quota, weights })</code></td><td>Shapley–Shubik and Banzhaf indices, swings, dummies.</td></tr>
 <tr><td><code>plurality</code>, <code>borda</code>, <code>instantRunoff</code>, <code>condorcet</code>, <code>approval</code></td><td>Winners with tallies, rounds, the pairwise table, or a Condorcet cycle.</td></tr>
 <tr><td><code>apportion(populations, seats, { method })</code></td><td>Hamilton, Jefferson, Webster, Adams, Huntington–Hill: <code>{ seats, quotas, method, tie }</code>.</td></tr>

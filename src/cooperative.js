@@ -9,9 +9,10 @@
 
 import { Rational } from "@ratmath/core";
 import { refuse } from "./counting.js";
-import { exact, linearProgram } from "./lp.js";
+import { exact, linearProgram, solveSquare } from "./lp.js";
 
 const ZERO = new Rational(0n);
+const ONE = new Rational(1n);
 const fact = (n) => {
   let f = 1n;
   for (let i = 2n; i <= BigInt(n); i++) f *= i;
@@ -83,6 +84,68 @@ export function core(game) {
   const total = balanced.reduce((s, b) => s.add(b.weight.multiply(v(b.coalition))), ZERO);
   return Object.freeze({ empty: true, balanced, reason: `these coalitions, with these weights, cover every player exactly once and are worth ${total} together, more than v(N) = ${vN}` });
 }
+/**
+ * The vertices of the core polytope, by exact linear algebra: every vertex
+ * makes x(N) = v(N) and n − 1 independent coalition constraints tight, so the
+ * candidates are solved exactly and kept when they satisfy every constraint.
+ *   { kind: "empty" | "point" | "polytope", vertices: [allocation], dimension }
+ * `kind` is "empty" with no vertices, "point" when the core is one
+ * allocation, and "polytope" otherwise (dimension 1 is a segment). For up to
+ * 6 players.
+ */
+export function coreVertices(game) {
+  const { players: P, value: v } = game;
+  const n = P.length;
+  if (n > 6) refuse("too-hard", "coreVertices enumerates tight sets of constraints and is limited to 6 players");
+  const first = core(game);
+  if (first.empty) return Object.freeze({ kind: "empty", vertices: [], dimension: -1, balanced: first.balanced });
+  const coalitions = subsetsOf(P).filter((S) => S.length && S.length < n);
+  const row = (S) => P.map((p) => (S.includes(p) ? ONE : ZERO));
+  const vN = v(P);
+  const feasible = (x) => coalitions.every((S) => S.reduce((s, p) => s.add(x[P.indexOf(p)]), ZERO).greaterThanOrEqual(v(S)));
+  const seen = new Map();
+  const choose = (start, picked) => {
+    if (picked.length === n - 1) {
+      const x = solveSquare([row(P), ...picked.map(row)], [vN, ...picked.map(v)]);
+      if (x && feasible(x)) {
+        const key = x.map(String).join(",");
+        if (!seen.has(key)) seen.set(key, x);
+      }
+      return;
+    }
+    for (let k = start; k < coalitions.length; k++) choose(k + 1, [...picked, coalitions[k]]);
+  };
+  if (n === 1) seen.set(String(vN), [vN]);
+  else choose(0, []);
+  const pts = [...seen.values()];
+  // the dimension is the rank of the differences from the first vertex
+  const diffs = pts.slice(1).map((x) => x.map((c, i) => c.subtract(pts[0][i])));
+  const dimension = rank(diffs);
+  return Object.freeze({
+    kind: pts.length === 1 ? "point" : "polytope",
+    vertices: pts.map((x) => Object.fromEntries(P.map((p, i) => [p, x[i]]))),
+    dimension,
+  });
+}
+function rank(rows) {
+  const A = rows.map((r) => [...r]);
+  let r = 0;
+  const cols = A.length ? A[0].length : 0;
+  for (let c = 0; c < cols && r < A.length; c++) {
+    let p = r;
+    while (p < A.length && A[p][c].numerator === 0n) p++;
+    if (p === A.length) continue;
+    [A[r], A[p]] = [A[p], A[r]];
+    for (let i = 0; i < A.length; i++) {
+      if (i === r || A[i][c].numerator === 0n) continue;
+      const f = A[i][c].divide(A[r][c]);
+      A[i] = A[i].map((x, k) => x.subtract(f.multiply(A[r][k])));
+    }
+    r++;
+  }
+  return r;
+}
+
 /** Is the allocation in the core? { inCore, blocking: coalition that gets less than its value, or null } */
 export function inCore(game, allocation) {
   const { players: P, value: v } = game;

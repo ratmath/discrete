@@ -457,7 +457,17 @@ export class IPResult {
   check(): true;
   toString(): string;
 }
-export function integerProgram(problem: ProblemSpec | Problem, options?: { integer?: (string | number)[] | true; maxNodes?: number }): IPResult;
+export function integerProgram(problem: ProblemSpec | Problem, options?: { integer?: (string | number)[] | true; binary?: (string | number)[] | boolean; maxNodes?: number }): IPResult;
+/** The transportation problem as an exact linear program; unbalanced totals get a dummy sink or source with cost 0. */
+export function transportation(supply: FractionLike[], demand: FractionLike[], cost: FractionLike[][], options?: { maxPivots?: number }): {
+  status: "optimal" | "infeasible" | "unbounded";
+  plan: Rational[][] | null;
+  cost: Rational | null;
+  dummy: "sink" | "source" | null;
+  leftover?: Rational[] | null;
+  unmet?: Rational[] | null;
+  lp: LPResult;
+};
 
 // ---- games ----
 
@@ -803,6 +813,8 @@ export function shapley(game: CooperativeGame): Record<string, Rational>;
 export function core(game: CooperativeGame):
   | { empty: false; allocation: Record<string, Rational> }
   | { empty: true; balanced: { coalition: string[]; weight: Rational }[]; reason: string };
+/** Every vertex of the core polytope (up to 6 players). */
+export function coreVertices(game: CooperativeGame): { kind: "empty" | "point" | "polytope"; vertices: Record<string, Rational>[]; dimension: number; balanced?: { coalition: string[]; weight: Rational }[] };
 export function inCore(game: CooperativeGame, allocation: Record<string, FractionLike>): { inCore: boolean; blocking: string[] | null; reason?: string };
 export function weightedVoting(spec: { quota: FractionLike; weights: Record<string, FractionLike> }): {
   game: CooperativeGame;
