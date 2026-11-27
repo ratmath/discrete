@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Optimisation helpers from the Course Test roadmap (batch A8):
+  `transportation(supply, demand, cost)` solves the transportation problem as
+  an exact LP and returns the shipping table, with a dummy sink or source for
+  unbalanced totals; `integerProgram(problem, { binary })` makes variables
+  0 or 1, so a knapsack is one call; `coreVertices(game)` lists every vertex
+  of the core and says whether it is empty, one point or larger.
 - `@ratmath/core` is now a peer dependency (`>=0.10.0 <0.12.0`): the package
   uses the program's own copy of Core instead of bringing its own, so Core 0.11
   works and there is never a second copy whose `Rational` is not the same class.

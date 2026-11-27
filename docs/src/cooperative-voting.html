@@ -35,6 +35,9 @@ core(majority);
 // { empty: true, balanced: [{ab, 1/2}, {ac, 1/2}, {bc, 1/2}],
 //   reason: "these coalitions, with these weights, cover every player exactly once and are worth 3/2 together, more than v(N) = 1" }</code></pre>
 <p>The core is the set of allocations no coalition can improve on by leaving: \(\sum_{i\in S} x_i \ge v(S)\) for all \(S\), with \(\sum x_i = v(N)\). It is found by exact linear programming. When it is empty, the dual gives a balanced collection (Bondareva–Shapley): coalitions with weights covering each player exactly once whose weighted worth exceeds \(v(N)\), a short proof that no allocation can satisfy them all.</p>
+<p><code>core</code> gives one allocation; <code>coreVertices(game)</code> gives them all. Every vertex of the core polytope makes \(x(N) = v(N)\) and \(n - 1\) independent coalition constraints tight, so each such system is solved exactly and kept when it satisfies every constraint. <code>kind</code> is <code>"empty"</code>, <code>"point"</code> or <code>"polytope"</code>, with the <code>dimension</code>. In the glove game with one left glove and two right ones, the right gloves compete and the core is the single point \((1, 0, 0)\).</p>
+<pre><code>const gloves = cooperativeGame(["L", "R1", "R2"], (S) =&gt; (S.includes("L") &amp;&amp; S.length &gt;= 2 ? 1 : 0));
+coreVertices(gloves);   // { kind: "point", vertices: [{ L: 1, R1: 0, R2: 0 }], dimension: 0 }</code></pre>
 <h2>Voting power</h2>
 <pre><code>import { weightedVoting } from "@ratmath/discrete";
 weightedVoting({ quota: 51, weights: { A: 49, B: 48, C: 3 } }).shapleyShubik;   // 1/3 each</code></pre>
@@ -55,6 +58,14 @@ apportion({ A: 6, B: 6, C: 2 }, 11).seats;   // { A: 5, B: 5, C: 1 }: the Alabam
 adjustedWinner({ house: 50, car: 20, boat: 30 }, { house: 40, car: 40, boat: 20 }).points;   // 520/9 each</code></pre>
 <p>Hamilton's method rounds quotas down and hands out the remaining seats by largest remainder; adding a seat can cost a state one. The divisor methods (Jefferson, Webster, Adams, Huntington–Hill) avoid that paradox but can violate quota. Adjusted winner splits at most one item and leaves both parties with equal points and no envy.</p>
 <template data-runbox>
+// The core of three games: one point, a segment, and empty.
+const gloves = cooperativeGame(["L", "R1", "R2"], (S) =&gt; (S.includes("L") &amp;&amp; S.length &gt;= 2 ? 1 : 0));
+const pair = cooperativeGame(["A", "B", "C"], (S) =&gt; (S.length === 3 ? 1 : S.join("") === "AB" ? 1 : 0));
+const majority = cooperativeGame(["A", "B", "C"], (S) =&gt; (S.length &gt;= 2 ? 1 : 0));
+for (const [name, g] of [["gloves", gloves], ["A and B", pair], ["majority", majority]]) {
+  const c = coreVertices(g);
+  PRINT(name.padEnd(9), c.kind, "dimension", c.dimension, c.vertices.map((x) =&gt; JSON.stringify(Object.fromEntries(Object.entries(x).map(([k, v]) =&gt; [k, String(v)])))).join(" "));
+}
 // One profile, every method.
 const r = rng("election");
 const cands = ["A", "B", "C", "D"];

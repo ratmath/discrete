@@ -1,6 +1,6 @@
 # @ratmath/discrete 0.3.0: full documentation
 
-> Discrete mathematics for RatMath: counting and enumeration, graphs and graph theory, generating functions and recurrences, games and voting, orders, codes and designs, and exact linear programming. From https://ratmath.com/discrete/, commit c153b3c. Each page ends with a runnable example; in it, PRINT(...) prints.
+> Discrete mathematics for RatMath: counting and enumeration, graphs and graph theory, generating functions and recurrences, games and voting, orders, codes and designs, and exact linear programming. From https://ratmath.com/discrete/, commit ca180fb. Each page ends with a runnable example; in it, PRINT(...) prints.
 
 
 ---
@@ -262,7 +262,9 @@ Every export of `@ratmath/discrete`. Whole-number arguments may be numbers, `Big
 
 | checkLinearProgram(problem, result), isFeasible(problem, x) | Check a certificate by arithmetic on the constraints alone; throws certificate-fails with the reason. |
 
-| integerProgram(problem, { integer, maxNodes }) | Branch and bound: { status, value, x, solution, nodes, relaxation, check() }. |
+| integerProgram(problem, { integer, binary, maxNodes }) | Branch and bound: { status, value, x, solution, nodes, relaxation, check() }. binary: true or a list makes variables 0 or 1. |
+
+| transportation(supply, demand, cost) | The transportation problem as an exact LP: { status, plan, cost, dummy, leftover, unmet, lp }; unbalanced totals get a dummy sink or source with cost 0. |
 
 | parseProblem(spec), Problem, solveSquare(M, b) | The normalised problem (prints itself); an exact square solve. |
 
@@ -337,6 +339,8 @@ Every export of `@ratmath/discrete`. Whole-number arguments may be numbers, `Big
 | cooperativeGame(players, v), shapley(game) | Exact Shapley values. |
 
 | core(game), inCore(game, x) | A core allocation, or a balanced collection proving the core empty; a blocking coalition. |
+
+| coreVertices(game) | Every vertex of the core: { kind: "empty" \| "point" \| "polytope", vertices, dimension }, up to 6 players. |
 
 | weightedVoting({ quota, weights }) | Shapley–Shubik and Banzhaf indices, swings, dummies. |
 
@@ -1902,6 +1906,17 @@ open.ray;       // [1, 1]: from it, move in this direction for ever
 
 An infeasible problem comes with a Farkas certificate: multipliers (non-negative on ≤ rows, non-positive on ≥ rows) whose combination of the constraints has left side ≥0 on every x≥0 but a negative right side. No point can satisfy that, so none can satisfy the constraints. Farkas' lemma says such multipliers exist whenever a system has no solution; phase one of the simplex method finds them. An unbounded problem comes with a feasible point and a ray d with ai​⋅d of the right sign for every constraint and c⋅d>0. Both are checked by `check()` in the same way as an optimum.
 
+### The transportation problem
+
+```js
+const t = transportation([20, 30], [10, 25, 15], [[8, 6, 10], [9, 12, 13]]);
+t.cost;   // 465
+t.plan;   // [[0, 20, 0], [10, 5, 15]]: warehouse 1 sends 20 to store 2, …
+t.lp.check();   // true: the prices prove no plan is cheaper
+```
+
+Sources with supplies si​ ship to sinks with demands dj​ at cost cij​ per unit. With xij​ the amount from i to j, minimise ∑cij​xij​ subject to ∑j​xij​=si​ and ∑i​xij​=dj​. `transportation(supply, demand, cost)` builds that program, solves it exactly and returns the shipping table. If total supply exceeds total demand, a dummy sink with cost 0 takes the rest (`leftover` says how much stays at each source); if demand exceeds supply, a dummy source records the `unmet` demand. The duals of the source and sink rows are the potentials ui​, vj​ of the stepping-stone method: every route has cij​−ui​−vj​≥0, which is the optimality certificate.
+
 ### Try it
 
 ```js
@@ -1923,6 +1938,9 @@ PRINT("bound b·y =", String(w.multiply(new Rational(100n)).add(l.multiply(new R
 const more = linearProgram({ maximize: { chairs: 30, tables: 50 },
   constraints: [[{ chairs: 2, tables: 4 }, "<=", 101, "wood"], [{ chairs: 3, tables: 2 }, "<=", 90, "labour"]] });
 PRINT("with 101 wood:", String(more.value), " gain", String(more.value.subtract(plan.value)));
+// A transportation problem with more supply than demand: a dummy sink absorbs the rest.
+const t = transportation([20, 40], [10, 25, 15], [[8, 6, 10], [9, 12, 13]]);
+PRINT("cost", String(t.cost), " plan", JSON.stringify(t.plan.map((r) => r.map(String))), " left at each source", t.leftover.map(String).join(", "));
 plan.check()
 ```
 
@@ -1949,6 +1967,9 @@ const pack = integerProgram({
   ],
 });
 String(pack);   // "optimal: 21 at a = 0, b = 1, c = 1, d = 1 (13 subproblems; relaxation 22)"
+
+// the same 0–1 knapsack in one call: binary adds x ≤ 1 and wholeness for each variable
+integerProgram({ maximize: { a: 8, b: 11, c: 6, d: 4 }, constraints: [[{ a: 5, b: 7, c: 4, d: 3 }, "<=", 14]] }, { binary: true });
 ```
 
 The linear relaxation drops the requirement that the variables be whole and is solved exactly. Its optimum bounds the integer optimum: here no packing is worth more than 22. If its solution is already whole, it is the answer. Otherwise some variable has a fractional value v, and every integer solution has either x≤⌊v⌋ or x≥⌊v⌋+1. Each case is a new linear program. A branch is closed when its relaxation is infeasible, whole, or no better than the best whole solution found so far.
@@ -1961,7 +1982,7 @@ r.relaxation.solution;   // { x1: 3, x2: 3/2 }: the linear optimum, worth 21
 String(r);               // "optimal: 20 at x1 = 4, x2 = 0 (5 subproblems; relaxation 21)"
 ```
 
-Rounding the relaxation's (3,3/2) gives (3,1), worth 19, or the infeasible (3,2). The best integer point, (4,0), is not near it. Integer programming is NP-hard in general, so the search can grow exponentially. This solver is for small problems and for teaching; it refuses with `"too-hard"` beyond `maxNodes` subproblems (20,000 by default). Pass `integer: ["x"]` to require only some variables to be whole.
+Rounding the relaxation's (3,3/2) gives (3,1), worth 19, or the infeasible (3,2). The best integer point, (4,0), is not near it. Integer programming is NP-hard in general, so the search can grow exponentially. This solver is for small problems and for teaching; it refuses with `"too-hard"` beyond `maxNodes` subproblems (20,000 by default). Pass `integer: ["x"]` to require only some variables to be whole, and `binary: true` (or a list of names) to make variables 0 or 1.
 
 The `check()` of an integer result confirms feasibility and wholeness. Unlike a linear optimum it carries no short proof of optimality: that rests on the search, and the test suite compares the search with every integer point of hundreds of small random problems.
 
@@ -1980,6 +2001,16 @@ for (let x = 0; x <= 6; x++) for (let y = 0; y <= 6; y++) {
   if (best === null || v > best) { best = v; at = [x, y]; }
 }
 PRINT("brute force:", best, "at", at.join(", "));
+// A 0–1 knapsack with binary: true, against all 2^5 choices.
+const values = [10, 13, 7, 8, 4], weights = [5, 6, 4, 5, 2];
+const k = integerProgram({ maximize: values, constraints: [[weights, "<=", 13]] }, { binary: true });
+let bestK = 0;
+for (let m = 0; m < 32; m++) {
+  let w = 0, v = 0;
+  for (let i = 0; i < 5; i++) if ((m >> i) & 1) { w += weights[i]; v += values[i]; }
+  if (w <= 13 && v > bestK) bestK = v;
+}
+PRINT("knapsack:", String(k), " brute force:", bestK);
 ip.check()
 ```
 
@@ -2260,6 +2291,13 @@ core(majority);
 
 The core is the set of allocations no coalition can improve on by leaving: ∑i∈S​xi​≥v(S) for all S, with ∑xi​=v(N). It is found by exact linear programming. When it is empty, the dual gives a balanced collection (Bondareva–Shapley): coalitions with weights covering each player exactly once whose weighted worth exceeds v(N), a short proof that no allocation can satisfy them all.
 
+`core` gives one allocation; `coreVertices(game)` gives them all. Every vertex of the core polytope makes x(N)=v(N) and n−1 independent coalition constraints tight, so each such system is solved exactly and kept when it satisfies every constraint. `kind` is `"empty"`, `"point"` or `"polytope"`, with the `dimension`. In the glove game with one left glove and two right ones, the right gloves compete and the core is the single point (1,0,0).
+
+```js
+const gloves = cooperativeGame(["L", "R1", "R2"], (S) => (S.includes("L") && S.length >= 2 ? 1 : 0));
+coreVertices(gloves);   // { kind: "point", vertices: [{ L: 1, R1: 0, R2: 0 }], dimension: 0 }
+```
+
 ### Voting power
 
 ```js
@@ -2297,6 +2335,14 @@ Hamilton's method rounds quotas down and hands out the remaining seats by larges
 ### Try it
 
 ```js
+// The core of three games: one point, a segment, and empty.
+const gloves = cooperativeGame(["L", "R1", "R2"], (S) => (S.includes("L") && S.length >= 2 ? 1 : 0));
+const pair = cooperativeGame(["A", "B", "C"], (S) => (S.length === 3 ? 1 : S.join("") === "AB" ? 1 : 0));
+const majority = cooperativeGame(["A", "B", "C"], (S) => (S.length >= 2 ? 1 : 0));
+for (const [name, g] of [["gloves", gloves], ["A and B", pair], ["majority", majority]]) {
+  const c = coreVertices(g);
+  PRINT(name.padEnd(9), c.kind, "dimension", c.dimension, c.vertices.map((x) => JSON.stringify(Object.fromEntries(Object.entries(x).map(([k, v]) => [k, String(v)])))).join(" "));
+}
 // One profile, every method.
 const r = rng("election");
 const cands = ["A", "B", "C", "D"];

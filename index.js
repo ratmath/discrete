@@ -37,7 +37,7 @@ export {
   isTree, isForest, minimumSpanningTree, spanningTreeCount, determinant, prufer, fromPrufer, labelledTrees, randomTree,
 } from "./src/trees.js";
 export {
-  linearProgram, integerProgram, checkLinearProgram, isFeasible, parseProblem, solveSquare, Problem, LPResult, IPResult,
+  linearProgram, integerProgram, transportation, checkLinearProgram, isFeasible, parseProblem, solveSquare, Problem, LPResult, IPResult,
 } from "./src/lp.js";
 export { matrixGame, saddlePoints, bimatrixGame, MatrixGameSolution, BimatrixGame } from "./src/games.js";
 export {
@@ -57,7 +57,7 @@ export {
   mex, impartialGame, nim, subtractionGame, Game, cgame, star as starGame, up, down, partizanGame, backwardInduction,
 } from "./src/play.js";
 export {
-  cooperativeGame, shapley, core, inCore, weightedVoting,
+  cooperativeGame, shapley, core, coreVertices, inCore, weightedVoting,
   plurality, borda, instantRunoff, condorcet, approval, apportion, adjustedWinner,
 } from "./src/cooperative.js";
 export {

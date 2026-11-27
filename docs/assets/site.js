@@ -1,8 +1,8 @@
 // Shared page furniture for the discrete docs: the contents column, the theme
 // switch and the code boxes. Add each topic page to PAGES as it is written.
 
-import * as A from "./discrete.js?v=a9f47ac7f9";
-import { mountRunboxes } from "./runbox.js?v=a9f47ac7f9";
+import * as A from "./discrete.js?v=d226364d29";
+import { mountRunboxes } from "./runbox.js?v=d226364d29";
 
 export { A };
 

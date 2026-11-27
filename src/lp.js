@@ -430,11 +430,20 @@ const floorOf = (r) => new Rational(r.floor());
  * Returns { status, x, value, nodes, relaxation } where `relaxation` is the
  * LP optimum without integrality (a bound on the answer). Refuses with
  * "too-hard" beyond `maxNodes` subproblems.
+ *
+ * `binary: true` (or a list of variables) makes those variables 0 or 1: each
+ * gets the row x ≤ 1 and must be whole, so a 0–1 knapsack is one call.
  */
-export function integerProgram(problem, { integer, maxNodes = 20000 } = {}) {
-  const P = parseProblem(problem);
-  const ints = integer === undefined || integer === true ? P.names.map((_, j) => j) : integer.map((v) => (typeof v === "number" ? v : P.names.indexOf(String(v))));
+export function integerProgram(problem, { integer, binary, maxNodes = 20000 } = {}) {
+  let P = parseProblem(problem);
+  const indexOf = (v) => (typeof v === "number" ? v : P.names.indexOf(String(v)));
+  const bins = binary === undefined || binary === false ? [] : binary === true ? P.names.map((_, j) => j) : binary.map(indexOf);
+  if (bins.some((j) => j < 0 || j >= P.names.length)) refuse("bad-problem", "binary names an unknown variable");
+  if (bins.some((j) => P.free[j])) refuse("bad-problem", "a binary variable cannot also be free");
+  if (bins.length) P = P.withRows(bins.map((j) => ({ name: `${P.names[j]} ≤ 1`, a: P.names.map((_, k) => (k === j ? ONE : ZERO)), relation: "<=", b: ONE })));
+  let ints = integer === undefined || integer === true ? (bins.length && integer === undefined ? [] : P.names.map((_, j) => j)) : integer.map(indexOf);
   if (ints.some((j) => j < 0 || j >= P.names.length)) refuse("bad-problem", "integer names an unknown variable");
+  ints = [...new Set([...ints, ...bins])].sort((a, b) => a - b);
   const max = P.sense === "maximize";
   const better = (a, b) => (max ? a.compareTo(b) > 0 : a.compareTo(b) < 0);
   const root = linearProgram(P);
@@ -489,4 +498,65 @@ export class IPResult {
     if (this.status !== "optimal") return `${this.status} (${this.nodes} subproblems)`;
     return `optimal: ${this.value} at ${this.problem.names.map((k, j) => `${k} = ${this.x[j]}`).join(", ")} (${this.nodes} subproblems; relaxation ${this.relaxation.value})`;
   }
+}
+
+// ---- the transportation problem ----------------------------------------------------
+
+/**
+ * The transportation problem: ship from sources with the given supplies to
+ * sinks with the given demands at least total cost, cost[i][j] per unit from
+ * source i to sink j.
+ *
+ *   transportation([20, 30], [10, 25, 15], [[8, 6, 10], [9, 12, 13]])
+ *
+ * When supply and demand totals differ, a dummy sink (excess supply stays
+ * where it is) or a dummy source (unmet demand) with cost 0 balances them.
+ * Solved as an exact linear program in the amounts x[i][j], whose
+ * certificate the result carries (`lp.check()`). Returns { status, plan,
+ * cost, dummy, lp }: `plan` is the shipping table without the dummy, cost
+ * the minimum, `dummy` "sink", "source" or null, and `unmet` / `leftover`
+ * the amounts the dummy absorbed, per sink or source.
+ */
+export function transportation(supply, demand, cost, options = {}) {
+  const S = supply.map((v) => exact(v, "supply"));
+  const D = demand.map((v) => exact(v, "demand"));
+  if (!S.length || !D.length) refuse("bad-problem", "transportation needs at least one source and one sink");
+  if (cost.length !== S.length || cost.some((row) => row.length !== D.length)) refuse("bad-problem", `the cost table must be ${S.length} × ${D.length}`);
+  if ([...S, ...D].some((v) => v.numerator < 0n)) refuse("bad-problem", "supplies and demands must be nonnegative");
+  const C = cost.map((row) => row.map((v) => exact(v, "cost")));
+  const total = (xs) => xs.reduce((s, v) => s.add(v), ZERO);
+  const gap = total(S).subtract(total(D));
+  let dummy = null;
+  if (gap.numerator > 0n) {
+    dummy = "sink";
+    D.push(gap);
+    C.forEach((row) => row.push(ZERO));
+  } else if (gap.numerator < 0n) {
+    dummy = "source";
+    S.push(gap.negate());
+    C.push(D.map(() => ZERO));
+  }
+  const [m, n] = [S.length, D.length];
+  const label = (i, j) => `x${i + 1}_${j + 1}`;
+  const names = [];
+  for (let i = 0; i < m; i++) for (let j = 0; j < n; j++) names.push(label(i, j));
+  const unit = (pick) => names.map((_, k) => (pick(Math.floor(k / n), k % n) ? 1 : 0));
+  const constraints = [
+    ...S.map((s, i) => ({ coefficients: unit((a) => a === i), relation: "=", rhs: s, name: `source ${i + 1}` })),
+    ...D.map((d, j) => ({ coefficients: unit((_, b) => b === j), relation: "=", rhs: d, name: `sink ${j + 1}` })),
+  ];
+  const lp = linearProgram({ minimize: C.flat(), constraints, names }, options);
+  if (lp.status !== "optimal") return Object.freeze({ status: lp.status, plan: null, cost: null, dummy, lp });
+  const table = Array.from({ length: m }, (_, i) => Array.from({ length: n }, (_, j) => lp.x[i * n + j]));
+  const realRows = dummy === "source" ? table.slice(0, -1) : table;
+  const plan = realRows.map((row) => (dummy === "sink" ? row.slice(0, -1) : row));
+  return Object.freeze({
+    status: "optimal",
+    plan,
+    cost: lp.value,
+    dummy,
+    leftover: dummy === "sink" ? table.map((row) => row.at(-1)) : null,
+    unmet: dummy === "source" ? table.at(-1) : null,
+    lp,
+  });
 }
