@@ -729,6 +729,21 @@ export function planarity(g: Graph):
   | { planar: true; faces: Vertex[][][]; edges: number; vertices: number }
   | { planar: false; kuratowski: KuratowskiWitness };
 export function isPlanar(g: Graph): boolean;
+export interface GenusResult {
+  /** The genus when the bounds meet, else null. */
+  genus: number | null;
+  proven: boolean;
+  lower: number;
+  upper: number;
+  planar: boolean;
+  /** The non-planar blocks, each with the rotation system of its best embedding and that embedding's faces. */
+  blocks: Array<{ vertices: Vertex[]; edges: number; girth: number; lower: number; upper: number; method: string; searched?: number; rotation: Record<string, Vertex[]>; faces: Vertex[][] }>;
+  reason: string;
+}
+/** The least number of handles on which the graph can be drawn without crossings, by rotation systems. */
+export function genus(g: Graph, options?: { limit?: number }): GenusResult;
+/** The genus of the surface a rotation system (each vertex's cyclic list of neighbours) draws a connected graph on. */
+export function embeddingGenus(g: Graph, rotation: Record<string, Vertex[]> | Map<Vertex, Vertex[]>): { genus: number; faces: Vertex[][]; vertices: number; edges: number; euler: number };
 export function checkKuratowski(g: Graph, witness: KuratowskiWitness): { ok: boolean; errors: string[] };
 
 // ---- isomorphism and spectra ----

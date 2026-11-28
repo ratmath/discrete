@@ -13,8 +13,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap">
 <link rel="stylesheet" href="https://ratmath.com/assets/katex/0.19.1/katex.min.css">
-<link rel="stylesheet" href="assets/style.css?v=d226364d29">
-<script type="module" src="assets/site.js?v=d226364d29"></script>
+<link rel="stylesheet" href="assets/style.css?v=bb3c2dbccc">
+<script type="module" src="assets/site.js?v=bb3c2dbccc"></script>
 </head>
 <body>
 <div class="shell">
@@ -144,6 +144,7 @@
 <tr><td><code>greedyColouring(g, order)</code>, <code>isProperColouring(g, c)</code></td><td>A colouring as a Map; <code>{ ok, clash }</code>.</td></tr>
 <tr><td><code>maximumClique</code>, <code>maximalCliques</code>, <code>maximumIndependentSet</code></td><td>Branch and bound; Bron–Kerbosch.</td></tr>
 <tr><td><code>planarity(g)</code>, <code>isPlanar(g)</code>, <code>checkKuratowski(g, w)</code></td><td><code>{ planar: true, faces }</code> (per block, Euler-checked) or <code>{ planar: false, kuratowski: { kind, branch, paths, edges } }</code>.</td></tr>
+<tr><td><code>genus(g, { limit })</code>, <code>embeddingGenus(g, rotation)</code></td><td><code>{ genus, proven, lower, upper, blocks: [{ rotation, faces, method }] }</code>: the least number of handles, by rotation systems; and the genus of the surface a given rotation system draws on. See <a href="planarity.html">Planarity</a></td></tr>
 <tr><td><code>isomorphism(g, h)</code>, <code>isIsomorphic(g, h)</code></td><td><code>{ isomorphic: true, map }</code> or <code>{ isomorphic: false, reason }</code>.</td></tr>
 <tr><td><code>automorphisms(g)</code></td><td><code>{ order, generators, orbits, group, vertices }</code>; <code>group</code> is a <code>PermGroup</code> up to order 50,000.</td></tr>
 <tr><td><code>spectrum(g, { laplacian })</code>, <code>characteristicPolynomial(M)</code></td><td>Exact eigenvalues with multiplicities: <code>{ polynomial, polynomialText, eigenvalues, toString() }</code>.</td></tr>

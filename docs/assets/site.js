@@ -1,8 +1,8 @@
 // Shared page furniture for the discrete docs: the contents column, the theme
 // switch and the code boxes. Add each topic page to PAGES as it is written.
 
-import * as A from "./discrete.js?v=d226364d29";
-import { mountRunboxes } from "./runbox.js?v=d226364d29";
+import * as A from "./discrete.js?v=bb3c2dbccc";
+import { mountRunboxes } from "./runbox.js?v=bb3c2dbccc";
 
 export { A };
 
@@ -27,7 +27,7 @@ export const PAGES = [
   { group: "Graph theory" },
   { href: "matchings-flows.html", title: "Matchings and flows", blurb: "Blossoms with Tutte–Berge sets, König and Hall, assignment, stable matching, max flow and min cut" },
   { href: "colouring.html", title: "Colouring and cliques", blurb: "Chromatic number with the reason no fewer colours work, the chromatic polynomial, cliques" },
-  { href: "planarity.html", title: "Planarity", blurb: "Faces for a planar graph, a Kuratowski subdivision for one that is not" },
+  { href: "planarity.html", title: "Planarity", blurb: "Faces for a planar graph, a Kuratowski subdivision for one that is not, the genus by rotation systems" },
   { href: "isomorphism-spectra.html", title: "Isomorphism and spectra", blurb: "Colour refinement, automorphism groups, exact eigenvalues, walks and spanning trees" },
   { group: "Optimisation and games" },
   { href: "linear-programming.html", title: "Linear programming", blurb: "An exact simplex method; every answer with its proof: dual prices, a Farkas vector or a ray" },

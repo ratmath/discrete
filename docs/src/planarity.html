@@ -39,6 +39,18 @@ checkKuratowski(petersen(), r.kuratowski).ok;   // true</code></pre>
 <p>When the embedding fails, edges are deleted one at a time while the graph stays non-planar. What is left is edge-minimal non-planar, and by Kuratowski's theorem it is a subdivision of \(K_5\) or \(K_{3,3}\): the vertices of degree three or four are the branch vertices and the rest lie on paths between them. <code>checkKuratowski</code> confirms the paths use real edges, are disjoint apart from their ends, and join the right pairs.</p>
 <h2>Quick counting arguments</h2>
 <p>A simple planar graph with \(V \ge 3\) has \(E \le 3V - 6\), since every face has at least three edges and each edge borders two faces. Without triangles it is \(E \le 2V - 4\). So \(K_5\) (10 &gt; 9) and \(K_{3,3}\) (9 &gt; 8) are out at once; Petersen has 15 edges, within both bounds, and needs the search.</p>
+<h2>Not planar: how many handles?</h2>
+<p>A graph that cannot be drawn on the sphere can be drawn on a sphere with enough handles. The <em>genus</em> of a graph is the least number of handles needed: 0 for planar graphs, 1 for graphs that fit on a torus, and so on.</p>
+<p>Drawings on orientable surfaces can be listed without any geometry. A <em>rotation system</em> gives each vertex a cyclic order of its neighbours. Walk along an edge into a vertex and leave by the neighbour that comes next in that vertex's order: the walks close up into the faces of a drawing, and with \(F\) faces Euler's formula</p>
+\[ V - E + F = 2 - 2g \]
+<p>gives the genus \(g\) of the surface. Every drawing without crossings comes from a rotation system, so the genus of the graph is the least \(g\) over all of them, a finite search.</p>
+<pre><code>const t = genus(complete(5));
+t.genus;                 // 1: the torus
+t.blocks[0].rotation;    // { 1: [5, 4, 3, 2], 2: [5, 4, 3, 1], … }  an embedding
+t.blocks[0].faces;       // its 5 faces: 5 − 10 + 5 = 0 = 2 − 2·1
+embeddingGenus(complete(5), t.blocks[0].rotation).genus;   // 1, traced again from the rotation alone</code></pre>
+<p>Two bounds make the answer a proof. From below: a planar graph has genus 0, and otherwise every face has at least as many sides as the girth \(\gamma\), so \(F \le 2E/\gamma\) and \(g \ge \lceil (E(1 - 2/\gamma) - V + 2)/2 \rceil\), at least 1. From above: the genus of an embedding actually found, returned with its rotation system so that it can be checked. A small block is searched completely (\(K_5\) has \(6^5 = 7776\) rotation systems once the first neighbour is fixed), stopping early if the lower bound is met. A larger one is searched by exchanging two neighbours at a time, and then <code>proven</code> is true only when the bounds meet; otherwise <code>genus</code> is <code>null</code> and the bounds are what is known, as for \(K_8\) (genus 2, where the search here finds 3). The genus of a graph is the sum over its blocks, so each block is treated separately.</p>
+
 <template data-runbox>
 // Planar or not, with the evidence, for some well-known graphs.
 for (const [name, g] of [["K5", complete(5)], ["K3,3", completeBipartite(3, 3)], ["Q3", hypercube(3)], ["Q4", hypercube(4)], ["dodecahedron", platonic("dodecahedron")], ["K2,7", completeBipartite(2, 7)], ["Petersen", petersen()]]) {
@@ -48,6 +60,13 @@ for (const [name, g] of [["K5", complete(5)], ["K3,3", completeBipartite(3, 3)],
     PRINT(name.padEnd(13), "planar:", r.faces.length, "block(s),", F, "faces; V − E + F per block =", r.faces.map((f) =&gt; g.vertices().length - g.edges().length + f.length).join(","));
   } else PRINT(name.padEnd(13), "not planar:", r.kuratowski.kind, "subdivision with", r.kuratowski.edges.length, "edges, check", checkKuratowski(g, r.kuratowski).ok);
 }
+
+// Genus: K5, K3,3, the Petersen graph and K7 all fit on a torus
+for (const [name, h] of [["K5", complete(5)], ["K3,3", completeBipartite(3, 3)], ["Petersen", petersen()], ["K7", complete(7)], ["K4", complete(4)]]) {
+  const t = genus(h);
+  PRINT(name.padEnd(9), "genus", t.genus, t.proven ? "(proven)" : `(between ${t.lower} and ${t.upper})`, t.blocks[0] ? `${t.blocks[0].faces.length} faces` : "planar");
+}
+genus(complete(5)).blocks[0].rotation
 </template>
 </article>
 </main>

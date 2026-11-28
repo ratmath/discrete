@@ -302,3 +302,266 @@ export function checkKuratowski(g, w) {
   return { ok: errors.length === 0, errors };
 }
 void refuse;
+
+// ---- genus: embeddings on surfaces with handles, by rotation systems ----------------------
+//
+// A rotation system gives each vertex a cyclic order of its neighbours. It
+// describes a drawing of the graph on an orientable surface without
+// crossings: walk along an edge into a vertex and leave by the neighbour that
+// comes next in that vertex's order, and the walks close up into the faces.
+// With F faces, V − E + F = 2 − 2g gives the genus g of the surface. Every
+// such drawing arises this way, so the genus of the graph is the least g
+// over all rotation systems: a finite search.
+//
+// The genus of a graph is the sum of the genera of its blocks (Battle,
+// Harary, Kodama and Youngs), so each block is treated on its own. For a
+// block the bounds are
+//   below: 0 if planar, else the larger of 1 and ⌈(E·(1 − 2/girth) − V + 2)/2⌉,
+//          because every face has at least `girth` sides;
+//   above: the genus of the best rotation system found.
+// A small block is searched completely, and the search stops early when the
+// lower bound is met. A large one is searched by exchanging neighbours in one
+// rotation at a time; the answer is then proven only if the two bounds meet.
+
+/** Faces of a rotation system on 0..n−1: rot[v] is the cyclic list of neighbours. Each face is a list of vertices. */
+function traceFaces(rot, wantFaces = false) {
+  const n = rot.length;
+  const pos = rot.map((r) => new Map(r.map((w, i) => [w, i])));
+  const seen = rot.map((r) => new Uint8Array(r.length)); // dart (v → r[i])
+  let count = 0;
+  const faces = [];
+  for (let v = 0; v < n; v++) {
+    for (let i = 0; i < rot[v].length; i++) {
+      if (seen[v][i]) continue;
+      count++;
+      const face = [];
+      let [a, k] = [v, i];
+      while (!seen[a][k]) {
+        seen[a][k] = 1;
+        if (wantFaces) face.push(a);
+        const b = rot[a][k];
+        // arriving at b from a: leave by the neighbour after a in b's order
+        const j = (pos[b].get(a) + 1) % rot[b].length;
+        [a, k] = [b, j];
+      }
+      if (wantFaces) faces.push(face);
+    }
+  }
+  return wantFaces ? faces : count;
+}
+
+function girthOf(n, adj) {
+  let best = Infinity;
+  for (let s = 0; s < n; s++) {
+    const dist = new Array(n).fill(-1);
+    const par = new Array(n).fill(-1);
+    dist[s] = 0;
+    const queue = [s];
+    for (let h = 0; h < queue.length; h++) {
+      const u = queue[h];
+      for (const w of adj[u]) {
+        if (dist[w] === -1) {
+          dist[w] = dist[u] + 1;
+          par[w] = u;
+          queue.push(w);
+        } else if (par[u] !== w) best = Math.min(best, dist[u] + dist[w] + 1);
+      }
+    }
+  }
+  return best;
+}
+
+/** One block (edge list on its own vertices 0..n−1): { genus, lower, upper, rot, searched }. */
+function blockGenus(n, E, limit) {
+  const adj = Array.from({ length: n }, () => []);
+  for (const [a, b] of E) {
+    adj[a].push(b);
+    adj[b].push(a);
+  }
+  const m = E.length;
+  const facesToGenus = (F) => (2 - n + m - F) / 2;
+  if (m < 3 || planarEdges(n, E)) {
+    // planar: find a rotation system with V − E + F = 2 by the same search (small) or report without one
+    const girth = m >= 3 ? girthOf(n, adj) : Infinity;
+    return { lower: 0, upper: 0, girth, rot: null, method: "planar" };
+  }
+  const girth = girthOf(n, adj);
+  const lower = Math.max(1, Math.ceil((m * (1 - 2 / girth) - n + 2) / 2 - 1e-9));
+  const target = m - n + 2 - 2 * lower; // the number of faces a genus-`lower` embedding has
+  // the number of rotation systems, first neighbour fixed at each vertex
+  let total = 1;
+  for (const a of adj) for (let k = 2; k < a.length; k++) total = Math.min(total * k, Number.MAX_SAFE_INTEGER);
+  let best = { F: -1, rot: null };
+  const take = (rot) => {
+    const F = traceFaces(rot);
+    if (F > best.F) best = { F, rot: rot.map((r) => r.slice()) };
+    return F >= target;
+  };
+  if (total <= limit) {
+    // every rotation system: permute the neighbours after the first, vertex by vertex
+    const rot = adj.map((a) => a.slice());
+    const order = [...adj.keys()].filter((v) => adj[v].length > 2);
+    let done = false;
+    const rec = (idx) => {
+      if (done) return;
+      if (idx === order.length) {
+        if (take(rot)) done = true;
+        return;
+      }
+      const v = order[idx];
+      const r = rot[v];
+      const permute = (k) => {
+        if (done) return;
+        if (k === r.length) return rec(idx + 1);
+        for (let i = k; i < r.length; i++) {
+          [r[k], r[i]] = [r[i], r[k]];
+          permute(k + 1);
+          [r[k], r[i]] = [r[i], r[k]];
+        }
+      };
+      permute(1);
+    };
+    rec(0);
+    const upper = facesToGenus(best.F);
+    return { lower: upper, upper, girth, rot: best.rot, method: done ? "the lower bound is met by an embedding" : `all ${total} rotation systems were examined`, searched: total };
+  }
+  // too many to list: improve a rotation system by exchanging two neighbours at a vertex (a fixed pseudo-random sequence)
+  let state = 0x9e3779b9;
+  const rand = (k) => {
+    state ^= state << 13;
+    state >>>= 0;
+    state ^= state >>> 17;
+    state ^= state << 5;
+    state >>>= 0;
+    return state % k;
+  };
+  const busy = [...adj.keys()].filter((v) => adj[v].length > 2);
+  let tries = 0;
+  outer: for (let restart = 0; restart < 40; restart++) {
+    const rot = adj.map((a) => {
+      const r = a.slice();
+      for (let i = r.length - 1; i > 0; i--) {
+        const j = rand(i + 1);
+        [r[i], r[j]] = [r[j], r[i]];
+      }
+      return r;
+    });
+    let F = traceFaces(rot);
+    if (take(rot)) break;
+    for (let step = 0; step < 4000; step++) {
+      tries++;
+      const v = busy[rand(busy.length)];
+      const r = rot[v];
+      const i = rand(r.length);
+      let j = rand(r.length - 1);
+      if (j >= i) j++;
+      [r[i], r[j]] = [r[j], r[i]];
+      const G = traceFaces(rot);
+      if (G >= F) {
+        F = G;
+        if (take(rot)) break outer;
+      } else [r[i], r[j]] = [r[j], r[i]];
+    }
+  }
+  const upper = facesToGenus(best.F);
+  return { lower, upper, girth, rot: best.rot, method: upper === lower ? "the lower bound is met by an embedding" : "bounds only: the search by exchanges did not reach the lower bound", searched: tries };
+}
+
+/**
+ * The genus of a graph: the least number of handles on a sphere that lets
+ * it be drawn without crossings.
+ *
+ *   genus(complete(5))   // { genus: 1, proven: true, lower: 1, upper: 1, blocks: [{ …, rotation, faces }] }
+ *
+ * `proven` is true when the lower and upper bounds agree; `genus` is then the
+ * genus, and otherwise null with the bounds. Each non-planar block comes with
+ * the rotation system of its best embedding and that embedding's faces, which
+ * `embeddingGenus` checks on its own. Directions, weights, loops and parallel
+ * edges are ignored. `limit` is the largest number of rotation systems
+ * examined one by one (default 2 000 000).
+ */
+export function genus(g, { limit = 2000000 } = {}) {
+  const X = indexOf(g);
+  const n = X.vs.length;
+  const set = new Set();
+  const E = [];
+  for (const e of X.edges) {
+    const a = X.at.get(e.from);
+    const b = X.at.get(e.to);
+    if (a === b) continue;
+    const k = ekey(a, b);
+    if (!set.has(k)) {
+      set.add(k);
+      E.push([a, b]);
+    }
+  }
+  let lower = 0;
+  let upper = 0;
+  const blocks = [];
+  for (const blk of edgeBlocks(n, E)) {
+    const ids = [...new Set(blk.flat())].sort((p, q) => p - q);
+    const local = new Map(ids.map((v, i) => [v, i]));
+    const r = blockGenus(ids.length, blk.map(([a, b]) => [local.get(a), local.get(b)]), limit);
+    lower += r.lower;
+    upper += r.upper;
+    if (r.method === "planar") continue;
+    const name = (i) => X.vs[ids[i]];
+    blocks.push({
+      vertices: ids.map((v) => X.vs[v]),
+      edges: blk.length,
+      girth: r.girth,
+      lower: r.lower,
+      upper: r.upper,
+      method: r.method,
+      searched: r.searched,
+      rotation: Object.fromEntries(r.rot.map((list, i) => [name(i), list.map(name)])),
+      faces: traceFaces(r.rot, true).map((f) => f.map(name)),
+    });
+  }
+  const proven = lower === upper;
+  return Object.freeze({
+    genus: proven ? upper : null,
+    proven,
+    lower,
+    upper,
+    planar: upper === 0,
+    blocks,
+    reason: upper === 0 ? "the graph is planar" : proven ? `V − E + F = 2 − 2g for the embedding found, and no embedding has fewer handles (${blocks.map((b) => b.method).join("; ")})` : `the genus is between ${lower} and ${upper}: the best embedding found has genus ${upper}, and Euler's formula with the girth gives at least ${lower}`,
+  });
+}
+
+/**
+ * The genus of the surface a rotation system draws the graph on, with its
+ * faces: { genus, faces, vertices, edges, euler }. `rotation` maps each
+ * vertex to the cyclic list of its neighbours; it must list every neighbour
+ * exactly once. The graph must be connected.
+ */
+export function embeddingGenus(g, rotation) {
+  const X = indexOf(g);
+  const n = X.vs.length;
+  const nbrs = X.vs.map(() => new Set());
+  for (const e of X.edges) {
+    const a = X.at.get(e.from);
+    const b = X.at.get(e.to);
+    if (a !== b) {
+      nbrs[a].add(b);
+      nbrs[b].add(a);
+    }
+  }
+  const get = (v) => (rotation instanceof Map ? rotation.get(v) : rotation[v]);
+  const rot = X.vs.map((v, i) => {
+    const list = (get(v) ?? []).map((w) => X.at.get(w));
+    if (list.some((w) => w === undefined) || list.length !== nbrs[i].size || new Set(list).size !== list.length || list.some((w) => !nbrs[i].has(w))) refuse("bad-argument", `the rotation at ${v} must list each neighbour of ${v} exactly once`);
+    return list;
+  });
+  const seen = new Uint8Array(n);
+  const stack = [0];
+  seen[0] = 1;
+  let reached = n ? 1 : 0;
+  while (stack.length) for (const w of nbrs[stack.pop()]) if (!seen[w]) (seen[w] = 1), reached++, stack.push(w);
+  if (reached !== n) refuse("bad-argument", "the graph must be connected: a rotation system describes one surface");
+  const faces = traceFaces(rot, true);
+  const m = nbrs.reduce((s, x) => s + x.size, 0) / 2;
+  const euler = n - m + faces.length;
+  return { genus: (2 - euler) / 2, faces: faces.map((f) => f.map((i) => X.vs[i])), vertices: n, edges: m, euler };
+}
