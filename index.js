@@ -50,7 +50,7 @@ export {
 export {
   isProperColouring, greedyColouring, maximumClique, maximalCliques, maximumIndependentSet, chromaticNumber, chromaticPolynomial,
 } from "./src/colouring.js";
-export { planarity, isPlanar, checkKuratowski } from "./src/planar.js";
+export { planarity, isPlanar, checkKuratowski, genus, embeddingGenus } from "./src/planar.js";
 export { isomorphism, isIsomorphic, automorphisms } from "./src/iso.js";
 export { adjacency, laplacian, characteristicPolynomial, spectrum, walks, spanningTreesFromSpectrum } from "./src/spectra.js";
 export {

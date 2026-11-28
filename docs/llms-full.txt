@@ -1,6 +1,6 @@
 # @ratmath/discrete 0.3.0: full documentation
 
-> Discrete mathematics for RatMath: counting and enumeration, graphs and graph theory, generating functions and recurrences, games and voting, orders, codes and designs, and exact linear programming. From https://ratmath.com/discrete/, commit ca180fb. Each page ends with a runnable example; in it, PRINT(...) prints.
+> Discrete mathematics for RatMath: counting and enumeration, graphs and graph theory, generating functions and recurrences, games and voting, orders, codes and designs, and exact linear programming. From https://ratmath.com/discrete/, commit 3d6c04c. Each page ends with a runnable example; in it, PRINT(...) prints.
 
 
 ---
@@ -315,6 +315,8 @@ Every export of `@ratmath/discrete`. Whole-number arguments may be numbers, `Big
 | maximumClique, maximalCliques, maximumIndependentSet | Branch and bound; Bron–Kerbosch. |
 
 | planarity(g), isPlanar(g), checkKuratowski(g, w) | { planar: true, faces } (per block, Euler-checked) or { planar: false, kuratowski: { kind, branch, paths, edges } }. |
+
+| genus(g, { limit }), embeddingGenus(g, rotation) | { genus, proven, lower, upper, blocks: [{ rotation, faces, method }] }: the least number of handles, by rotation systems; and the genus of the surface a given rotation system draws on. See Planarity |
 
 | isomorphism(g, h), isIsomorphic(g, h) | { isomorphic: true, map } or { isomorphic: false, reason }. |
 
@@ -1748,6 +1750,25 @@ When the embedding fails, edges are deleted one at a time while the graph stays 
 
 A simple planar graph with V≥3 has E≤3V−6, since every face has at least three edges and each edge borders two faces. Without triangles it is E≤2V−4. So K5​ (10 > 9) and K3,3​ (9 > 8) are out at once; Petersen has 15 edges, within both bounds, and needs the search.
 
+### Not planar: how many handles?
+
+A graph that cannot be drawn on the sphere can be drawn on a sphere with enough handles. The genus of a graph is the least number of handles needed: 0 for planar graphs, 1 for graphs that fit on a torus, and so on.
+
+Drawings on orientable surfaces can be listed without any geometry. A rotation system gives each vertex a cyclic order of its neighbours. Walk along an edge into a vertex and leave by the neighbour that comes next in that vertex's order: the walks close up into the faces of a drawing, and with F faces Euler's formula
+
+V−E+F=2−2g
+gives the genus g of the surface. Every drawing without crossings comes from a rotation system, so the genus of the graph is the least g over all of them, a finite search.
+
+```js
+const t = genus(complete(5));
+t.genus;                 // 1: the torus
+t.blocks[0].rotation;    // { 1: [5, 4, 3, 2], 2: [5, 4, 3, 1], … }  an embedding
+t.blocks[0].faces;       // its 5 faces: 5 − 10 + 5 = 0 = 2 − 2·1
+embeddingGenus(complete(5), t.blocks[0].rotation).genus;   // 1, traced again from the rotation alone
+```
+
+Two bounds make the answer a proof. From below: a planar graph has genus 0, and otherwise every face has at least as many sides as the girth γ, so F≤2E/γ and g≥⌈(E(1−2/γ)−V+2)/2⌉, at least 1. From above: the genus of an embedding actually found, returned with its rotation system so that it can be checked. A small block is searched completely (K5​ has 65=7776 rotation systems once the first neighbour is fixed), stopping early if the lower bound is met. A larger one is searched by exchanging two neighbours at a time, and then `proven` is true only when the bounds meet; otherwise `genus` is `null` and the bounds are what is known, as for K8​ (genus 2, where the search here finds 3). The genus of a graph is the sum over its blocks, so each block is treated separately.
+
 ### Try it
 
 ```js
@@ -1759,6 +1780,13 @@ for (const [name, g] of [["K5", complete(5)], ["K3,3", completeBipartite(3, 3)],
     PRINT(name.padEnd(13), "planar:", r.faces.length, "block(s),", F, "faces; V − E + F per block =", r.faces.map((f) => g.vertices().length - g.edges().length + f.length).join(","));
   } else PRINT(name.padEnd(13), "not planar:", r.kuratowski.kind, "subdivision with", r.kuratowski.edges.length, "edges, check", checkKuratowski(g, r.kuratowski).ok);
 }
+
+// Genus: K5, K3,3, the Petersen graph and K7 all fit on a torus
+for (const [name, h] of [["K5", complete(5)], ["K3,3", completeBipartite(3, 3)], ["Petersen", petersen()], ["K7", complete(7)], ["K4", complete(4)]]) {
+  const t = genus(h);
+  PRINT(name.padEnd(9), "genus", t.genus, t.proven ? "(proven)" : `(between ${t.lower} and ${t.upper})`, t.blocks[0] ? `${t.blocks[0].faces.length} faces` : "planar");
+}
+genus(complete(5)).blocks[0].rotation
 ```
 
 ---

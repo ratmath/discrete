@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- `genus(g)` (Course Test roadmap, item B9): the genus of a graph by rotation
+  systems, block by block, with a lower bound from Euler's formula and the
+  girth and the rotation system of the embedding found. Small blocks are
+  searched completely; for larger ones the answer is marked proven only when
+  the bounds meet. `embeddingGenus(g, rotation)` traces the faces of a given
+  rotation system on its own.
+
 - Optimisation helpers from the Course Test roadmap (batch A8):
   `transportation(supply, demand, cost)` solves the transportation problem as
   an exact LP and returns the shipping table, with a dummy sink or source for
